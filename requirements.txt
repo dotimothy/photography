@@ -1,0 +1,7 @@
+GitPython
+tqdm
+flask
+numpy
+opencv-python
+exifread
+Pillow

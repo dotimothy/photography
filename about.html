@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>About TheDoShoots</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Outfit:300,500,700' rel='stylesheet' type='text/css'>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
+            /* Allow vertical scroll */
+            overflow-x: hidden;
+            background: #000;
+            font-family: 'Outfit', sans-serif;
+            color: #fff;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* SCROLL SECTIONS */
+        .scroll-container {
+            height: 500vh;
+            /* Long scroll area */
+            position: relative;
+        }
+
+        /* Content Sections fixed/absolute based on scroll logic or simply placed */
+        /* We will use Fixed Overlay that changes based on Scroll Progress */
+        .content-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            /* Let clicks pass to scroll */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .visible-content {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        h1 {
+            font-size: 5vw;
+            margin: 0;
+            text-shadow: 0 0 20px #ffffff;
+        }
+
+        h2 {
+            font-size: 3vw;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.5vw;
+            max-width: 600px;
+            line-height: 1.6;
+            color: #ddd;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-back {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 1.2em;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+
+        .nav-back:hover {
+            color: #ffffff;
+        }
+
+        /* Scroll Progress Indicator */
+        .progress-bar {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #ffffff;
+            box-shadow: 0 0 10px #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+
+
+
+    <div id="canvas-container"></div>
+
+    <div class="scroll-container">
+        <!-- Invisible spacer to force scroll -->
+    </div>
+
+    <!-- Dynamic Content Sections -->
+    <div id="section-0" class="content-overlay visible-content">
+        <h1>TheDoShoots</h1>
+        <p style="font-size: 1.5em; margin-top: 10px;">By Timothy Do</p>
+        <img src="assets/tim.jpg"
+            style="width: 30em; border-radius: 50%; vertical-align: middle; ; border: 4px solid white; margin: 20px 0; box-shadow: 0 0 20px rgba(255,255,255,0.2);">
+        <p>Photographer • Engineer • Explorer</p>
+        <p style="font-size: 1em; margin-top: 40px; opacity: 0.7;">(Scroll to Fly)</p>
+    </div>
+
+    <div id="section-1" class="content-overlay">
+        <h2>THE JOURNEY</h2>
+        <p>My passion began years ago, watching my father capture family memories. What started as a hobby became a way
+            to freeze time and hold onto the fleeting moments of the wild.</p>
+    </div>
+
+    <div id="section-2" class="content-overlay">
+        <h2>THE ENGINEER</h2>
+        <p>With an M.S. in Electrical and Computer Engineering from UCLA, I bring a technical eye to the art.
+            Understanding the light, the sensor, and the physics allows me to push the boundaries of what's captured.
+        </p>
+    </div>
+
+    <div id="section-3" class="content-overlay">
+        <h2>THE WILD</h2>
+        <p>From the depths of the night sky to the raw beauty of national parks. As an Eagle Scout, nature is my second
+            home. This portfolio is my window into that world.</p>
+    </div>
+
+    <!-- Progress Dots -->
+    <div class="progress-bar">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
+
+    <script>
+        // --- 3D SCENE ---
+        let scene, camera, renderer;
+        let starGeo, stars;
+        let galleryMeshGroup = new THREE.Group();
+
+        // Scroll / Camera Logic
+        let scrollY = 0;
+        let maxScroll = 0;
+        let cameraZ = 0;
+        const sectionDepth = 200; // Distance between sections in 3D units
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.002);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // 1. Starfield (Tunnel)
+            starGeo = new THREE.BufferGeometry();
+            const starCount = 6000;
+            const pos = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount * 3; i += 3) {
+                pos[i] = (Math.random() - 0.5) * 400; // X
+                pos[i + 1] = (Math.random() - 0.5) * 400; // Y
+                pos[i + 2] = (Math.random() * 2000) - 1000; // Z depth
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            let starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, transparent: true });
+            stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+
+            // 2. Floating Photos (Decorations along the path)
+            // Load a few textures (placeholders or real if available, using colors for now to ensure look)
+            const loader = new THREE.TextureLoader();
+            const tex1 = loader.load('assets/photographer.jpg'); // Your profile
+
+            // Create "Frames" along the path
+            // Section 1: Memory (Z: -200)
+            createFrame(tex1, -15, 5, -180, 20, 30);
+
+            // Section 2: Tech (Z: -400) - Maybe create a wireframe camera?
+            const wireGeo = new THREE.BoxGeometry(10, 8, 4);
+            const wireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+            const cameraWire = new THREE.Mesh(wireGeo, wireMat);
+            cameraWire.position.set(15, -5, -380);
+            cameraWire.scale.set(1, 1, 1);
+            // Rotate it
+            scene.add(cameraWire);
+
+            // Section 3: Wild (Z: -600)
+            createFrame(tex1, -20, -10, -580, 25, 15);
+            createFrame(tex1, 20, 10, -590, 15, 25);
+
+            scene.add(galleryMeshGroup);
+
+            // Listeners
+            window.addEventListener('resize', onResize);
+            window.addEventListener('scroll', onScroll);
+
+            animate();
+        }
+
+        function createFrame(tex, x, y, z, w, h) {
+            const geo = new THREE.PlaneGeometry(w, h);
+            const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.rotation.y = Math.random() * 0.5 - 0.25;
+            galleryMeshGroup.add(mesh);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onScroll() {
+            scrollY = window.scrollY || document.documentElement.scrollTop;
+            const docHeight = document.body.scrollHeight - window.innerHeight;
+            if (docHeight <= 0) return; // Prevention
+            const pct = Math.min(1, Math.max(0, scrollY / docHeight)); // Clamp 0-1
+
+            // Total fly distance = 3 sections * 200 = 600 units
+            const totalZ = 3 * sectionDepth;
+
+            // Camera Z moves Negative (Forward)
+            camera.position.z = -(pct * totalZ);
+
+            // Rotate stars for speed effect
+            stars.rotation.z = pct * 2;
+
+            // Update UI Opacity based on Z position
+            updateSections(pct);
+        }
+
+        function updateSections(pct) {
+            // pct goes 0 -> 1
+            // 4 Sections (0, 1, 2, 3)
+            // Section 0: 0.0 - 0.1
+            // Section 1: 0.2 - 0.4
+            // Section 2: 0.5 - 0.7
+            // Section 3: 0.8 - 1.0
+
+            const secs = [
+                document.getElementById('section-0'),
+                document.getElementById('section-1'),
+                document.getElementById('section-2'),
+                document.getElementById('section-3')
+            ];
+
+            const dots = document.querySelectorAll('.dot');
+
+            // Simple logic: Highlight section based on quarters
+            let activeIdx = 0;
+            if (pct > 0.2) activeIdx = 1;
+            if (pct > 0.5) activeIdx = 2;
+            if (pct > 0.8) activeIdx = 3;
+
+            secs.forEach((el, i) => {
+                if (i === activeIdx) {
+                    el.classList.add('visible-content');
+                } else {
+                    el.classList.remove('visible-content');
+                }
+            });
+
+            dots.forEach((d, i) => {
+                if (i === activeIdx) d.classList.add('active');
+                else d.classList.remove('active');
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Idle movement
+            galleryMeshGroup.children.forEach(mesh => {
+                mesh.rotation.y += 0.002;
+            });
+
+            // Parallax mouse? Add later if needed.
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
