@@ -7,7 +7,6 @@
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href='https://fonts.googleapis.com/css?family=Roboto:300,500,700' rel='stylesheet' type='text/css'>
-    <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
@@ -79,7 +78,6 @@
         right: 30px;
         z-index: 100;
         display: none;
-        /* Potentially unused now that we have on-screen UI, but keeping container */
     }
 
     #ui-3d button {
@@ -133,7 +131,6 @@
         color: white;
         font-size: 2em;
         line-height: 46px;
-        /* Center 'x' vertically (50 - 2 border - 2 padding approx) */
         text-align: center;
         cursor: pointer;
         z-index: 3001;
@@ -296,7 +293,7 @@
 
     footer {
         text-align: center;
-        ``` color: #666;
+        color: #666;
         padding: 20px;
         margin-top: auto;
     }
@@ -327,8 +324,8 @@
         align-items: center;
         z-index: 5000;
         pointer-events: auto;
-        /* Using backdrop-filter? Maybe. No, let's keep it clean transparent to see stars */
-        background: rgba(0, 0, 0, 0.2);
+        /* UPDATED: SOLID BLACK BACKGROUND (Hides screen completely) */
+        background: #000000;
         transition: opacity 1.5s ease-in-out;
     }
 
@@ -380,16 +377,12 @@
 
 <body>
 
-    <!-- 3D Container -->
     <div id="mode-3d"></div>
 
-    <!-- 3D UI -->
     <div id="ui-3d">
         <button id="settingsToggle3d" style="display:none;"><i class="fas fa-cog fa-lg"></i></button>
-        <!-- Hidden as we have on-screen settings -->
     </div>
 
-    <!-- WELCOME / LANDING SCREEN -->
     <div id="welcome-screen">
         <div class="welcome-content">
             <h1>Welcome to TheDoShoots</h1>
@@ -398,13 +391,11 @@
         </div>
     </div>
 
-    <!-- 3D Global Footer -->
     <div id="footer-3d"
         style="position:fixed; bottom:10px; width:100%; text-align:center; color:#666; font-family:'Roboto',sans-serif; pointer-events:none;">
         &copy; 2025 Timothy Do. All Rights Reserved
     </div>
 
-    <!-- 2D Mode (Monochromatic Theme) -->
     <div id="mode-2d">
         <div class="hero-section">
             <h1 style="font-size: 4em; font-weight: 700; margin-bottom: 0.5em;">TheDoShoots</h1>
@@ -429,10 +420,8 @@
         <footer>@TheDoShoots 2025. By Timothy Do. All Rights Reserved.</footer>
     </div>
 
-    <!-- FPS Overlay -->
     <div id="fps-counter">FPS: 60</div>
 
-    <!-- Overlays -->
     <div class="iframe-overlay" id="galleryOverlay">
         <button class="close-button" id="closeGallery">×</button>
         <iframe id="galleryIframe" src="" frameborder="0"></iframe>
@@ -458,61 +447,67 @@
     <script>
         // --- TEXTURE GENERATION ---
 
-        // 1. Leather Texture (Noise)
         function createLeatherTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024; canvas.height = 1024;
             const ctx = canvas.getContext('2d');
 
-            // Base dark grey
-            ctx.fillStyle = '#1a1a1a';
+            ctx.fillStyle = '#181818'; // Slightly lighter base for better visibility
             ctx.fillRect(0, 0, 1024, 1024);
 
-            // Noise
-            for (let i = 0; i < 300000; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.1)' : 'rgba(50,50,50,0.1)';
-                ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+            for (let i = 0; i < 500000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.1)' : 'rgba(80,80,80,0.05)';
+                ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 1, 1);
             }
 
-            // Pattern (Grip dots)
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            for (let y = 0; y < 1024; y += 10) {
-                for (let x = 0; x < 1024; x += 10) {
-                    if (Math.random() > 0.2) ctx.fillRect(x, y, 4, 4);
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            for (let i = 0; i < 15000; i++) {
+                const x = Math.random() * 1024;
+                const y = Math.random() * 1024;
+                const s = Math.random() * 4 + 1;
+                ctx.beginPath();
+                ctx.arc(x, y, s, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            for (let y = 0; y < 1024; y += 8) {
+                for (let x = 0; x < 1024; x += 8) {
+                    if (Math.random() > 0.1) ctx.fillRect(x, y, 2, 2);
                 }
             }
+
             const tex = new THREE.CanvasTexture(canvas);
             tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
             return tex;
         }
 
-        // 2. Brushed Metal Texture
         function createMetalTexture() {
             const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 512;
+            canvas.width = 1024; canvas.height = 1024;
             const ctx = canvas.getContext('2d');
 
-            // Gradient
-            const grad = ctx.createLinearGradient(0, 0, 512, 512);
-            grad.addColorStop(0, '#222');
-            grad.addColorStop(0.5, '#444');
-            grad.addColorStop(1, '#222');
+            const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+            grad.addColorStop(0, '#2a2a2a'); // Lighter metal
+            grad.addColorStop(0.5, '#666');
+            grad.addColorStop(1, '#2a2a2a');
             ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 512, 512);
+            ctx.fillRect(0, 0, 1024, 1024);
 
-            // Scratches
-            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-            for (let i = 0; i < 500; i++) {
+            ctx.globalAlpha = 0.1;
+            ctx.strokeStyle = '#fff';
+            for (let i = 0; i < 2000; i++) {
                 ctx.beginPath();
-                ctx.moveTo(Math.random() * 512, Math.random() * 512);
-                ctx.lineTo(Math.random() * 512, Math.random() * 512);
+                const x = Math.random() * 1024;
+                const y = Math.random() * 1024;
+                const len = Math.random() * 50 + 10;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + len, y + len / 4);
                 ctx.stroke();
             }
+            ctx.globalAlpha = 1.0;
             return new THREE.CanvasTexture(canvas);
         }
-
-        // 3. UI Screen Texture (The Interface)
-        // Moved to later in the file (lines ~860) to support 1280x850 resolution.
 
         // --- 3D SCENE ---
         let scene, camera, renderer;
@@ -522,18 +517,9 @@
         let hasExplored = false;
         let animationId;
 
-        // FPS Stats
         let lastTime = performance.now();
         let frameCount = 0;
         const fpsElem = document.getElementById('fps-counter');
-
-        // Raycast Targets
-        let buttonPlanes = [];
-
-        // Zoom Logic
-        let targetZoom = 18; // Default to Zoomed Out (Body visible)
-        const minZoom = 6;
-        const maxZoom = 25;
 
         document.addEventListener('DOMContentLoaded', () => {
             const mode3dToggle = document.getElementById('mode3dToggle');
@@ -555,10 +541,9 @@
                 if (is3DActive) {
                     m2.classList.remove('active');
                     m3.style.display = 'block';
-                    // Only hide UI if we haven't explored yet
                     ui3d.style.display = hasExplored ? 'block' : 'none';
                     init3D();
-                    animate(); // Call animate when 3D is active
+                    animate();
                 } else {
                     m2.classList.add('active');
                     m3.style.display = 'none';
@@ -567,16 +552,13 @@
                 }
             }
 
-            // --- ANIMATE LOOP ---
             function animate() {
                 animationId = requestAnimationFrame(animate);
 
-                // Update Tweens (if TWEEN library is used)
                 if (typeof TWEEN !== 'undefined') {
                     TWEEN.update();
                 }
 
-                // FPS Counter
                 const now = performance.now();
                 frameCount++;
                 if (now - lastTime >= 1000) {
@@ -585,135 +567,158 @@
                     lastTime = now;
                 }
 
-                if (!scene || !camera || !renderer) return; // Ensure scene is initialized
+                if (!scene || !camera || !renderer) return;
 
-                // Update controls if they exist
                 if (scene.userData.controls) {
                     scene.userData.controls.update();
                 }
 
+                if (starSystem) {
+                    starSystem.rotation.y += 0.0005;
+                    starSystem.rotation.x += 0.0002;
+                }
+
+                if (uiTexture) uiTexture.needsUpdate = true;
+
                 renderer.render(scene, camera);
             }
 
-            // --- INIT 3D ---
             function init3D() {
-                if (scene) return; // Prevent re-initialization
+                if (scene) return;
                 scene = new THREE.Scene();
 
-                // Camera setup for "Handheld" feel
                 camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-                // Start FAR away (in the stars)
                 camera.position.set(0, 0, 80);
                 camera.lookAt(0, 0, 0);
 
                 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                // Use Standard output encoding for better lighting
+                renderer.outputEncoding = THREE.sRGBEncoding;
                 document.getElementById('mode-3d').appendChild(renderer.domElement);
 
-                // Lighting
-                const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+                // --- LIGHTING UPDATE ---
+                // 1. High Ambient Light to fill shadows
+                const ambient = new THREE.AmbientLight(0xffffff, 0.8);
                 scene.add(ambient);
-                const spot = new THREE.SpotLight(0xffffff, 1);
-                spot.position.set(5, 10, 10);
-                spot.castShadow = true;
-                scene.add(spot);
-                const blueRim = new THREE.PointLight(0x00ffff, 0.8);
-                blueRim.position.set(-10, 0, 5);
-                scene.add(blueRim);
 
-                // --- BACKGROUND ---
+                // 2. Strong Key Light (Front-Right)
+                const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                keyLight.position.set(10, 10, 20);
+                scene.add(keyLight);
+
+                // 3. Rim Light (Back-Left) for separation
+                const rimLight = new THREE.SpotLight(0x00aaff, 2.0);
+                rimLight.position.set(-20, 10, -10);
+                rimLight.lookAt(0, 0, 0);
+                scene.add(rimLight);
+
+                // 4. Fill Light (Bottom-Right)
+                const fillLight = new THREE.PointLight(0xffaa00, 0.6);
+                fillLight.position.set(10, -10, 10);
+                scene.add(fillLight);
+
                 createStarfield();
 
-                // --- CONTROLS ---
                 const controls = new THREE.OrbitControls(camera, renderer.domElement);
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.05;
                 controls.minDistance = 5;
-                controls.maxDistance = 50;
+                controls.maxDistance = 60;
+                scene.userData.controls = controls;
 
-                scene.userData.controls = controls; // Store for animate loop
-
-                // --- CAMERA MODEL ---
                 camGroup = new THREE.Group();
-                camGroup.visible = false; // Hidden until Explore
+                camGroup.visible = false;
                 scene.add(camGroup);
 
                 const leatherTex = createLeatherTexture();
                 const metalTex = createMetalTexture();
 
                 const leatherMat = new THREE.MeshStandardMaterial({
-                    map: leatherTex, roughness: 0.9, color: 0x333333
-                });
-                const metalMat = new THREE.MeshStandardMaterial({
-                    map: metalTex, roughness: 0.3, metalness: 0.8, color: 0x888888
-                });
-                const blackPlasticMat = new THREE.MeshStandardMaterial({
-                    color: 0x111111, roughness: 0.5
+                    map: leatherTex,
+                    roughness: 0.8,
+                    color: 0x444444, // Lighter grey for better visibility
+                    bumpMap: leatherTex,
+                    bumpScale: 0.02
                 });
 
-                // 1. Main Body (Back)
+                const metalMat = new THREE.MeshStandardMaterial({
+                    map: metalTex,
+                    roughness: 0.2,
+                    metalness: 0.9,
+                    color: 0xcccccc // Bright silver
+                });
+
+                const blackPlasticMat = new THREE.MeshStandardMaterial({
+                    color: 0x222222, roughness: 0.4
+                });
+
+                // Body
                 const bodyGeo = new THREE.BoxGeometry(14, 10, 4);
                 const body = new THREE.Mesh(bodyGeo, leatherMat);
                 camGroup.add(body);
 
-                // 2. LCD Screen Frame (Resized LARGER)
-                const screenFrameGeo = new THREE.BoxGeometry(13.5, 9.5, 0.5); // Wider/Taller
+                // Frame
+                const screenFrameGeo = new THREE.BoxGeometry(13.5, 9.5, 0.5);
                 const screenFrame = new THREE.Mesh(screenFrameGeo, blackPlasticMat);
                 screenFrame.position.set(0, -0.5, 2);
                 camGroup.add(screenFrame);
 
-                // 3. The LCD Screen (Canvas)
+                // Screen
                 const uiTex = createUIScreen();
-                const screenGeo = new THREE.PlaneGeometry(12.8, 8.5); // Matches new frame
+                const screenGeo = new THREE.PlaneGeometry(12.8, 8.5);
+                // MeshBasicMaterial is self-illuminated
                 const screenMat = new THREE.MeshBasicMaterial({ map: uiTex });
                 screenMesh = new THREE.Mesh(screenGeo, screenMat);
                 screenMesh.position.set(0, -0.5, 2.26);
                 camGroup.add(screenMesh);
 
-                // 4. Lens (Front)
+                // Lens
                 const lensGeo = new THREE.CylinderGeometry(3.5, 3.5, 3, 32);
                 const lens = new THREE.Mesh(lensGeo, blackPlasticMat);
                 lens.rotation.x = Math.PI / 2;
-                lens.position.set(0, 0, -3.5); // Extend from center (Z=0) towards front (Z negative)
+                lens.position.set(0, 0, -3.5);
                 camGroup.add(lens);
 
-                // Lens Glass
+                const lensRingGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.5, 32);
+                const lensRing = new THREE.Mesh(lensRingGeo, metalMat);
+                lensRing.rotation.x = Math.PI / 2;
+                lensRing.position.set(0, 0, -4.5);
+                camGroup.add(lensRing);
+
                 const glassGeo = new THREE.CylinderGeometry(3, 3, 0.2, 32);
                 const glassMat = new THREE.MeshPhysicalMaterial({
-                    color: 0x111111, metalness: 0.9, roughness: 0.1,
-                    transparent: true, opacity: 0.8, transmission: 0.5
+                    color: 0xffffff,
+                    metalness: 0,
+                    roughness: 0,
+                    transparent: true,
+                    opacity: 0.2,
+                    transmission: 0.9,
+                    clearcoat: 1.0
                 });
                 const glass = new THREE.Mesh(glassGeo, glassMat);
                 glass.rotation.x = Math.PI / 2;
                 glass.position.set(0, 0, -5.1);
                 camGroup.add(glass);
 
-                // 5. Grip (Right side looking from back = Left side from front)
-                // Position X = -8
+                // Grip
                 const gripGeo = new THREE.BoxGeometry(4, 9, 5);
                 const grip = new THREE.Mesh(gripGeo, leatherMat);
                 grip.position.set(-8, -0.5, 0.5);
                 camGroup.add(grip);
 
-                // ... (rest of geometry code unchanged)
+                const shutterGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16);
+                const shutter = new THREE.Mesh(shutterGeo, metalMat);
+                shutter.position.set(-8, 4.5, 1.5);
+                camGroup.add(shutter);
 
-                // --- DYNAMIC INTERACTION ZONES ---
-                // We no longer use static planes. We check click coordinates against UI state.
-
-                // --- INTERACTION ---
                 raycaster = new THREE.Raycaster();
                 mouse = new THREE.Vector2();
-
-                // Zoom Logic (Initialized globally)
-                // We no longer use static planes. We check click coordinates against UI state.
-
-                // Zoom Logic (Initialized globally)
 
                 window.addEventListener('resize', onResize);
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('click', onClick);
-                document.addEventListener('wheel', onWheel, { passive: false });
             }
 
             function onResize() {
@@ -724,19 +729,12 @@
                 }
             }
 
-            function onWheel(e) {
-                // Let OrbitControls handle Zoom
-                // But we want to clamp it? OrbitControls.minDistance handles that.
-                // We can remove this custom logic OR keep it if we want to update a UI slider.
-                // For now, let's remove the custom targetZoom logic to avoid conflict.
-            }
-
             function createStarfield() {
                 const geometry = new THREE.BufferGeometry();
-                const count = 5000; // More stars
+                const count = 5000;
                 const posArray = new Float32Array(count * 3);
                 for (let i = 0; i < count * 3; i++) {
-                    posArray[i] = (Math.random() - 0.5) * 400; // Wider spread (400)
+                    posArray[i] = (Math.random() - 0.5) * 400;
                 }
                 geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
                 const material = new THREE.PointsMaterial({
@@ -747,16 +745,14 @@
             }
 
             // --- UI STATE MANAGEMENT ---
-            let currentScreen = 'HOME'; // 'HOME' | 'SETTINGS'
-            let uiClickZones = []; // [{x, y, w, h, action: fn}]
-
-            // 3. UI Screen Logic
+            let currentScreen = 'HOME';
+            let uiClickZones = [];
             let uiCanvas, uiCtx, uiTexture;
             let pfpImage = new Image();
 
             function createUIScreen() {
                 uiCanvas = document.createElement('canvas');
-                uiCanvas.width = 1280; uiCanvas.height = 850; // New Res: 1280x850
+                uiCanvas.width = 1280; uiCanvas.height = 850;
                 uiCtx = uiCanvas.getContext('2d');
 
                 pfpImage.src = './assets/photographer.jpg';
@@ -767,27 +763,22 @@
                 document.fonts.load("900 40px 'Font Awesome 5 Free'").then(updateUI);
 
                 updateUI();
-
                 uiTexture = new THREE.CanvasTexture(uiCanvas);
+                // Ensure texture is bright
+                uiTexture.encoding = THREE.sRGBEncoding;
                 return uiTexture;
             }
 
             function updateUI() {
-                uiClickZones = []; // Reset zones
-
-                // BG
-                uiCtx.fillStyle = '#050505';
+                uiClickZones = [];
+                // UPDATED: Use a dark gray instead of pure black for backlight simulation
+                uiCtx.fillStyle = '#151515';
                 uiCtx.fillRect(0, 0, 1280, 850);
-
-                // Grid
                 drawGrid();
-
-                // Status Bar (Common)
                 drawStatusBar();
 
-                document.getElementById('footer-3d').style.display = 'none'; // Hide by default
+                document.getElementById('footer-3d').style.display = 'none';
                 if (currentScreen === 'HOME') {
-                    // Update 3D footer visibility (show)
                     document.getElementById('footer-3d').style.display = 'block';
                     drawHome();
                 } else {
@@ -798,10 +789,9 @@
             }
 
             function drawGrid() {
-                uiCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+                uiCtx.strokeStyle = 'rgba(255,255,255,0.1)'; // Brighter grid
                 uiCtx.lineWidth = 2;
                 uiCtx.beginPath();
-                // Roughly thirds
                 uiCtx.moveTo(426, 0); uiCtx.lineTo(426, 850);
                 uiCtx.moveTo(853, 0); uiCtx.lineTo(853, 850);
                 uiCtx.moveTo(0, 283); uiCtx.lineTo(1280, 283);
@@ -810,18 +800,14 @@
             }
 
             function drawHome() {
-                // Header
                 uiCtx.fillStyle = '#fff';
                 uiCtx.font = '700 100px "Roboto", sans-serif';
                 uiCtx.textAlign = 'left';
                 uiCtx.textBaseline = 'top';
                 uiCtx.fillText('TheDoShoots', 80, 80);
 
-                // PFP
                 drawProfilePic();
 
-                // Buttons Stack (Right Side)
-                // Spacing: 120px height, 30px gap
                 const btnX = 650;
                 const btnW = 550;
                 const btnH = 100;
@@ -832,32 +818,24 @@
                 drawButton("ASTRO", "\uf030", btnX, startY + (btnH + gap), btnW, btnH, () => handleNav('./astronomy/index.html', true));
                 drawButton("WILDLIFE", "\uf1b0", btnX, startY + (btnH + gap) * 2, btnW, btnH, () => handleNav('./wildlife/index.html', true));
                 drawButton("SETTINGS", "\uf013", btnX, startY + (btnH + gap) * 3, btnW, btnH, () => { currentScreen = 'SETTINGS'; updateUI(); });
-                // Note: Renamed "ASTRO" to "KEYBOARD" in user request? No, user just complained about layout. I'll stick to original links but better layout.
-                // Reverting "KEYBOARD" to "ASTRO".
-                // Better yet, just redraw correctly.
 
-                // Footer (Socials row)
                 const socialY = 700;
                 uiCtx.textAlign = 'left';
                 uiCtx.fillStyle = '#fff';
                 uiCtx.font = '900 60px "Font Awesome 5 Brands"';
 
-                // IG
                 uiCtx.fillText('\uf16d', 80, socialY);
                 addZone(80, socialY - 50, 60, 60, () => window.open('https://instagram.com/thedoshoots', '_blank'));
 
-                // Flickr
                 uiCtx.fillText('\uf16e', 180, socialY);
                 addZone(180, socialY - 50, 60, 60, () => window.open('https://flickr.com', '_blank'));
 
-                // Email (Solid)
                 uiCtx.font = '900 60px "Font Awesome 5 Free"';
                 uiCtx.fillText('\uf0e0', 280, socialY);
                 addZone(280, socialY - 50, 60, 60, () => window.open('mailto:tim@example.com', '_blank'));
             }
 
             function drawSettings() {
-                // Header
                 uiCtx.fillStyle = '#ffffff';
                 uiCtx.font = '700 80px "Roboto", sans-serif';
                 uiCtx.textAlign = 'left';
@@ -871,7 +849,6 @@
                 drawToggleOption("Gallery Mode", startY + lineHeight, 'galleryToggle');
                 drawToggleOption("Data Saver", startY + lineHeight * 2, 'datasaverToggle');
 
-                // Back Button
                 drawButton("BACK", "\uf060", 80, 650, 300, 100, () => { currentScreen = 'HOME'; updateUI(); });
             }
 
@@ -884,15 +861,13 @@
                 uiCtx.textAlign = 'left';
                 uiCtx.fillText(label, 120, y + 40);
 
-                // Toggle Switch UI
                 const swX = 900, swY = y, swW = 120, swH = 60;
                 uiCtx.fillStyle = isChecked ? '#ffffff' : '#333';
                 uiCtx.beginPath();
                 uiCtx.roundRect(swX, swY, swW, swH, 30);
                 uiCtx.fill();
 
-                // Knob
-                uiCtx.fillStyle = isChecked ? '#000' : '#fff'; // Invert knob color for contrast
+                uiCtx.fillStyle = isChecked ? '#000' : '#fff';
                 uiCtx.beginPath();
                 const kX = isChecked ? swX + swW - 55 : swX + 5;
                 uiCtx.arc(kX + 25, swY + 30, 25, 0, Math.PI * 2);
@@ -900,8 +875,8 @@
 
                 addZone(swX, swY, swW, swH, () => {
                     if (el) {
-                        el.click(); // Trigger native click to handle logic
-                        updateUI(); // Redraw
+                        el.click();
+                        updateUI();
                     }
                 });
             }
@@ -914,7 +889,6 @@
                 const y = 830;
                 uiCtx.fillText("[RAW]  ISO 1600  1/500  f/2.8", 80, y);
 
-                // Battery
                 uiCtx.strokeStyle = '#fff';
                 uiCtx.lineWidth = 3;
                 uiCtx.strokeRect(1150, 795, 80, 40);
@@ -924,24 +898,20 @@
             }
 
             function drawProfilePic() {
-                const x = 250, y = 450, radius = 160; // Bigger PFP
-
+                const x = 250, y = 450, radius = 160;
                 uiCtx.save();
                 uiCtx.shadowColor = '#ffffff';
                 uiCtx.shadowBlur = 40;
                 uiCtx.fillStyle = '#000';
                 uiCtx.beginPath(); uiCtx.arc(x, y, radius - 2, 0, Math.PI * 2); uiCtx.fill();
                 uiCtx.shadowBlur = 0;
-
                 uiCtx.beginPath(); uiCtx.arc(x, y, radius, 0, Math.PI * 2); uiCtx.closePath(); uiCtx.clip();
-
                 if (pfpImage.complete) {
                     uiCtx.drawImage(pfpImage, x - radius, y - radius, radius * 2, radius * 2);
                 } else {
                     uiCtx.fillStyle = '#222'; uiCtx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
                 }
                 uiCtx.restore();
-
                 uiCtx.save();
                 uiCtx.lineWidth = 8; uiCtx.strokeStyle = '#ffffff';
                 uiCtx.beginPath(); uiCtx.arc(x, y, radius, 0, Math.PI * 2); uiCtx.stroke();
@@ -949,13 +919,11 @@
             }
 
             function drawButton(text, icon, x, y, w, h, action) {
-                uiCtx.fillStyle = 'rgba(20, 20, 20, 1)';
+                uiCtx.fillStyle = 'rgba(30, 30, 30, 1)'; // Lighter button bg
                 uiCtx.fillRect(x, y, w, h);
-                uiCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                uiCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // Brighter border
                 uiCtx.lineWidth = 3;
                 uiCtx.strokeRect(x, y, w, h);
-
-                // Icon
                 if (icon) {
                     uiCtx.fillStyle = '#00ffff';
                     uiCtx.font = '900 50px "Font Awesome 5 Free"';
@@ -963,55 +931,33 @@
                     uiCtx.textBaseline = 'middle';
                     uiCtx.fillText(icon, x + 60, y + h / 2);
                 }
-
                 uiCtx.fillStyle = '#fff';
                 uiCtx.font = '700 60px "Roboto", sans-serif';
-                uiCtx.textAlign = 'left'; // Align left next to icon
-                uiCtx.textBaseline = 'middle';
-
                 const textX = icon ? x + 130 : x + w / 2;
                 const align = icon ? 'left' : 'center';
                 uiCtx.textAlign = align;
-
+                uiCtx.textBaseline = 'middle';
                 uiCtx.fillText(text, textX, y + h / 2);
-
                 uiCtx.fillStyle = '#ffffff';
-                uiCtx.fillRect(x, y, 15, h); // Decor bar
-
-                // Add Click Zone
+                uiCtx.fillRect(x, y, 15, h);
                 addZone(x, y, w, h, action);
             }
 
             function addZone(canvasX, canvasY, w, h, action) {
-                // Map Canvas Coords to 0-1 Plane Coords
-                // Canvas is 1280 x 850
-                // Plane is 12.8 x 8.5
-                // Center is (640, 425) -> (0,0) in 3D
-
                 uiClickZones.push({
                     x: canvasX, y: canvasY, w: w, h: h, action: action
                 });
             }
 
-            // Updated Interaction Logic
             function onClick() {
                 if (!is3DActive) return;
-
-                if (camera.position.z < 18) { // Clickable range
+                if (camera.position.z < 30) {
                     raycaster.setFromCamera(mouse, camera);
                     const intersects = raycaster.intersectObject(screenMesh);
-
                     if (intersects.length > 0) {
                         const uv = intersects[0].uv;
-                        // UV is 0..1 (bottom-left to top-right typically, wait, Three.js PlaneGeometry matches image)
-                        // UV (0,0) = Bottom-Left ? No, Top-Left usually for canvas?
-                        // Texture UV: (0,0) is Bottom-Left. Canvas (0,0) is Top-Left.
-                        // So UV.y = 1 - (CanvasY / Height)
-
                         const clickX = uv.x * 1280;
                         const clickY = (1 - uv.y) * 850;
-
-                        // Check zones
                         for (let zone of uiClickZones) {
                             if (clickX >= zone.x && clickX <= zone.x + zone.w &&
                                 clickY >= zone.y && clickY <= zone.y + zone.h) {
@@ -1023,22 +969,17 @@
                 }
             }
 
-            // Cursor Hover
-            // Cursor Hover
             function onMouseMove(e) {
                 mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-                if (is3DActive && camera.position.z < 18) {
+                if (is3DActive && camera.position.z < 30) {
                     raycaster.setFromCamera(mouse, camera);
                     const intersects = raycaster.intersectObject(screenMesh);
                     let hovering = false;
-
                     if (intersects.length > 0) {
                         const uv = intersects[0].uv;
                         const clickX = uv.x * 1280;
                         const clickY = (1 - uv.y) * 850;
-
                         for (let zone of uiClickZones) {
                             if (clickX >= zone.x && clickX <= zone.x + zone.w &&
                                 clickY >= zone.y && clickY <= zone.y + zone.h) {
@@ -1070,34 +1011,6 @@
                 return url.toString();
             }
 
-            function animate() {
-                animationId = requestAnimationFrame(animate);
-                if (uiTexture) uiTexture.needsUpdate = true; // Refresh for pfp load
-
-                if (uiTexture) uiTexture.needsUpdate = true; // Refresh for pfp load
-
-                // No manual zoom interpolation needed if Controls are used.
-                // Controls update automatically if enableDamping is on, we need controls.update()
-                // But controls is local variable in init3D...
-                // We need to access controls globally or just let it be?
-                // Wait, controls.enableDamping REQUIRES update() in loop.
-                // I made 'const controls' in init3D. I need 'controls' variable to be global.
-                // Quick fix: Attach controls to window or make global
-
-                // Let's rely on standard orbit for now without damping or re-query.
-                // Actually, better: 
-                if (scene && scene.userData.controls) scene.userData.controls.update();
-
-                if (starSystem) {
-                    starSystem.rotation.y += 0.0005; // Slow rotation
-                    starSystem.rotation.x += 0.0002;
-                }
-
-                renderer.render(scene, camera);
-                TWEEN.update();
-            }
-
-            // --- SETTINGS BINDINGS ---
             mode3dToggle.addEventListener('change', (e) => {
                 localStorage.setItem('mode3dToggle', e.target.checked);
                 location.reload();
@@ -1106,7 +1019,6 @@
             datasaverToggle.addEventListener('change', updateUI);
             directLinksToggle.addEventListener('change', updateUI);
 
-            // Overlays
             document.getElementById('closeGallery').addEventListener('click', () => {
                 document.getElementById('galleryOverlay').style.opacity = 0;
                 setTimeout(() => document.getElementById('galleryOverlay').style.visibility = 'hidden', 400);
@@ -1115,17 +1027,13 @@
                 document.getElementById('settingsPanel').style.visibility = 'visible';
                 document.getElementById('settingsPanel').style.opacity = 1;
             });
-            // 2D Settings Toggle Listener
             document.getElementById('settingsToggle').addEventListener('click', () => {
                 document.getElementById('settingsPanel').style.visibility = 'visible';
                 document.getElementById('settingsPanel').style.opacity = 1;
             });
-
-            // 2D Nav Listeners
             document.getElementById('nav-about-2d').addEventListener('click', (e) => { e.preventDefault(); handleNav('./about.html', true); });
             document.getElementById('nav-astro-2d').addEventListener('click', (e) => { e.preventDefault(); handleNav('./astronomy/index.html', true); });
             document.getElementById('nav-wildlife-2d').addEventListener('click', (e) => { e.preventDefault(); handleNav('./wildlife/index.html', true); });
-
             document.getElementById('closeSettings').addEventListener('click', () => {
                 document.getElementById('settingsPanel').style.opacity = 0;
                 setTimeout(() => document.getElementById('settingsPanel').style.visibility = 'hidden', 300);
@@ -1134,41 +1042,33 @@
             loadSettings();
         });
 
-        // --- EXPLORE ANIMATION ---
         window.explore = function () {
-            console.log("Explore clicked!");
             const welcome = document.getElementById('welcome-screen');
             if (welcome) {
                 welcome.style.opacity = 0;
                 setTimeout(() => { welcome.style.display = 'none'; }, 1500);
             }
 
-            // Animate Camera
-            // Animate Camera
-            if (!camera) {
-                console.error("Camera not initialized");
-                return;
-            }
+            if (!camera) return;
 
-            // Show Camera Model
             if (camGroup) camGroup.visible = true;
             hasExplored = true;
 
-            console.log("Starting Tween from", camera.position.z);
-
             new TWEEN.Tween(camera.position)
-                .to({ x: 0, y: 0, z: 10 }, 2500) // 2.5s fly-in
+                .to({ x: 0, y: 0, z: 24 }, 2500)
                 .easing(TWEEN.Easing.Cubic.InOut)
                 .onComplete(() => {
-                    console.log("Tween Complete");
                     const ui3d = document.getElementById('ui-3d');
                     if (ui3d) ui3d.style.display = 'block';
                 })
                 .start();
 
             new TWEEN.Tween(camera.rotation)
-                .to({ z: 0 }, 2000)
+                .to({ z: 0.1, y: 0.1 }, 2000)
                 .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => {
+                    new TWEEN.Tween(camera.rotation).to({ z: 0, y: 0 }, 500).start();
+                })
                 .start();
         };
     </script>
