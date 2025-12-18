@@ -172,7 +172,7 @@ if __name__ == '__main__':
     updateGalleryRepo()
     print(f"\n{color.BOLD}*** Step 2: Building galleries ***{color.END}\n")
     galleries = ['astronomy','wildlife']
-    titles = ['🌌 Astronomy Gallery!!! 🌌', '🐿️ Wildlife Gallery!!! 🐿️']
+    titles = ['🌌 Astronomy 🌌', '🐿️ Wildlife 🐿️']
     for gallery,title in zip(galleries,titles):
           prepareGallery(gallery,title, args.exif)
     print(f"{color.BOLD}All galleries prepared!{color.END}")

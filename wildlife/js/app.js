@@ -557,7 +557,7 @@ class App {
     }
 
     typeTitle() {
-        const titleText = "🐿️ Wildlife Gallery!!! 🐿️";
+        const titleText = "🐿️ Wildlife 🐿️";
         let i = 0;
         this.ui.title.innerText = "";
         const interval = setInterval(() => {
