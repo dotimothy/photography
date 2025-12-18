@@ -1,53 +1,323 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
-    <title>TheDoShoots</title>
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href='https://fonts.googleapis.com/css?family=Roboto:300,500,700' rel='stylesheet' type='text/css'>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <title>TheDoShoots by Timothy Do</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900&display=swap' rel='stylesheet'
+        type='text/css'>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 </head>
 
 <base target="_blank">
 
 <style>
+    :root {
+        --primary-color: #ffffff;
+        --accent-color: #00e5ff;
+        --bg-dark: #050505;
+        --glass-bg: rgba(20, 20, 20, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --museum-theme: #00e5ff;
+    }
+
     * {
-        font-family: 'Roboto', sans-serif;
         box-sizing: border-box;
+        -webkit-font-smoothing: antialiased;
+        font-family: 'Roboto', sans-serif;
+        /* Enforce Roboto everywhere */
     }
 
     body {
         margin: 0;
         padding: 0;
-        min-height: 100vh;
-        background-color: #050505;
+        width: 100vw;
+        height: 100vh;
+        background-color: var(--bg-dark);
         overflow: hidden;
+        color: var(--primary-color);
     }
 
-    /* 2D Mode Container (Fallback) */
+    /* --- 2D MODE (Northern Lights Style) --- */
     #mode-2d {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
-        min-height: 100%;
+        height: 100%;
         display: none;
         flex-direction: column;
-        background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('./assets/photographer.jpg') no-repeat center center/cover fixed;
+
+        /* Deep Base */
+        background-color: #02040a;
+
+        /* The Moving Color Blobs */
+        background-image:
+            radial-gradient(at 10% 10%, rgba(0, 255, 136, 0.25) 0, transparent 50%),
+            radial-gradient(at 50% 0%, rgba(0, 229, 255, 0.2) 0, transparent 50%),
+            radial-gradient(at 90% 10%, rgba(120, 0, 255, 0.25) 0, transparent 50%),
+            radial-gradient(at 50% 90%, rgba(0, 20, 60, 0.8) 0, transparent 80%);
+
+        background-size: 180% 180%;
+        animation: auroraFlow 3s ease-in-out infinite alternate;
+
         overflow-y: auto;
+        z-index: 10;
+        position: relative;
+        /* Needed for the texture overlay */
+    }
+
+    /* Texture Overlay: Grain + Vertical Light Pillars */
+    #mode-2d::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.5;
+        /* Adjust texture intensity */
+
+        background-image:
+            /* Layer 1: SVG Noise for "Grain" */
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E"),
+
+            /* Layer 2: Vertical Stripes for "Aurora Curtains" */
+            repeating-linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.03) 1px,
+                transparent 2px,
+                transparent 15px);
+
+        background-size: 200px 200px, 100% 100%;
+    }
+
+    @keyframes auroraFlow {
+        0% {
+            background-position: 0% 20%;
+        }
+
+        100% {
+            background-position: 100% 80%;
+        }
     }
 
     #mode-2d.active {
         display: flex;
     }
 
-    /* 3D Mode Container */
+    /* Important: Keeps text clickable above the texture */
+    .hero-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 40px 20px;
+        perspective: 1000px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .profile-pic-2d {
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--museum-theme);
+        margin-bottom: 30px;
+        box-shadow: 0 0 30px rgba(197, 160, 89, 0.2);
+        animation: fadeInDown 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        transition: transform 0.3s ease;
+    }
+
+    .profile-pic-2d:hover {
+        transform: scale(1.05) rotate(5deg);
+        box-shadow: 0 0 50px rgba(197, 160, 89, 0.4);
+    }
+
+    .glitch-title {
+        font-size: 5rem;
+        font-weight: 900;
+        letter-spacing: -2px;
+        color: white;
+        margin-bottom: 4rem;
+        position: relative;
+        text-shadow: 2px 2px 0px var(--museum-theme);
+        animation: glitch-anim 5s infinite;
+    }
+
+    .glitch-title::before,
+    .glitch-title::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    @keyframes glitch-anim {
+        0% {
+            transform: translate(0)
+        }
+
+        20% {
+            transform: translate(-2px, 2px)
+        }
+
+        40% {
+            transform: translate(-2px, -2px)
+        }
+
+        60% {
+            transform: translate(2px, 2px)
+        }
+
+        80% {
+            transform: translate(2px, -2px)
+        }
+
+        100% {
+            transform: translate(0)
+        }
+    }
+
+    .nav-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 30px;
+        width: 100%;
+        max-width: 1200px;
+        padding-bottom: 40px;
+    }
+
+    /* Dark Museum Card Style */
+    .nav-card {
+        background: rgba(20, 20, 20, 0.8);
+        /* Dark background */
+        backdrop-filter: blur(12px);
+        width: 300px;
+        padding: 40px 30px;
+        text-decoration: none;
+        color: #f0f0f0;
+        /* Light text */
+        position: relative;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        /* Deep shadow for contrast */
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-left: 4px solid var(--museum-theme);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        border-radius: 4px;
+        overflow: hidden;
+        animation: fadeInUp 1s ease-out backwards;
+    }
+
+    .nav-card:nth-child(1) {
+        animation-delay: 0.1s;
+    }
+
+    .nav-card:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .nav-card:nth-child(3) {
+        animation-delay: 0.3s;
+    }
+
+    .nav-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+        transform: translateX(-100%);
+        transition: 0.6s;
+    }
+
+    .nav-card:hover::before {
+        transform: translateX(100%);
+    }
+
+    .nav-card:hover {
+        transform: translateY(-15px);
+        background: rgba(30, 30, 30, 0.95);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-card h3 {
+        margin: 15px 0 5px 0;
+        font-size: 1.8rem;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: white;
+    }
+
+    .nav-card span {
+        font-size: 0.85rem;
+        color: #888;
+        font-weight: 400;
+        font-family: monospace;
+        letter-spacing: 1px;
+    }
+
+    .card-emoji {
+        font-size: 3rem;
+        margin-bottom: 10px;
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+        transition: transform 0.3s;
+    }
+
+    .nav-card:hover .card-emoji {
+        transform: scale(1.2) rotate(10deg);
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* --- 3D MODE CONTAINER --- */
     #mode-3d {
         position: fixed;
         top: 0;
@@ -55,264 +325,74 @@
         width: 100%;
         height: 100%;
         z-index: 1;
+        outline: none;
     }
 
-    #fps-counter {
+    /* --- UI OVERLAY (Shared) --- */
+    .ui-layer {
         position: fixed;
-        top: 10px;
-        left: 10px;
-        font-family: monospace;
-        font-weight: bold;
-        color: lime;
-        z-index: 9999;
+        z-index: 1000;
         pointer-events: none;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 5px;
-        border-radius: 4px;
-    }
-
-    /* UI Overlay for 3D Mode */
-    #ui-3d {
-        position: absolute;
-        bottom: 30px;
-        right: 30px;
-        z-index: 100;
-        display: none;
-    }
-
-    #ui-3d button {
-        background: rgba(10, 10, 10, 0.8);
-        border: 1px solid #333;
-        color: #888;
-        cursor: pointer;
-        padding: 12px;
-        border-radius: 50%;
-        transition: 0.3s;
-    }
-
-    #ui-3d button:hover {
-        color: #ffffff;
-        border-color: #ffffff;
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-    }
-
-    /* Iframe & Settings (Standard) */
-    .iframe-overlay {
-        position: fixed;
+        /* Let clicks pass through to 3D */
+        width: 100%;
+        height: 100%;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: #000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 3000;
-        opacity: 0;
-        visibility: hidden;
-        transition: 0.4s;
     }
 
-    .iframe-overlay iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
+    .interactive-element {
+        pointer-events: auto;
     }
 
-    .close-button {
+    /* Top Right Controls Container */
+    .controls-container {
         position: absolute;
         top: 30px;
-        left: 30px;
+        right: 30px;
+        display: flex;
+        gap: 15px;
+    }
+
+    /* Circular Button Style */
+    .icon-btn {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        color: white;
         width: 50px;
         height: 50px;
-        background: rgba(0, 0, 0, 0.6);
-        border: 2px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
-        color: white;
-        font-size: 2em;
-        line-height: 46px;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        z-index: 3001;
         transition: 0.3s;
         backdrop-filter: blur(5px);
+        font-weight: bold;
+        font-size: 1.2rem;
     }
 
-    .close-button:hover {
-        background: rgba(0, 255, 255, 0.2);
-        border-color: #00ffff;
-        color: #00ffff;
-        transform: scale(1.1);
-    }
-
-    .settings-panel {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 4000;
-        opacity: 0;
-        visibility: hidden;
-        transition: 0.3s;
-    }
-
-    .settings-content {
-        background: #111;
-        border: 1px solid #333;
-        border-radius: 10px;
-        padding: 2em;
-        color: white;
-        width: 90%;
-        max-width: 400px;
-    }
-
-    .settings-content h2 {
-        color: #ffffff;
-        text-align: center;
-    }
-
-    .setting-item {
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .setting-item input[type="checkbox"] {
-        appearance: none;
-        width: 50px;
-        height: 26px;
-        background: #333;
-        border-radius: 20px;
-        position: relative;
-        cursor: pointer;
-    }
-
-    .setting-item input[type="checkbox"]:checked {
-        background: #ffffff;
-    }
-
-    .setting-item input[type="checkbox"]::after {
-        content: '';
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 20px;
-        height: 20px;
-        background: #fff;
-        border-radius: 50%;
-        transition: 0.3s;
-    }
-
-    .setting-item input[type="checkbox"]:checked::after {
-        transform: translateX(24px);
-    }
-
-    .settings-close-button {
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        color: #666;
-        font-size: 2em;
-        background: none;
-        border: none;
-        cursor: pointer;
-    }
-
-    /* 2D Fallback Styles */
-    .hero-section {
-        text-align: center;
-        color: white;
-        padding: 50px;
-    }
-
-    .nav-menu {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        width: 100%;
-        max-width: 400px;
-        margin: 0 auto;
-    }
-
-    .nav-item {
-        display: block;
-        padding: 20px;
-        border: 2px solid white;
-        color: white;
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 1.5em;
-        transition: 0.3s;
-        text-transform: uppercase;
-    }
-
-    .nav-item:hover {
-        background: white;
+    .icon-btn:hover {
+        background: var(--accent-color);
         color: black;
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
     }
 
-    .settings-btn-2d {
-        margin-top: 40px;
-        background: transparent;
-        border: 1px solid #666;
-        color: #888;
-        padding: 15px 30px;
-        font-size: 1em;
-        cursor: pointer;
-        transition: 0.3s;
-        border-radius: 30px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .settings-btn-2d:hover {
-        border-color: white;
-        color: white;
-    }
-
-    .social-icons {
-        display: flex;
-        justify-content: center;
-        gap: 40px;
-        margin-top: 30px;
-    }
-
-    .social-logo {
-        color: white;
-        font-size: 3em;
-    }
-
-    footer {
-        text-align: center;
-        color: #666;
-        padding: 20px;
-        margin-top: auto;
-    }
-
-    /* FPS Overlay */
+    /* FPS Counter */
     #fps-counter {
         position: fixed;
-        bottom: 10px;
-        right: 10px;
-        color: #00ffff;
-        font-family: 'Roboto Mono', monospace;
-        font-size: 0.9em;
-        z-index: 9999;
+        bottom: 20px;
+        right: 20px;
+        font-family: monospace;
+        color: var(--accent-color);
         background: rgba(0, 0, 0, 0.5);
         padding: 5px 10px;
-        border-radius: 5px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 9999;
     }
 
-    /* Welcome Screen Styles */
+    /* --- WELCOME SCREEN --- */
     #welcome-screen {
         position: fixed;
         top: 0;
@@ -320,161 +400,738 @@
         width: 100%;
         height: 100%;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 5000;
-        pointer-events: auto;
-        /* UPDATED: SOLID BLACK BACKGROUND (Hides screen completely) */
-        background: #000000;
-        transition: opacity 1.5s ease-in-out;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.6);
+        /* Slightly darker for contrast */
+        backdrop-filter: blur(10px);
+        transition: opacity 1s ease-in-out, visibility 1s;
     }
 
-    .welcome-content {
-        text-align: center;
-        color: white;
+    #welcome-screen.hidden {
         opacity: 0;
-        animation: fadeIn 2s forwards 0.5s;
+        visibility: hidden;
+        pointer-events: none;
     }
 
-    .welcome-content h1 {
-        font-size: 4em;
-        font-weight: 700;
+    .welcome-text {
+        text-align: center;
+        animation: fadeInUp 1s ease-out;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .social-row {
+        display: flex;
+        gap: 25px;
+        margin-top: 25px;
+        margin-bottom: 10px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .social-icon {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.5rem;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        text-decoration: none;
+        position: relative;
+    }
+
+    .social-icon:hover {
+        color: var(--accent-color);
+        /* Turns Cyan on hover */
+        transform: translateY(-5px) scale(1.2);
+        text-shadow: 0 0 15px var(--accent-color);
+    }
+
+    .welcome-pfp {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        margin-bottom: 25px;
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        transition: transform 0.5s ease;
+    }
+
+    .welcome-pfp:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 50px rgba(0, 229, 255, 0.4);
+        border-color: var(--accent-color);
+    }
+
+    .welcome-text h1 {
+        font-family: 'Roboto', sans-serif;
+        font-weight: 900;
+        font-size: 4rem;
         margin: 0;
-        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        letter-spacing: -2px;
+        background: linear-gradient(to right, #fff, #aaa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
-    .welcome-content h2 {
-        font-size: 1.5em;
-        font-weight: 300;
-        margin-top: 10px;
-        margin-bottom: 40px;
-        opacity: 0.8;
-    }
-
-    .welcome-content button {
+    .explore-btn {
+        margin-top: 40px;
+        padding: 15px 50px;
         background: transparent;
-        border: 2px solid white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
         color: white;
-        padding: 15px 40px;
-        font-size: 1.2em;
+        font-size: 1.2rem;
+        letter-spacing: 4px;
+        cursor: pointer;
+        transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        overflow: hidden;
+        position: relative;
+        font-weight: 700;
+    }
+
+    .explore-btn:hover {
+        background: white;
+        color: black;
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+    }
+
+    /* --- SETTINGS PANEL (Immersive) --- */
+    .settings-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 5000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.3s;
+        backdrop-filter: blur(15px);
+    }
+
+    .settings-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .settings-modal {
+        background: #111;
+        border: 1px solid #333;
+        width: 400px;
+        padding: 30px;
+        border-radius: 4px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        transform: translateY(20px);
+        transition: 0.3s;
+    }
+
+    .settings-overlay.visible .settings-modal {
+        transform: translateY(0);
+    }
+
+    .settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 15px;
+    }
+
+    .settings-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 300;
         letter-spacing: 2px;
+    }
+
+    .close-settings {
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .close-settings:hover {
+        color: white;
+    }
+
+    .setting-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .setting-label {
+        font-size: 0.9rem;
+        color: #aaa;
+    }
+
+    /* Custom Toggle Switch */
+    .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 24px;
+        background: #333;
+        border-radius: 12px;
         cursor: pointer;
         transition: 0.3s;
     }
 
-    .welcome-content button:hover {
-        background: white;
-        color: black;
-        box-shadow: 0 0 20px white;
+    .toggle-switch.active {
+        background: var(--accent-color);
     }
 
-    @keyframes fadeIn {
+    .toggle-knob {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toggle-switch.active .toggle-knob {
+        transform: translateX(26px);
+    }
+
+    /* --- IFRAME OVERLAY --- */
+    .iframe-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 4000;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(100%);
+        transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+
+    .iframe-container.active {
+        transform: translateY(0);
+    }
+
+    .close-iframe {
+        position: absolute;
+        bottom: 30px;
+        right: 30px;
+        padding: 10px 20px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: 0.2s;
+        z-index: 4001;
+        backdrop-filter: blur(5px);
+        font-family: 'Roboto', sans-serif;
+        letter-spacing: 1px;
+    }
+
+    .close-iframe:hover {
+        background: rgba(255, 255, 255, 0.9);
+        color: black;
+    }
+
+    iframe {
+        flex: 1;
+        border: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
         to {
             opacity: 1;
+            transform: translateY(0);
         }
+    }
+
+    #btn-mute {
+        color: #ff4444;
+    }
+
+    a {
+        color: #fff;
     }
 </style>
 
 <body>
 
+    <!-- 3D MODE CONTAINER -->
     <div id="mode-3d"></div>
 
-    <div id="ui-3d">
-        <button id="settingsToggle3d" style="display:none;"><i class="fas fa-cog fa-lg"></i></button>
-    </div>
-
-    <div id="welcome-screen">
-        <div class="welcome-content">
-            <h1>Welcome to TheDoShoots</h1>
-            <h2>By Timothy Do</h2>
-            <button onclick="explore()">EXPLORE</button>
-        </div>
-    </div>
-
-    <div id="footer-3d"
-        style="position:fixed; bottom:10px; width:100%; text-align:center; color:#666; font-family:'Roboto',sans-serif; pointer-events:none;">
-        &copy; 2025 Timothy Do. All Rights Reserved
-    </div>
-
+    <!-- 2D MODE CONTAINER -->
     <div id="mode-2d">
-        <div class="hero-section">
-            <h1 style="font-size: 4em; font-weight: 700; margin-bottom: 0.5em;">TheDoShoots</h1>
+        <div class="hero-container">
+            <!-- PROFILE PICTURE ADDED HERE -->
+            <img src="./assets/photographer.jpg" alt="Profile" class="profile-pic-2d">
 
-            <div class="nav-menu">
-                <a href="#" id="nav-about-2d" class="nav-item">ABOUT</a>
-                <a href="#" id="nav-astro-2d" class="nav-item">ASTROPHOTOGRAPHY</a>
-                <a href="#" id="nav-wildlife-2d" class="nav-item">WILDLIFE</a>
+            <h1 class="glitch-title" data-text="TheDoShoots">TheDoShoots</h1>
+
+            <div class="nav-grid">
+                <!-- DARK MUSEUM PLACARD BUTTONS -->
+                <a href="#" class="nav-card" onclick="handleNav('./about.html', true); return false;">
+                    <div class="card-emoji">👤</div>
+                    <h3>About</h3>
+                    <span>Exhibit 01: Biography</span>
+                </a>
+                <a href="#" class="nav-card" onclick="handleNav('./astronomy/index.html', true); return false;">
+                    <div class="card-emoji">🌌</div>
+                    <h3>Astro</h3>
+                    <span>Exhibit 02: Deep Space</span>
+                </a>
+                <a href="#" class="nav-card" onclick="handleNav('./wildlife/index.html', true); return false;">
+                    <div class="card-emoji">🐿️</div>
+                    <h3>Wildlife</h3>
+                    <span>Exhibit 03: Nature</span>
+                </a>
             </div>
+        </div>
+        <footer style="text-align: center; padding: 20px; color: #444; font-size: 0.8em; margin-top: auto;">
+            <h2>© <a href="https://timothydo.me/photography" target="_blank">TheDoShoots</a> 2025. By Timothy Do. All
+                Rights Reserved.</h2>
+        </footer>
+    </div>
 
-            <div class="social-icons" style="margin-top: 50px;">
-                <a class="social-logo" href="https://instagram.com/thedoshoots" target="_blank"><i
-                        class="fab fa-instagram"></i></a>
-                <a class="social-logo" href="https://flickr.com" target="_blank"><i class="fab fa-flickr"></i></a>
-                <a class="social-logo" href="mailto:tim@example.com"><i class="fas fa-envelope"></i></a>
-            </div>
+    <!-- UI LAYER -->
+    <div class="ui-layer">
+        <div id="fps-counter">FPS: 60</div>
 
-            <button id="settingsToggle" class="settings-btn-2d">
-                <i class="fas fa-cog"></i> SETTINGS
+        <div class="controls-container">
+            <button class="icon-btn interactive-element" id="btn-mute" title="Mute Audio">
+                <i class="fas fa-volume-mute"></i>
+            </button>
+
+            <!-- QUICK MODE TOGGLE -->
+            <button class="icon-btn interactive-element" id="btn-quick-toggle" title="Toggle 2D/3D Mode">
+                <i class="fas fa-cube"></i>
+            </button>
+
+            <!-- SETTINGS TRIGGER -->
+            <button class="icon-btn interactive-element" id="btn-open-settings" title="Settings">
+                <i class="fas fa-sliders-h"></i>
             </button>
         </div>
-        <footer>@TheDoShoots 2025. By Timothy Do. All Rights Reserved.</footer>
-    </div>
 
-    <div id="fps-counter">FPS: 60</div>
+        <!-- WELCOME SCREEN -->
+        <div id="welcome-screen" class="interactive-element">
+            <div class="welcome-text">
+                <img src="./assets/photographer.jpg" alt="Photographer Profile" class="welcome-pfp">
+                <h1>TheDoShoots</h1>
+                <p style="color: #888; letter-spacing: 2px; margin-top: 10px;">By <a href="https://timothydo.me/"
+                        target="_blank">Timothy Do</a>
+                </p>
 
-    <div class="iframe-overlay" id="galleryOverlay">
-        <button class="close-button" id="closeGallery">×</button>
-        <iframe id="galleryIframe" src="" frameborder="0"></iframe>
-    </div>
+                <div class="social-row">
+                    <a href="https://instagram.com/thedoshoots" target="_blank" title="Instagram" class="social-icon">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" title="Flickr"
+                        class="social-icon">
+                        <i class="fab fa-flickr"></i>
+                    </a>
+                    <a href="https://www.youtube.com/@TheDoShoots" target="_blank" title="YouTube" class="social-icon">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a href="https://tiktok.com/@TheDoShoots" target="_blank" title="TikTok" class="social-icon">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                    <a href="https://vsco.co/thedoshoots" target="_blank" title="VSCO" class="social-icon">
+                        <i class="fas fa-camera-retro"></i>
+                    </a>
+                    <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" title="Contact" class="social-icon">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
 
-    <div class="settings-panel" id="settingsPanel">
-        <div class="settings-content">
-            <button class="settings-close-button" id="closeSettings">×</button>
-            <h2>SETTINGS</h2>
-            <div class="setting-item">
-                <label for="mode3dToggle">3D Camera View</label>
-                <input type="checkbox" id="mode3dToggle" checked>
+                <button class="explore-btn" onclick="startExperience()">Explore Portfolio</button>
             </div>
-            <div class="setting-item"><label for="galleryToggle">Gallery Mode</label><input type="checkbox"
-                    id="galleryToggle"></div>
-            <div class="setting-item"><label for="datasaverToggle">Data Saver</label><input type="checkbox"
-                    id="datasaverToggle"></div>
-            <div class="setting-item"><label for="directLinksToggle">Direct Links</label><input type="checkbox"
-                    id="directLinksToggle"></div>
         </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="settings-overlay" id="settings-overlay">
+        <div class="settings-modal interactive-element">
+            <div class="settings-header">
+                <h2>SYSTEM SETTINGS</h2>
+                <button class="close-settings" id="btn-close-settings">&times;</button>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">3D Immersive Mode</span>
+                <div class="toggle-switch active" id="toggle-3d-mode">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Star Density (Hyper)</span>
+                <div class="toggle-switch active" id="toggle-stars">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Direct Links (No iFrame)</span>
+                <div class="toggle-switch" id="toggle-direct">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Data Saver</span>
+                <div class="toggle-switch" id="toggle-saver">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IFRAME OVERLAY -->
+    <div class="iframe-container" id="iframe-overlay">
+        <button class="close-iframe" onclick="closeiFrame()">CLOSE PREVIEW</button>
+        <iframe id="content-frame" src="about:blank"></iframe>
     </div>
 
     <script>
-        // --- TEXTURE GENERATION ---
+        // --- GLOBAL STATE ---
+        const state = {
+            is3D: true,
+            hasExplored: false,
+            highDensityStars: true,
+            directLinks: false,
+            dataSaver: false,
+            isAnimating: true,
+            muted: true
+        };
 
-        function createLeatherTexture() {
+        // --- DOM ELEMENTS ---
+        const els = {
+            mode3d: document.getElementById('mode-3d'),
+            mode2d: document.getElementById('mode-2d'),
+            welcome: document.getElementById('welcome-screen'),
+            fps: document.getElementById('fps-counter'),
+            settingsOverlay: document.getElementById('settings-overlay'),
+            iframeOverlay: document.getElementById('iframe-overlay'),
+            iframe: document.getElementById('content-frame'),
+            toggles: {
+                mode3d: document.getElementById('toggle-3d-mode'),
+                stars: document.getElementById('toggle-stars'),
+                direct: document.getElementById('toggle-direct'),
+                saver: document.getElementById('toggle-saver')
+            }
+        };
+
+        // --- THREE.JS VARIABLES ---
+        let scene, camera, renderer, controls;
+        let camGroup, screenMesh, starSystem, uiTexture, uiCtx;
+        let raycaster, mouse;
+        let animationFrameId;
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let uiClickZones = [];
+        let pfpImage = new Image();
+        pfpImage.src = './assets/photographer.jpg';
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPreferences();
+            init3D();
+            setupEventListeners();
+
+            // Wait for image load to redraw UI
+            pfpImage.onload = () => {
+                if (uiCtx) updateUI();
+            };
+
+            // Also ensure fonts are ready
+            document.fonts.ready.then(() => {
+                if (uiCtx) updateUI();
+            });
+
+            // Apply initial mode
+            if (!state.is3D) {
+                switchMode(false);
+            } else {
+                animate();
+            }
+        });
+
+        function loadPreferences() {
+            // Priority: URL Param > LocalStorage > Default (True)
+            const urlParams = new URLSearchParams(window.location.search);
+            const modeParam = urlParams.get('mode');
+
+            if (modeParam === '2d') {
+                state.is3D = false;
+                state.hasExplored = true; // Skip intro for 2D start
+            } else if (modeParam === '3d') {
+                state.is3D = true;
+                state.hasExplored = false; // Show intro for 3D start
+            } else {
+                const saved3d = localStorage.getItem('mode3d');
+                if (saved3d !== null) {
+                    state.is3D = saved3d === 'true';
+                } else {
+                    state.is3D = true; // Default
+                }
+            }
+            state.hasExplored = false;
+
+            // Sync UI Toggles
+            updateToggleUI(els.toggles.mode3d, state.is3D);
+        }
+
+        function setupEventListeners() {
+            // Settings Open/Close
+            document.getElementById('btn-open-settings').addEventListener('click', () => {
+                els.settingsOverlay.classList.add('visible');
+            });
+            document.getElementById('btn-close-settings').addEventListener('click', () => {
+                els.settingsOverlay.classList.remove('visible');
+            });
+
+            // Quick Toggle
+            document.getElementById('btn-quick-toggle').addEventListener('click', () => {
+                sfx.click();
+                toggleMode(!state.is3D);
+            });
+
+            // Toggle Switches
+            setupToggle(els.toggles.mode3d, (val) => toggleMode(val));
+            setupToggle(els.toggles.stars, (val) => { state.highDensityStars = val; createStarfield(); });
+            setupToggle(els.toggles.direct, (val) => { state.directLinks = val; updateUI(); });
+            setupToggle(els.toggles.saver, (val) => { state.dataSaver = val; updateUI(); });
+
+            // Raycaster Interaction
+            window.addEventListener('resize', onResize);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('click', onCanvasClick);
+
+            // Mute Toggle Logic
+            const muteBtn = document.getElementById('btn-mute');
+            muteBtn.addEventListener('click', () => {
+                state.muted = !state.muted;
+
+                // Update Icon
+                const icon = muteBtn.querySelector('i');
+                if (state.muted) {
+                    icon.classList.remove('fa-volume-up');
+                    icon.classList.add('fa-volume-mute');
+                    muteBtn.style.color = '#ff4444'; // Visual cue for muted
+                } else {
+                    icon.classList.remove('fa-volume-mute');
+                    icon.classList.add('fa-volume-up');
+                    muteBtn.style.color = 'white';
+                    // Optional: Play a test beep when unmuting
+                    sfx.click();
+                }
+            });
+        }
+
+        function setupToggle(el, callback) {
+            el.addEventListener('click', () => {
+                sfx.click();
+                const isActive = el.classList.contains('active');
+                updateToggleUI(el, !isActive);
+                callback(!isActive);
+            });
+        }
+
+        function updateToggleUI(el, active) {
+            if (active) el.classList.add('active');
+            else el.classList.remove('active');
+        }
+
+        // --- MODE SWITCHING ---
+        window.toggleMode = function (go3D) {
+            state.is3D = go3D;
+            localStorage.setItem('mode3d', go3D);
+            switchMode(go3D);
+
+            // Update the toggle in settings to reflect reality if changed externally
+            updateToggleUI(els.toggles.mode3d, go3D);
+        };
+
+        function switchMode(is3D) {
+            if (is3D) {
+                els.mode2d.classList.remove('active');
+                els.mode3d.style.display = 'block';
+                state.isAnimating = true;
+
+                // If returning to 3D and haven't explored, show welcome
+                if (!state.hasExplored) {
+                    els.welcome.classList.remove('hidden');
+                }
+                animate();
+            } else {
+                els.mode2d.classList.add('active');
+                els.mode3d.style.display = 'none';
+
+                if (state.hasExplored) {
+                    els.welcome.classList.add('hidden');
+                }
+
+                state.isAnimating = false;
+            }
+        }
+
+        window.startExperience = function () {
+            state.hasExplored = true;
+            els.welcome.classList.add('hidden');
+            sfx.shutter();
+
+            if (camera && controls) {
+
+                // --- 1. SETUP THE ANIMATION OBJECTS ---
+
+                // "dummy" object to hold our spherical coordinate values
+                // Angle 0 = Front, Angle Math.PI (3.14) = Back
+                const orbitData = {
+                    angle: 0,   // Start at the front
+                    radius: 75, // Start distance
+                    lift: 0     // Y height
+                };
+
+                // The specific point on the 3D model we want to end up looking at
+                // (The screen mesh is located roughly at z = -2, y = -0.5)
+                const targetLookAt = { x: 0, y: -0.5, z: -2 };
+
+                // --- 2. TWEEN THE ORBIT (The "Swing Around") ---
+
+                new TWEEN.Tween(orbitData)
+                    .to({
+                        angle: Math.PI, // Rotate 180 degrees to the back
+                        radius: 25,     // Zoom in close to the screen
+                        lift: 0         // Keep vertically centered
+                    }, 1500)            // Duration: 1 Seconds (Slower is more cinematic)
+                    .easing(TWEEN.Easing.Cubic.InOut) // Smooth acceleration/deceleration
+                    .onUpdate(() => {
+                        // MATH: Convert Polar Angle to Cartesian (X, Z) Position
+                        // This forces the camera to travel along the edge of a circle
+                        camera.position.x = orbitData.radius * Math.sin(orbitData.angle);
+                        camera.position.z = orbitData.radius * Math.cos(orbitData.angle);
+                        camera.position.y = orbitData.lift;
+
+                        // Essential: Tell the controls to recalculate vectors
+                        controls.update();
+                    })
+                    .start();
+
+                // --- 3. TWEEN THE FOCUS (The "Look At") ---
+
+                // Simultaneously shift the center of attention from the camera body to the screen
+                new TWEEN.Tween(controls.target)
+                    .to(targetLookAt, 3000)
+                    .easing(TWEEN.Easing.Cubic.InOut)
+                    .start();
+            }
+        };
+
+        // --- 3D SCENE SETUP ---
+        function init3D() {
+            scene = new THREE.Scene();
+            // FIX: Opaque background to prevent darkening
+            scene.background = new THREE.Color(0x050505);
+            scene.fog = new THREE.FogExp2(0x050505, 0.002);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+            // Position camera based on exploration state
+            if (state.hasExplored) {
+                camera.position.set(0, 0, 25);
+            } else {
+                camera.position.set(0, 0, 75);
+            }
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            els.mode3d.appendChild(renderer.domElement);
+
+            // Lighting - More dramatic for space
+            const ambient = new THREE.AmbientLight(0xffffff, 0.2); // Low ambient for contrast
+            scene.add(ambient);
+
+            const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+            keyLight.position.set(20, 20, 50);
+            scene.add(keyLight);
+
+            const rimLight = new THREE.SpotLight(0x00e5ff, 5); // Blue rim light
+            rimLight.position.set(-30, 10, 0);
+            rimLight.lookAt(0, 0, 0);
+            scene.add(rimLight);
+
+            const fillLight = new THREE.PointLight(0xffaa00, 0.5); // Warm fill
+            fillLight.position.set(20, -10, 20);
+            scene.add(fillLight);
+
+            // Objects
+            createStarfield();
+            createCameraModel();
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 10;
+            controls.maxDistance = 100;
+            controls.enablePan = false;
+
+            // Interaction
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+        }
+
+        // --- PROCEDURAL TEXTURES ---
+        function generateLeatherTexture() {
+            const size = 1024;
             const canvas = document.createElement('canvas');
-            canvas.width = 1024; canvas.height = 1024;
+            canvas.width = size; canvas.height = size;
             const ctx = canvas.getContext('2d');
 
-            ctx.fillStyle = '#181818'; // Slightly lighter base for better visibility
-            ctx.fillRect(0, 0, 1024, 1024);
+            // Base
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, size, size);
 
-            for (let i = 0; i < 500000; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.1)' : 'rgba(80,80,80,0.05)';
-                ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 1, 1);
+            // Layer 1: Fine Noise
+            for (let i = 0; i < 800000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#222' : '#111';
+                ctx.fillRect(Math.random() * size, Math.random() * size, 2, 2);
             }
 
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            for (let i = 0; i < 15000; i++) {
-                const x = Math.random() * 1024;
-                const y = Math.random() * 1024;
-                const s = Math.random() * 4 + 1;
+            // Layer 2: Cell pattern (Leather grain)
+            ctx.globalAlpha = 0.05;
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 5000; i++) {
+                const r = Math.random() * 5 + 2;
                 ctx.beginPath();
-                ctx.arc(x, y, s, 0, Math.PI * 2);
+                ctx.arc(Math.random() * size, Math.random() * size, r, 0, Math.PI * 2);
                 ctx.fill();
-            }
-
-            ctx.fillStyle = 'rgba(255,255,255,0.03)';
-            for (let y = 0; y < 1024; y += 8) {
-                for (let x = 0; x < 1024; x += 8) {
-                    if (Math.random() > 0.1) ctx.fillRect(x, y, 2, 2);
-                }
             }
 
             const tex = new THREE.CanvasTexture(canvas);
@@ -482,594 +1139,467 @@
             return tex;
         }
 
-        function createMetalTexture() {
+        function generateMetalTexture() {
+            const size = 1024;
             const canvas = document.createElement('canvas');
-            canvas.width = 1024; canvas.height = 1024;
+            canvas.width = size; canvas.height = size;
             const ctx = canvas.getContext('2d');
 
-            const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
-            grad.addColorStop(0, '#2a2a2a'); // Lighter metal
-            grad.addColorStop(0.5, '#666');
-            grad.addColorStop(1, '#2a2a2a');
+            // Brushed Metal Gradient
+            const grad = ctx.createLinearGradient(0, 0, size, size);
+            grad.addColorStop(0, '#555');
+            grad.addColorStop(0.5, '#999');
+            grad.addColorStop(1, '#555');
             ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 1024, 1024);
+            ctx.fillRect(0, 0, size, size);
 
-            ctx.globalAlpha = 0.1;
-            ctx.strokeStyle = '#fff';
-            for (let i = 0; i < 2000; i++) {
-                ctx.beginPath();
-                const x = Math.random() * 1024;
-                const y = Math.random() * 1024;
-                const len = Math.random() * 50 + 10;
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + len, y + len / 4);
-                ctx.stroke();
+            // Scratches (Anisotropy)
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            for (let i = 0; i < 50000; i++) {
+                ctx.fillRect(Math.random() * size, Math.random() * size, Math.random() * 50, 1);
             }
-            ctx.globalAlpha = 1.0;
+
             return new THREE.CanvasTexture(canvas);
         }
 
-        // --- 3D SCENE ---
-        let scene, camera, renderer;
-        let screenMesh, camGroup, starSystem;
-        let raycaster, mouse;
-        let is3DActive = true;
-        let hasExplored = false;
-        let animationId;
+        function createStarfield() {
+            if (starSystem) scene.remove(starSystem);
 
-        let lastTime = performance.now();
-        let frameCount = 0;
-        const fpsElem = document.getElementById('fps-counter');
+            // Increased density
+            const count = state.highDensityStars ? 50000 : 10000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            const sizes = new Float32Array(count);
+            const colors = new Float32Array(count * 3);
+            const color = new THREE.Color();
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const mode3dToggle = document.getElementById('mode3dToggle');
-            const galleryToggle = document.getElementById('galleryToggle');
-            const datasaverToggle = document.getElementById('datasaverToggle');
-            const directLinksToggle = document.getElementById('directLinksToggle');
+            for (let i = 0; i < count; i++) {
+                // Spherical distribution
+                const r = 400 + Math.random() * 1000;
+                const theta = 2 * Math.PI * Math.random();
+                const phi = Math.acos(2 * Math.random() - 1);
 
-            function loadSettings() {
-                is3DActive = (localStorage.getItem('mode3dToggle') !== 'false');
-                mode3dToggle.checked = is3DActive;
-                applyMode();
+                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = r * Math.cos(phi);
+
+                sizes[i] = Math.random() * 2;
+
+                // Slight blue/yellow tints
+                if (Math.random() > 0.9) color.setHex(0xaabfff);
+                else if (Math.random() > 0.9) color.setHex(0xffddaa);
+                else color.setHex(0xffffff);
+
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
             }
 
-            function applyMode() {
-                const ui3d = document.getElementById('ui-3d');
-                const m2 = document.getElementById('mode-2d');
-                const m3 = document.getElementById('mode-3d');
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-                if (is3DActive) {
-                    m2.classList.remove('active');
-                    m3.style.display = 'block';
-                    ui3d.style.display = hasExplored ? 'block' : 'none';
-                    init3D();
-                    animate();
-                } else {
-                    m2.classList.add('active');
-                    m3.style.display = 'none';
-                    ui3d.style.display = 'none';
-                    cancelAnimationFrame(animationId);
-                }
-            }
+            const material = new THREE.PointsMaterial({
+                size: 1.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                sizeAttenuation: true
+            });
 
-            function animate() {
-                animationId = requestAnimationFrame(animate);
+            starSystem = new THREE.Points(geometry, material);
+            scene.add(starSystem);
+        }
 
-                if (typeof TWEEN !== 'undefined') {
-                    TWEEN.update();
-                }
+        function createCameraModel() {
+            camGroup = new THREE.Group();
 
-                const now = performance.now();
-                frameCount++;
-                if (now - lastTime >= 1000) {
-                    if (fpsElem) fpsElem.innerText = `FPS: ${frameCount}`;
-                    frameCount = 0;
-                    lastTime = now;
-                }
+            // --- SCALING UPDATE: Make camera bigger ---
+            camGroup.scale.set(1.4, 1.4, 1.4);
 
-                if (!scene || !camera || !renderer) return;
+            scene.add(camGroup);
 
-                if (scene.userData.controls) {
-                    scene.userData.controls.update();
-                }
+            const leatherTex = generateLeatherTexture();
+            const metalTex = generateMetalTexture();
 
-                if (starSystem) {
-                    starSystem.rotation.y += 0.0005;
-                    starSystem.rotation.x += 0.0002;
-                }
+            const leatherMat = new THREE.MeshStandardMaterial({
+                map: leatherTex,
+                color: 0x333333,
+                roughness: 0.9,
+                bumpMap: leatherTex,
+                bumpScale: 0.05
+            });
 
-                if (uiTexture) uiTexture.needsUpdate = true;
+            const metalMat = new THREE.MeshStandardMaterial({
+                map: metalTex,
+                color: 0xaaaaaa,
+                roughness: 0.3,
+                metalness: 0.8,
+                envMapIntensity: 1.0
+            });
 
-                renderer.render(scene, camera);
-            }
+            const blackMat = new THREE.MeshStandardMaterial({
+                color: 0x111111,
+                roughness: 0.5
+            });
 
-            function init3D() {
-                if (scene) return;
-                scene = new THREE.Scene();
+            // 1. Body
+            const body = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 4), leatherMat);
+            camGroup.add(body);
 
-                camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-                camera.position.set(0, 0, 80);
-                camera.lookAt(0, 0, 0);
+            // 2. Grip
+            const grip = new THREE.Mesh(new THREE.BoxGeometry(3, 9, 5), leatherMat);
+            grip.position.set(-7.5, -0.5, 1);
+            camGroup.add(grip);
 
-                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                // Use Standard output encoding for better lighting
-                renderer.outputEncoding = THREE.sRGBEncoding;
-                document.getElementById('mode-3d').appendChild(renderer.domElement);
+            // 3. Top Plate (Metal)
+            // INCREASED DIMENSIONS SLIGHTLY TO AVOID Z-FIGHTING (14.05 vs 14)
+            const topPlate = new THREE.Mesh(new THREE.BoxGeometry(14.05, 2, 4.05), metalMat);
+            topPlate.position.set(0, 5, 0);
+            camGroup.add(topPlate);
 
-                // --- LIGHTING UPDATE ---
-                // 1. High Ambient Light to fill shadows
-                const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-                scene.add(ambient);
+            // 4. Shutter Button
+            const shutter = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16), metalMat);
+            shutter.position.set(-7.5, 6, 1.5);
+            camGroup.add(shutter);
 
-                // 2. Strong Key Light (Front-Right)
-                const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
-                keyLight.position.set(10, 10, 20);
-                scene.add(keyLight);
+            // 5. Lens Assembly
+            const lensOuter = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 2, 32), blackMat);
+            lensOuter.rotation.x = Math.PI / 2;
+            lensOuter.position.z = 3;
+            camGroup.add(lensOuter);
 
-                // 3. Rim Light (Back-Left) for separation
-                const rimLight = new THREE.SpotLight(0x00aaff, 2.0);
-                rimLight.position.set(-20, 10, -10);
-                rimLight.lookAt(0, 0, 0);
-                scene.add(rimLight);
+            const lensRing = new THREE.Mesh(new THREE.CylinderGeometry(3.9, 3.9, 0.5, 32), metalMat);
+            lensRing.rotation.x = Math.PI / 2;
+            lensRing.position.z = 3.5;
+            camGroup.add(lensRing);
 
-                // 4. Fill Light (Bottom-Right)
-                const fillLight = new THREE.PointLight(0xffaa00, 0.6);
-                fillLight.position.set(10, -10, 10);
-                scene.add(fillLight);
+            // 6. Glass
+            const glassGeo = new THREE.CircleGeometry(3.5, 32);
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0x222244,
+                metalness: 0.9,
+                roughness: 0,
+                transmission: 0.2,
+                transparent: true,
+                opacity: 0.6
+            });
+            const glass = new THREE.Mesh(glassGeo, glassMat);
+            glass.position.z = 4.01;
+            camGroup.add(glass);
 
-                createStarfield();
+            // 7. Screen (Back)
+            createUIScreen();
+            const screenGeo = new THREE.PlaneGeometry(12, 8);
+            const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture }); // Self-illuminated
+            screenMesh = new THREE.Mesh(screenGeo, screenMat);
+            screenMesh.position.set(0, -0.5, -2.01);
+            screenMesh.rotation.y = Math.PI; // Face backwards
+            camGroup.add(screenMesh);
+        }
 
-                const controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.enableDamping = true;
-                controls.dampingFactor = 0.05;
-                controls.minDistance = 5;
-                controls.maxDistance = 60;
-                scene.userData.controls = controls;
+        // --- VIRTUAL SCREEN UI ---
+        function createUIScreen() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200; canvas.height = 800;
+            uiCtx = canvas.getContext('2d');
 
-                camGroup = new THREE.Group();
-                camGroup.visible = false;
-                scene.add(camGroup);
+            // Load Font Awesome
+            document.fonts.load("900 60px 'Font Awesome 6 Free'");
 
-                const leatherTex = createLeatherTexture();
-                const metalTex = createMetalTexture();
+            uiTexture = new THREE.CanvasTexture(canvas);
+            uiTexture.encoding = THREE.sRGBEncoding;
+            updateUI();
+        }
 
-                const leatherMat = new THREE.MeshStandardMaterial({
-                    map: leatherTex,
-                    roughness: 0.8,
-                    color: 0x444444, // Lighter grey for better visibility
-                    bumpMap: leatherTex,
-                    bumpScale: 0.02
-                });
+        function updateUI() {
+            if (!uiCtx) return;
+            uiClickZones = [];
 
-                const metalMat = new THREE.MeshStandardMaterial({
-                    map: metalTex,
-                    roughness: 0.2,
-                    metalness: 0.9,
-                    color: 0xcccccc // Bright silver
-                });
+            // Background
+            uiCtx.fillStyle = '#000000';
+            uiCtx.fillRect(0, 0, 1200, 800);
 
-                const blackPlasticMat = new THREE.MeshStandardMaterial({
-                    color: 0x222222, roughness: 0.4
-                });
+            // REMOVED GRID LINES (User Request)
 
-                // Body
-                const bodyGeo = new THREE.BoxGeometry(14, 10, 4);
-                const body = new THREE.Mesh(bodyGeo, leatherMat);
-                camGroup.add(body);
+            // Info Overlay
+            uiCtx.fillStyle = '#00e5ff';
+            // CHANGED: Force Roboto for consistency
+            uiCtx.font = 'bold 40px Roboto';
+            uiCtx.fillText("RAW", 50, 100);
+            uiCtx.fillStyle = '#fff';
+            uiCtx.fillText("ISO 3200", 250, 100);
+            uiCtx.fillText("1/250", 550, 100);
+            uiCtx.fillText("f/1.8", 900, 100);
 
-                // Frame
-                const screenFrameGeo = new THREE.BoxGeometry(13.5, 9.5, 0.5);
-                const screenFrame = new THREE.Mesh(screenFrameGeo, blackPlasticMat);
-                screenFrame.position.set(0, -0.5, 2);
-                camGroup.add(screenFrame);
+            // Battery Icon (Charging)
+            const bx = 1050, by = 65, bw = 60, bh = 30;
+            uiCtx.strokeStyle = '#fff';
+            uiCtx.lineWidth = 3;
+            uiCtx.strokeRect(bx, by, bw, bh);
+            uiCtx.fillRect(bx + bw, by + 8, 4, 14); // Terminal
 
-                // Screen
-                const uiTex = createUIScreen();
-                const screenGeo = new THREE.PlaneGeometry(12.8, 8.5);
-                // MeshBasicMaterial is self-illuminated
-                const screenMat = new THREE.MeshBasicMaterial({ map: uiTex });
-                screenMesh = new THREE.Mesh(screenGeo, screenMat);
-                screenMesh.position.set(0, -0.5, 2.26);
-                camGroup.add(screenMesh);
+            // Green Fill
+            uiCtx.fillStyle = '#00ff00';
+            uiCtx.fillRect(bx + 4, by + 4, bw * 0.7, bh - 8);
 
-                // Lens
-                const lensGeo = new THREE.CylinderGeometry(3.5, 3.5, 3, 32);
-                const lens = new THREE.Mesh(lensGeo, blackPlasticMat);
-                lens.rotation.x = Math.PI / 2;
-                lens.position.set(0, 0, -3.5);
-                camGroup.add(lens);
+            // Lightning Bolt
+            uiCtx.fillStyle = '#fff';
+            uiCtx.beginPath();
+            uiCtx.moveTo(bx + 20, by - 5);
+            uiCtx.lineTo(bx + 10, by + 15);
+            uiCtx.lineTo(bx + 25, by + 15);
+            uiCtx.lineTo(bx + 15, by + 35);
+            uiCtx.lineTo(bx + 40, by + 15);
+            uiCtx.lineTo(bx + 25, by + 15);
+            uiCtx.closePath();
+            uiCtx.fill();
 
-                const lensRingGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.5, 32);
-                const lensRing = new THREE.Mesh(lensRingGeo, metalMat);
-                lensRing.rotation.x = Math.PI / 2;
-                lensRing.position.set(0, 0, -4.5);
-                camGroup.add(lensRing);
 
-                const glassGeo = new THREE.CylinderGeometry(3, 3, 0.2, 32);
-                const glassMat = new THREE.MeshPhysicalMaterial({
-                    color: 0xffffff,
-                    metalness: 0,
-                    roughness: 0,
-                    transparent: true,
-                    opacity: 0.2,
-                    transmission: 0.9,
-                    clearcoat: 1.0
-                });
-                const glass = new THREE.Mesh(glassGeo, glassMat);
-                glass.rotation.x = Math.PI / 2;
-                glass.position.set(0, 0, -5.1);
-                camGroup.add(glass);
-
-                // Grip
-                const gripGeo = new THREE.BoxGeometry(4, 9, 5);
-                const grip = new THREE.Mesh(gripGeo, leatherMat);
-                grip.position.set(-8, -0.5, 0.5);
-                camGroup.add(grip);
-
-                const shutterGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16);
-                const shutter = new THREE.Mesh(shutterGeo, metalMat);
-                shutter.position.set(-8, 4.5, 1.5);
-                camGroup.add(shutter);
-
-                raycaster = new THREE.Raycaster();
-                mouse = new THREE.Vector2();
-
-                window.addEventListener('resize', onResize);
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('click', onClick);
-            }
-
-            function onResize() {
-                if (camera) {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                }
-            }
-
-            function createStarfield() {
-                const geometry = new THREE.BufferGeometry();
-                const count = 5000;
-                const posArray = new Float32Array(count * 3);
-                for (let i = 0; i < count * 3; i++) {
-                    posArray[i] = (Math.random() - 0.5) * 400;
-                }
-                geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-                const material = new THREE.PointsMaterial({
-                    size: 0.2, color: 0xffffff, transparent: true, opacity: 0.8
-                });
-                starSystem = new THREE.Points(geometry, material);
-                scene.add(starSystem);
-            }
-
-            // --- UI STATE MANAGEMENT ---
-            let currentScreen = 'HOME';
-            let uiClickZones = [];
-            let uiCanvas, uiCtx, uiTexture;
-            let pfpImage = new Image();
-
-            function createUIScreen() {
-                uiCanvas = document.createElement('canvas');
-                uiCanvas.width = 1280; uiCanvas.height = 850;
-                uiCtx = uiCanvas.getContext('2d');
-
-                pfpImage.src = './assets/photographer.jpg';
-                pfpImage.onload = updateUI;
-
-                document.fonts.load("700 80px Roboto").then(updateUI);
-                document.fonts.load("900 40px 'Font Awesome 5 Brands'").then(updateUI);
-                document.fonts.load("900 40px 'Font Awesome 5 Free'").then(updateUI);
-
-                updateUI();
-                uiTexture = new THREE.CanvasTexture(uiCanvas);
-                // Ensure texture is bright
-                uiTexture.encoding = THREE.sRGBEncoding;
-                return uiTexture;
-            }
-
-            function updateUI() {
-                uiClickZones = [];
-                // UPDATED: Use a dark gray instead of pure black for backlight simulation
-                uiCtx.fillStyle = '#151515';
-                uiCtx.fillRect(0, 0, 1280, 850);
-                drawGrid();
-                drawStatusBar();
-
-                document.getElementById('footer-3d').style.display = 'none';
-                if (currentScreen === 'HOME') {
-                    document.getElementById('footer-3d').style.display = 'block';
-                    drawHome();
-                } else {
-                    drawSettings();
-                }
-
-                if (uiTexture) uiTexture.needsUpdate = true;
-            }
-
-            function drawGrid() {
-                uiCtx.strokeStyle = 'rgba(255,255,255,0.1)'; // Brighter grid
-                uiCtx.lineWidth = 2;
+            // Profile Picture
+            if (pfpImage.complete && pfpImage.naturalHeight !== 0) {
+                const px = 200, py = 350, pr = 100;
+                uiCtx.save();
                 uiCtx.beginPath();
-                uiCtx.moveTo(426, 0); uiCtx.lineTo(426, 850);
-                uiCtx.moveTo(853, 0); uiCtx.lineTo(853, 850);
-                uiCtx.moveTo(0, 283); uiCtx.lineTo(1280, 283);
-                uiCtx.moveTo(0, 566); uiCtx.lineTo(1280, 566);
+                uiCtx.arc(px, py, pr, 0, Math.PI * 2);
+                uiCtx.closePath();
+                uiCtx.clip();
+                uiCtx.drawImage(pfpImage, px - pr, py - pr, pr * 2, pr * 2);
+                uiCtx.restore();
+
+                // Ring around pfp
+                uiCtx.strokeStyle = '#fff';
+                uiCtx.lineWidth = 4;
+                uiCtx.beginPath();
+                uiCtx.arc(px, py, pr, 0, Math.PI * 2);
                 uiCtx.stroke();
             }
 
-            function drawHome() {
-                uiCtx.fillStyle = '#fff';
-                uiCtx.font = '700 100px "Roboto", sans-serif';
-                uiCtx.textAlign = 'left';
-                uiCtx.textBaseline = 'top';
-                uiCtx.fillText('TheDoShoots', 80, 80);
+            // Menu Buttons
+            const btnW = 500;
+            const btnH = 100;
+            const x = 450;
+            let y = 200;
 
-                drawProfilePic();
+            // UPDATED: Added emojis to text
+            drawUIBtn("👤 About", x, y, btnW, btnH, () => handleNav('./about.html', true));
+            y += 120;
+            drawUIBtn("🌌 Astro", x, y, btnW, btnH, () => handleNav('./astronomy/index.html', true));
+            y += 120;
+            drawUIBtn("🐿️ Wildlife", x, y, btnW, btnH, () => handleNav('./wildlife/index.html', true));
+            y += 120;
 
-                const btnX = 650;
-                const btnW = 550;
-                const btnH = 100;
-                const startY = 180;
-                const gap = 30;
+            // REMOVED: Data saver text hanging on screen
 
-                drawButton("ABOUT", "\uf007", btnX, startY, btnW, btnH, () => handleNav('./about.html', true));
-                drawButton("ASTRO", "\uf030", btnX, startY + (btnH + gap), btnW, btnH, () => handleNav('./astronomy/index.html', true));
-                drawButton("WILDLIFE", "\uf1b0", btnX, startY + (btnH + gap) * 2, btnW, btnH, () => handleNav('./wildlife/index.html', true));
-                drawButton("SETTINGS", "\uf013", btnX, startY + (btnH + gap) * 3, btnW, btnH, () => { currentScreen = 'SETTINGS'; updateUI(); });
+            if (uiTexture) uiTexture.needsUpdate = true;
+        }
 
-                const socialY = 700;
-                uiCtx.textAlign = 'left';
-                uiCtx.fillStyle = '#fff';
-                uiCtx.font = '900 60px "Font Awesome 5 Brands"';
+        function drawUIBtn(text, x, y, w, h, action) {
+            // Button Box
+            uiCtx.fillStyle = 'rgba(30,30,30,0.9)';
+            uiCtx.fillRect(x, y, w, h);
+            uiCtx.strokeStyle = '#fff';
+            uiCtx.lineWidth = 4;
+            uiCtx.strokeRect(x, y, w, h);
 
-                uiCtx.fillText('\uf16d', 80, socialY);
-                addZone(80, socialY - 50, 60, 60, () => window.open('https://instagram.com/thedoshoots', '_blank'));
+            // Text
+            uiCtx.fillStyle = '#fff';
+            // CHANGED: Force Roboto for consistency
+            uiCtx.font = 'bold 60px "Roboto"';
+            uiCtx.textAlign = 'center';
+            uiCtx.textBaseline = 'middle';
+            uiCtx.fillText(text, x + w / 2, y + h / 2);
 
-                uiCtx.fillText('\uf16e', 180, socialY);
-                addZone(180, socialY - 50, 60, 60, () => window.open('https://flickr.com', '_blank'));
+            // Click Zone (Inverted coordinates for back of camera)
+            uiClickZones.push({
+                x: x, y: y, w: w, h: h, action: action
+            });
+        }
 
-                uiCtx.font = '900 60px "Font Awesome 5 Free"';
-                uiCtx.fillText('\uf0e0', 280, socialY);
-                addZone(280, socialY - 50, 60, 60, () => window.open('mailto:tim@example.com', '_blank'));
+        // --- INTERACTION LOGIC ---
+        function onResize() {
+            if (camera) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
             }
+            if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+        }
 
-            function drawSettings() {
-                uiCtx.fillStyle = '#ffffff';
-                uiCtx.font = '700 80px "Roboto", sans-serif';
-                uiCtx.textAlign = 'left';
-                uiCtx.textBaseline = 'top';
-                uiCtx.fillText('SETTINGS', 80, 80);
+        function onMouseMove(e) {
+            if (!state.is3D) return;
 
-                const startY = 250;
-                const lineHeight = 120;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-                drawToggleOption("3D Mode", startY, 'mode3dToggle');
-                drawToggleOption("Gallery Mode", startY + lineHeight, 'galleryToggle');
-                drawToggleOption("Data Saver", startY + lineHeight * 2, 'datasaverToggle');
+            checkIntersections(false);
+        }
 
-                drawButton("BACK", "\uf060", 80, 650, 300, 100, () => { currentScreen = 'HOME'; updateUI(); });
-            }
+        function onCanvasClick(e) {
+            if (!state.is3D || !state.hasExplored) return;
+            checkIntersections(true);
+        }
 
-            function drawToggleOption(label, y, id) {
-                const el = document.getElementById(id);
-                const isChecked = el ? el.checked : false;
+        function checkIntersections(isClick) {
+            // Only interact if looking at back of camera roughly
+            if (!camera || !screenMesh) return;
 
-                uiCtx.fillStyle = '#fff';
-                uiCtx.font = '500 50px "Roboto", sans-serif';
-                uiCtx.textAlign = 'left';
-                uiCtx.fillText(label, 120, y + 40);
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(screenMesh);
 
-                const swX = 900, swY = y, swW = 120, swH = 60;
-                uiCtx.fillStyle = isChecked ? '#ffffff' : '#333';
-                uiCtx.beginPath();
-                uiCtx.roundRect(swX, swY, swW, swH, 30);
-                uiCtx.fill();
+            if (intersects.length > 0) {
+                document.body.style.cursor = 'pointer';
+                if (isClick) {
+                    const uv = intersects[0].uv;
+                    sfx.shutter();
+                    // UV mapping on PlaneGeometry: x=0..1, y=0..1
+                    // Since the mesh is rotated 180 deg (PI), UVs might be flipped depending on implementation.
+                    // For a standard plane rotated y=PI, x is inverted visually.
+                    const canvasX = (1 - uv.x) * 1200;
+                    const canvasY = (1 - uv.y) * 800; // y is typically inverted in UV vs Canvas
 
-                uiCtx.fillStyle = isChecked ? '#000' : '#fff';
-                uiCtx.beginPath();
-                const kX = isChecked ? swX + swW - 55 : swX + 5;
-                uiCtx.arc(kX + 25, swY + 30, 25, 0, Math.PI * 2);
-                uiCtx.fill();
-
-                addZone(swX, swY, swW, swH, () => {
-                    if (el) {
-                        el.click();
-                        updateUI();
-                    }
-                });
-            }
-
-            function drawStatusBar() {
-                uiCtx.fillStyle = '#ffffff';
-                uiCtx.font = '500 35px monospace';
-                uiCtx.textAlign = 'left';
-                uiCtx.textBaseline = 'bottom';
-                const y = 830;
-                uiCtx.fillText("[RAW]  ISO 1600  1/500  f/2.8", 80, y);
-
-                uiCtx.strokeStyle = '#fff';
-                uiCtx.lineWidth = 3;
-                uiCtx.strokeRect(1150, 795, 80, 40);
-                uiCtx.fillRect(1230, 805, 6, 20);
-                uiCtx.fillStyle = '#ffffff';
-                uiCtx.fillRect(1156, 801, 50, 28);
-            }
-
-            function drawProfilePic() {
-                const x = 250, y = 450, radius = 160;
-                uiCtx.save();
-                uiCtx.shadowColor = '#ffffff';
-                uiCtx.shadowBlur = 40;
-                uiCtx.fillStyle = '#000';
-                uiCtx.beginPath(); uiCtx.arc(x, y, radius - 2, 0, Math.PI * 2); uiCtx.fill();
-                uiCtx.shadowBlur = 0;
-                uiCtx.beginPath(); uiCtx.arc(x, y, radius, 0, Math.PI * 2); uiCtx.closePath(); uiCtx.clip();
-                if (pfpImage.complete) {
-                    uiCtx.drawImage(pfpImage, x - radius, y - radius, radius * 2, radius * 2);
-                } else {
-                    uiCtx.fillStyle = '#222'; uiCtx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-                }
-                uiCtx.restore();
-                uiCtx.save();
-                uiCtx.lineWidth = 8; uiCtx.strokeStyle = '#ffffff';
-                uiCtx.beginPath(); uiCtx.arc(x, y, radius, 0, Math.PI * 2); uiCtx.stroke();
-                uiCtx.restore();
-            }
-
-            function drawButton(text, icon, x, y, w, h, action) {
-                uiCtx.fillStyle = 'rgba(30, 30, 30, 1)'; // Lighter button bg
-                uiCtx.fillRect(x, y, w, h);
-                uiCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // Brighter border
-                uiCtx.lineWidth = 3;
-                uiCtx.strokeRect(x, y, w, h);
-                if (icon) {
-                    uiCtx.fillStyle = '#00ffff';
-                    uiCtx.font = '900 50px "Font Awesome 5 Free"';
-                    uiCtx.textAlign = 'center';
-                    uiCtx.textBaseline = 'middle';
-                    uiCtx.fillText(icon, x + 60, y + h / 2);
-                }
-                uiCtx.fillStyle = '#fff';
-                uiCtx.font = '700 60px "Roboto", sans-serif';
-                const textX = icon ? x + 130 : x + w / 2;
-                const align = icon ? 'left' : 'center';
-                uiCtx.textAlign = align;
-                uiCtx.textBaseline = 'middle';
-                uiCtx.fillText(text, textX, y + h / 2);
-                uiCtx.fillStyle = '#ffffff';
-                uiCtx.fillRect(x, y, 15, h);
-                addZone(x, y, w, h, action);
-            }
-
-            function addZone(canvasX, canvasY, w, h, action) {
-                uiClickZones.push({
-                    x: canvasX, y: canvasY, w: w, h: h, action: action
-                });
-            }
-
-            function onClick() {
-                if (!is3DActive) return;
-                if (camera.position.z < 30) {
-                    raycaster.setFromCamera(mouse, camera);
-                    const intersects = raycaster.intersectObject(screenMesh);
-                    if (intersects.length > 0) {
-                        const uv = intersects[0].uv;
-                        const clickX = uv.x * 1280;
-                        const clickY = (1 - uv.y) * 850;
-                        for (let zone of uiClickZones) {
-                            if (clickX >= zone.x && clickX <= zone.x + zone.w &&
-                                clickY >= zone.y && clickY <= zone.y + zone.h) {
-                                zone.action();
-                                break;
-                            }
+                    for (let zone of uiClickZones) {
+                        if (canvasX >= zone.x && canvasX <= zone.x + zone.w &&
+                            canvasY >= zone.y && canvasY <= zone.y + zone.h) {
+                            zone.action();
+                            break;
                         }
                     }
                 }
+            } else {
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        window.handleNav = function (url, isInternal) {
+            if (state.directLinks || !isInternal) {
+                window.open(url, '_blank');
+            } else {
+                els.iframe.src = url;
+                els.iframeOverlay.classList.add('active');
+            }
+        };
+
+        window.closeiFrame = function () {
+            els.iframeOverlay.classList.remove('active');
+            sfx.click();
+            setTimeout(() => { els.iframe.src = "about:blank"; }, 500);
+        };
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            if (!state.isAnimating) return;
+            animationFrameId = requestAnimationFrame(animate);
+
+            const now = performance.now();
+            frameCount++;
+            if (now - lastTime >= 1000) {
+                els.fps.innerText = `FPS: ${frameCount}`;
+                frameCount = 0;
+                lastTime = now;
             }
 
-            function onMouseMove(e) {
-                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                if (is3DActive && camera.position.z < 30) {
-                    raycaster.setFromCamera(mouse, camera);
-                    const intersects = raycaster.intersectObject(screenMesh);
-                    let hovering = false;
-                    if (intersects.length > 0) {
-                        const uv = intersects[0].uv;
-                        const clickX = uv.x * 1280;
-                        const clickY = (1 - uv.y) * 850;
-                        for (let zone of uiClickZones) {
-                            if (clickX >= zone.x && clickX <= zone.x + zone.w &&
-                                clickY >= zone.y && clickY <= zone.y + zone.h) {
-                                hovering = true;
-                                break;
-                            }
-                        }
-                    }
-                    document.body.style.cursor = hovering ? 'pointer' : 'default';
+            TWEEN.update();
+            if (controls) controls.update();
+
+            // Subtle floating animation
+            if (camGroup) {
+                camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
+                camGroup.rotation.z = Math.sin(now * 0.0002) * .02;
+            }
+
+            if (starSystem) {
+                // FASTER ROTATION
+                starSystem.rotation.y += 0.0005;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- ADVANCED AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const sfx = {
+            // Helper to generate noise buffer
+            createNoiseBuffer: () => {
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
                 }
+                return buffer;
+            },
+
+            shutter: () => {
+                if (state.muted) return; // Mute Check
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const t = audioCtx.currentTime;
+
+                // SOUND 1: The "Click" (High frequency mechanics)
+                const noise1 = audioCtx.createBufferSource();
+                noise1.buffer = sfx.createNoiseBuffer();
+                const filter1 = audioCtx.createBiquadFilter();
+                filter1.type = 'highpass';
+                filter1.frequency.value = 1500;
+                const gain1 = audioCtx.createGain();
+                gain1.gain.setValueAtTime(0.4, t);
+                gain1.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                noise1.connect(filter1);
+                filter1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                noise1.start(t);
+                noise1.stop(t + 0.05);
+
+                // SOUND 2: The "Clunk" (Mirror slap - low body resonance)
+                const osc = audioCtx.createOscillator();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, t);
+                osc.frequency.exponentialRampToValueAtTime(40, t + 0.15); // Pitch drop
+                const gainOsc = audioCtx.createGain();
+                gainOsc.gain.setValueAtTime(0.5, t);
+                gainOsc.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+                osc.connect(gainOsc);
+                gainOsc.connect(audioCtx.destination);
+                osc.start(t);
+                osc.stop(t + 0.15);
+
+                // SOUND 3: The "Release" (Secondary mechanical noise after 50ms)
+                const noise2 = audioCtx.createBufferSource();
+                noise2.buffer = sfx.createNoiseBuffer();
+                const filter2 = audioCtx.createBiquadFilter();
+                filter2.type = 'lowpass';
+                filter2.frequency.value = 800;
+                const gain2 = audioCtx.createGain();
+                gain2.gain.setValueAtTime(0, t);
+                gain2.gain.setValueAtTime(0.3, t + 0.06); // Start slightly later
+                gain2.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+                noise2.connect(filter2);
+                filter2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                noise2.start(t);
+                noise2.stop(t + 0.15);
+            },
+
+            click: () => {
+                if (state.muted) return; // Mute Check
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const t = audioCtx.currentTime;
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, t);
+                osc.frequency.exponentialRampToValueAtTime(600, t + 0.05);
+                gain.gain.setValueAtTime(0.1, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(t);
+                osc.stop(t + 0.05);
             }
-
-            function handleNav(url, isInternal) {
-                const finalUrl = buildUrl(url);
-                if (directLinksToggle.checked || !isInternal) {
-                    window.open(finalUrl, '_blank');
-                } else {
-                    document.getElementById('galleryIframe').src = finalUrl;
-                    document.getElementById('galleryOverlay').style.visibility = 'visible';
-                    document.getElementById('galleryOverlay').style.opacity = '1';
-                }
-            }
-
-            function buildUrl(base) {
-                const url = new URL(base, window.location);
-                if (galleryToggle.checked) url.searchParams.set('gallery', 'true');
-                if (datasaverToggle.checked) url.searchParams.set('datasaver', 'true');
-                if (directLinksToggle.checked) url.searchParams.set('directlinks', 'true');
-                return url.toString();
-            }
-
-            mode3dToggle.addEventListener('change', (e) => {
-                localStorage.setItem('mode3dToggle', e.target.checked);
-                location.reload();
-            });
-            galleryToggle.addEventListener('change', updateUI);
-            datasaverToggle.addEventListener('change', updateUI);
-            directLinksToggle.addEventListener('change', updateUI);
-
-            document.getElementById('closeGallery').addEventListener('click', () => {
-                document.getElementById('galleryOverlay').style.opacity = 0;
-                setTimeout(() => document.getElementById('galleryOverlay').style.visibility = 'hidden', 400);
-            });
-            document.getElementById('settingsToggle3d').addEventListener('click', () => {
-                document.getElementById('settingsPanel').style.visibility = 'visible';
-                document.getElementById('settingsPanel').style.opacity = 1;
-            });
-            document.getElementById('settingsToggle').addEventListener('click', () => {
-                document.getElementById('settingsPanel').style.visibility = 'visible';
-                document.getElementById('settingsPanel').style.opacity = 1;
-            });
-            document.getElementById('nav-about-2d').addEventListener('click', (e) => { e.preventDefault(); handleNav('./about.html', true); });
-            document.getElementById('nav-astro-2d').addEventListener('click', (e) => { e.preventDefault(); handleNav('./astronomy/index.html', true); });
-            document.getElementById('nav-wildlife-2d').addEventListener('click', (e) => { e.preventDefault(); handleNav('./wildlife/index.html', true); });
-            document.getElementById('closeSettings').addEventListener('click', () => {
-                document.getElementById('settingsPanel').style.opacity = 0;
-                setTimeout(() => document.getElementById('settingsPanel').style.visibility = 'hidden', 300);
-            });
-
-            loadSettings();
-        });
-
-        window.explore = function () {
-            const welcome = document.getElementById('welcome-screen');
-            if (welcome) {
-                welcome.style.opacity = 0;
-                setTimeout(() => { welcome.style.display = 'none'; }, 1500);
-            }
-
-            if (!camera) return;
-
-            if (camGroup) camGroup.visible = true;
-            hasExplored = true;
-
-            new TWEEN.Tween(camera.position)
-                .to({ x: 0, y: 0, z: 24 }, 2500)
-                .easing(TWEEN.Easing.Cubic.InOut)
-                .onComplete(() => {
-                    const ui3d = document.getElementById('ui-3d');
-                    if (ui3d) ui3d.style.display = 'block';
-                })
-                .start();
-
-            new TWEEN.Tween(camera.rotation)
-                .to({ z: 0.1, y: 0.1 }, 2000)
-                .easing(TWEEN.Easing.Quadratic.Out)
-                .onComplete(() => {
-                    new TWEEN.Tween(camera.rotation).to({ z: 0, y: 0 }, 500).start();
-                })
-                .start();
         };
     </script>
 </body>
