@@ -1,709 +1,1020 @@
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>About | TheDoShoots</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,700,900&display=swap' rel='stylesheet'>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,700,900&display=swap' rel='stylesheet'
-        type='text/css'>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
     <style>
         :root {
             --accent-cyan: #00e5ff;
-            --accent-neutral: #888;
-            --glass-bg: rgba(20, 20, 20, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(10, 10, 10, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.15);
         }
 
-        body,
         html {
+            /* Enable Scroll Snapping for 2D Mode */
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        body {
             margin: 0;
-            padding: 0;
-            width: 100%;
-            min-height: 100vh;
-            background: #050505;
+            background: #000;
             font-family: 'Roboto', sans-serif;
             color: #fff;
             overflow-x: hidden;
         }
 
-        /* 3D Canvas Background */
+        /* --- 2D AURORA BACKGROUND (CSS ONLY) --- */
+        .aurora-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: -2;
+            overflow: hidden;
+            opacity: 1;
+            transition: opacity 1s;
+        }
+        .aurora-bg.hidden { opacity: 0; pointer-events: none; }
+
+        .aurora-light {
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.4) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 20%, rgba(50, 255, 100, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 20% 80%, rgba(100, 50, 255, 0.4) 0%, transparent 50%);
+            filter: blur(40px);
+            animation: auroraMove 3s infinite alternate ease-in-out;
+            transform-origin: center;
+            mix-blend-mode: screen;
+        }
+        
+        .aurora-light::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent 40%, rgba(0, 229, 255, 0.2) 50%, transparent 60%);
+            animation: shimmer 5s infinite linear;
+            opacity: 0.8;
+        }
+
+        @keyframes auroraMove {
+            0% { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg); }
+            100% { transform: rotate(10deg) scale(1.1); filter: hue-rotate(30deg); }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
+            100% { transform: translateX(50%) translateY(50%) rotate(360deg); }
+        }
+
+        /* --- SHUTTER OVERLAY --- */
+        .shutter-blade {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: #050505;
+            z-index: 5000;
+            transition: transform 1.2s cubic-bezier(0.8, 0, 0.2, 1);
+        }
+        .shutter-top { top: 0; transform-origin: top; }
+        .shutter-bottom { bottom: 0; transform-origin: bottom; }
+        body.shutter-open .shutter-top { transform: scaleY(0); }
+        body.shutter-open .shutter-bottom { transform: scaleY(0); }
+
+        /* --- 3D CANVAS --- */
         #canvas-container {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
+            touch-action: none; 
+            opacity: 0;
+            transition: opacity 1s;
         }
+        #canvas-container.active { opacity: 1; z-index: 1; }
 
-        /* Scrollable Area */
-        .scroll-container {
-            height: 500vh;
+        /* --- SCROLL MODE CONTENT --- */
+        .scroll-mode-container {
             position: relative;
             z-index: 10;
-            pointer-events: none;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        .scroll-mode-container.hidden {
+            opacity: 0; visibility: hidden; pointer-events: none;
         }
 
-        /* Fixed Content Layer */
-        .content-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 20;
-            pointer-events: none;
+        .section {
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            perspective: 1000px;
-        }
-
-        /* Content Sections */
-        .section {
-            position: absolute;
+            padding: 0 5%; /* Wider padding */
+            text-align: center;
             opacity: 0;
-            transform: translateY(50px) scale(0.9);
-            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            text-align: center;
-            width: 90%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            transform: scale(0.95); /* Slight scale for transition */
+            transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+            
+            /* Scroll Snapping */
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+        
+        .section.active { 
+            opacity: 1; 
+            transform: scale(1); 
         }
 
-        .section.active {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-
-        /* Typography & Elements */
         h1 {
-            font-size: 3.5rem;
+            font-size: clamp(3rem, 8vw, 6rem);
             font-weight: 900;
-            margin: 0 0 5px 0;
-            letter-spacing: -2px;
-            text-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
-        }
-
-        .author-line {
-            font-size: 1.2rem;
-            color: #ddd;
-            margin-bottom: 5px;
-            font-weight: 300;
-            letter-spacing: 1px;
-        }
-
-        h2 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--accent-cyan);
-            margin-bottom: 25px;
-            letter-spacing: 2px;
             text-transform: uppercase;
-            border-bottom: 2px solid var(--accent-cyan);
-            display: inline-block;
-            padding-bottom: 10px;
+            margin: 0;
+            background: linear-gradient(to bottom, #fff, #999);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        p {
-            font-size: 1.2rem;
-            line-height: 1.8;
-            color: #e0e0e0;
-            background: var(--glass-bg);
-            padding: 40px;
-            border-radius: 4px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-            max-width: 700px;
-        }
-
-        /* NEW: Placeholder Image Styling */
-        .section-image {
-            width: 100%;
-            max-width: 500px;
-            max-height: 500px;
-            object-fit: cover;
-            border-radius: 8px;
+        
+        h2 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            color: var(--accent-cyan);
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
             margin-bottom: 30px;
+        }
+
+        /* Bigger Modals in 2D */
+        p {
+            font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+            line-height: 1.7;
+            background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
-            display: block;
-        }
-
-        /* Intro Layout */
-        .intro-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .profile-header {
-            text-align: center;
+            padding: clamp(30px, 5vw, 60px);
+            max-width: 900px; /* Increased max-width */
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }
 
         .profile-img {
-            width: 240px;
-            height: 240px;
+            width: clamp(200px, 25vw, 300px);
+            height: clamp(200px, 25vw, 300px);
             border-radius: 50%;
-            object-fit: cover;
             border: 4px solid var(--accent-cyan);
-            margin-bottom: 20px;
-            box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
+            object-fit: cover;
+            margin-bottom: 30px;
+            box-shadow: 0 0 50px rgba(0, 229, 255, 0.5);
         }
 
-        .sub-text {
-            font-family: monospace;
-            color: var(--accent-cyan);
-            font-size: 0.9rem;
-            margin-top: 5px;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
+        .section-image {
+            width: 100%;
+            max-width: 800px; /* Bigger images */
+            height: auto;
+            max-height: 60vh;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }
 
-        /* Social Icons */
+        /* --- RESTORED SOCIALS --- */
         .social-row {
             display: flex;
             gap: 20px;
-            margin-bottom: 30px;
+            margin: 30px 0 40px 0;
             justify-content: center;
         }
-
         .social-icon {
             color: #ccc;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             transition: 0.3s;
             text-decoration: none;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
+            align-items: center; justify-content: center;
+            width: 55px; height: 55px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
         .social-icon:hover {
             color: var(--accent-cyan);
             background: rgba(0, 229, 255, 0.1);
-            transform: translateY(-3px);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
         }
 
-        /* Gear Styles */
-        .gear-section-compact {
+        /* --- GEAR GRID (RESPONSIVE) --- */
+        .gear-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
             width: 100%;
-            max-width: 800px;
-            margin-top: 10px;
+            max-width: 1000px;
+            margin-top: 40px;
         }
-
-        .gear-title-small {
-            font-size: 1rem;
+        .gear-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: left;
+            transition: 0.3s;
+        }
+        .gear-box:hover {
+            background: rgba(0, 229, 255, 0.05);
+            border-color: var(--accent-cyan);
+            transform: translateY(-5px);
+        }
+        .gear-label {
             color: var(--accent-cyan);
+            font-size: 0.9rem;
             text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             margin-bottom: 15px;
-            opacity: 0.9;
-            text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
-        }
-
-        .gear-group-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .gear-group {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 15px;
-            flex: 1;
-            min-width: 240px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .group-label {
-            font-size: 0.8rem;
-            color: var(--accent-cyan);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+            border-bottom: 1px solid rgba(0,229,255,0.3);
             padding-bottom: 5px;
         }
-
         .gear-item {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 4px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            transition: 0.2s;
-        }
-
-        .gear-item:hover {
-            background: rgba(0, 229, 255, 0.1);
-            transform: translateX(5px);
-        }
-
-        .gear-icon {
-            font-size: 1.2rem;
-            color: var(--accent-cyan);
-            width: 25px;
-            text-align: center;
-        }
-
-        .gear-name {
-            font-weight: 500;
-            font-size: 0.85rem;
+            gap: 12px;
+            margin-bottom: 10px;
+            font-size: 1rem;
             color: #ddd;
-            text-align: left;
         }
 
-        /* Return Button */
-        .return-btn {
-            margin-top: 40px;
-            padding: 15px 40px;
-            background: transparent;
-            border: 2px solid var(--accent-cyan);
+        /* --- CONTROLS --- */
+        .controls {
+            position: fixed;
+            top: 20px; right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+        }
+        .icon-btn {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
             color: white;
-            font-family: 'Roboto', sans-serif;
-            font-weight: 700;
-            letter-spacing: 2px;
+            font-size: 1.2rem;
             cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
             transition: 0.3s;
-            text-transform: uppercase;
-            border-radius: 30px;
-            pointer-events: auto;
-            position: relative;
-            z-index: 100;
-            opacity: 0.5;
-            pointer-events: none;
+            backdrop-filter: blur(5px);
         }
-
-        .return-btn.enabled {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .return-btn.enabled:hover {
+        .icon-btn:hover, .icon-btn.active {
             background: var(--accent-cyan);
             color: black;
-            box-shadow: 0 0 30px var(--accent-cyan);
-            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--accent-cyan);
+            transform: scale(1.1);
         }
 
-        /* Progress Dots */
-        .progress-bar {
+        /* --- 3D NAV CONTROLS --- */
+        .spatial-nav {
             position: fixed;
-            right: 40px;
-            top: 50%;
-            transform: translateY(-50%);
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 100;
-        }
-
-        .dot {
-            width: 12px;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            transition: 0.4s;
-            border: 1px solid transparent;
-            cursor: pointer;
-            pointer-events: auto;
-        }
-
-        .dot.active {
-            background: var(--accent-cyan);
-            box-shadow: 0 0 15px var(--accent-cyan);
-            transform: scale(1.3);
-        }
-
-        .scroll-hint {
-            position: fixed;
-            bottom: 30px;
-            width: 100%;
-            text-align: center;
-            color: rgba(0, 229, 255, 0.5);
-            font-size: 0.9rem;
-            letter-spacing: 3px;
-            animation: bounce 2s infinite;
+            gap: 30px;
+            z-index: 3000;
+            opacity: 0;
             pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        .spatial-nav.active { opacity: 1; pointer-events: auto; }
+        
+        .nav-arrow {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+        .nav-arrow:hover {
+            background: var(--accent-cyan);
+            color: black;
+            transform: scale(1.1);
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.6);
         }
 
-        @keyframes bounce {
-
-            0%,
-            20%,
-            50%,
-            80%,
-            100% {
-                transform: translateY(0);
-            }
-
-            40% {
-                transform: translateY(-10px);
-            }
-
-            60% {
-                transform: translateY(-5px);
-            }
+        /* --- SPATIAL OVERLAY --- */
+        .spatial-modal {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 85%; max-width: 700px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid var(--accent-cyan);
+            padding: 40px;
+            opacity: 0; visibility: hidden;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000;
+            box-shadow: 0 0 50px rgba(0,229,255,0.2);
+            text-align: center;
+            max-height: 85vh;
+            overflow-y: auto;
         }
+        .spatial-modal.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+        .close-modal {
+            position: absolute; top: 15px; right: 20px;
+            color: #fff; font-size: 2rem; cursor: pointer;
+            transition: 0.3s;
+            z-index: 2001;
+        }
+        .close-modal:hover { color: var(--accent-cyan); }
 
-        a {
-            color: #fff
+        .modal-image-content {
+            width: clamp(300px, 30vw, 400px);
+            height: clamp(300px, 30vw, 400px);
+            vertical-align: middle;
+            object-fit: cover; 
+            object-position: center;
+            margin-bottom: 20px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.3); 
+            margin: auto;
+            margin-bottom: 2em;
+        }
+        
+        .mode-hint {
+            position: fixed;
+            bottom: 110px; left: 0; width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            pointer-events: none;
+            text-shadow: 0 0 10px var(--accent-cyan);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .mode-hint.active { opacity: 1; }
+        
+        /* Modal Text Area */
+        #modal-text {
+            color: #ddd;
+            line-height: 1.6;
+            font-size: 1.75rem;
         }
     </style>
 </head>
 
 <body>
+    <!-- Shutter Transition -->
+    <div class="shutter-blade shutter-top"></div>
+    <div class="shutter-blade shutter-bottom"></div>
 
+    <!-- 2D Background -->
+    <div class="aurora-bg" id="aurora-bg">
+        <div class="aurora-light"></div>
+    </div>
+
+    <!-- 3D Canvas -->
     <div id="canvas-container"></div>
-    <div class="scroll-container"></div>
 
-    <div class="content-layer">
+    <!-- UI Controls -->
+    <div class="controls">
+        <button class="icon-btn" onclick="toggleMode()" id="mode-toggle" title="Switch View Mode (2D/3D)">
+            <i class="fas fa-cube"></i>
+        </button>
+        <button class="icon-btn" onclick="goBack()" title="Close / Home">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 
-        <div id="section-0" class="section active">
-            <div class="intro-container">
-                <div class="profile-header">
-                    <img src="./assets/tim.jpg" alt="Timothy Do" class="profile-img">
-                    <h1>TheDoShoots</h1>
-                    <div class="author-line"><a href="https://timothydo.me/" target="_blank">By Timothy Do</a></div>
-                    <div class="sub-text">PHOTOGRAPHER • ENGINEER • EXPLORER</div>
+    <!-- 3D Navigation Controls -->
+    <div class="spatial-nav" id="spatial-nav">
+        <button class="nav-arrow" onclick="navigateSpatial(-1)" title="Previous"><i class="fas fa-chevron-left"></i></button>
+        <button class="nav-arrow" onclick="navigateSpatial(1)" title="Next"><i class="fas fa-chevron-right"></i></button>
+    </div>
 
-                    <div class="social-row">
-                        <a href="https://instagram.com/thedoshoots" target="_blank" class="social-icon"
-                            title="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" class="social-icon"
-                            title="Flickr"><i class="fab fa-flickr"></i></a>
-                        <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-icon"
-                            title="YouTube"><i class="fab fa-youtube"></i></a>
-                        <a href="https://tiktok.com/@TheDoShoots" target="_blank" class="social-icon" title="TikTok"><i
-                                class="fab fa-tiktok"></i></a>
-                        <a href="https://vsco.co/thedoshoots" target="_blank" class="social-icon" title="VSCO"><i
-                                class="fas fa-camera-retro"></i></a>
-                        <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" class="social-icon"
-                            title="Contact"><i class="fas fa-envelope"></i></a>
-                    </div>
+    <!-- Scroll Content (Default) -->
+    <div class="scroll-mode-container" id="scroll-content">
+        
+        <div class="section active" id="sec-intro">
+            <img src="./assets/tim.jpg" alt="Timothy Do" class="profile-img">
+            <h1>TheDoShoots</h1>
+            <div style="color: var(--accent-cyan); margin-bottom: 20px; letter-spacing: 2px;">PHOTOGRAPHER • ENGINEER • EXPLORER</div>
+            
+            <!-- RESTORED SOCIALS -->
+            <div class="social-row">
+                <a href="https://instagram.com/thedoshoots" target="_blank" class="social-icon" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" class="social-icon" title="Flickr"><i class="fab fa-flickr"></i></a>
+                <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-icon" title="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://tiktok.com/@TheDoShoots" target="_blank" class="social-icon" title="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="https://vsco.co/thedoshoots" target="_blank" class="social-icon" title="VSCO">
+                    <svg viewBox="0 0 24 24" style="width: 22px; height: auto; fill: currentColor; display: block; margin: auto;">
+                        <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm11.52 12c0 .408-.023.792-.072 1.176l-2.04-.24c.024-.312.05-.624.05-.936 0-.288-.025-.6-.05-.888l2.04-.24c.072.384.072.744.072 1.128zM.479 12c0-.384.024-.769.049-1.152l2.04.24c-.024.312-.047.6-.047.912s.023.6.047.912l-2.04.24C.479 12.769.479 12.384.479 12zm20.472-3.096l1.921-.72c.264.72.433 1.464.552 2.232l-2.04.24c-.097-.6-.24-1.2-.433-1.752zM21 12c0 .6-.072 1.176-.167 1.752l-2.017-.455c.071-.409.119-.841.119-1.297s-.048-.912-.119-1.344l2.017-.457c.118.577.167 1.177.167 1.801zm-9 6.456C8.435 18.455 5.545 15.565 5.544 12 5.545 8.435 8.435 5.545 12 5.544c3.565.001 6.455 2.891 6.456 6.456.008 3.559-2.871 6.448-6.429 6.456H12zM12.216 21v-2.064c.885-.029 1.756-.224 2.568-.575l.888 1.872c-1.09.482-2.264.742-3.456.767zm-3.936-.791l.912-1.873c.792.359 1.656.575 2.568.6V21c-1.202-.023-2.386-.293-3.48-.791zM3 12c0-.624.072-1.224.192-1.824l2.016.456c-.098.45-.146.908-.144 1.368 0 .432.048.864.12 1.272l-2.016.455C3.051 13.159 2.994 12.58 3 12zm8.76-9v2.064c-.877.029-1.74.224-2.544.576l-.888-1.871C9.411 3.291 10.577 3.03 11.76 3zm3.935.792l-.911 1.872c-.809-.363-1.682-.559-2.568-.576V3.024c1.248 0 2.424.288 3.479.768zm5.088 4.656c-.231-.56-.513-1.098-.84-1.608l1.681-1.152c.407.648.768 1.32 1.056 2.04l-1.897.72zm-.07 1.296l-2.018.456c-.23-.85-.621-1.648-1.151-2.352l1.632-1.295c.72.959 1.248 2.015 1.537 3.191zm-3.457-2.256c-.572-.667-1.264-1.22-2.04-1.633l.912-1.871c1.056.549 1.993 1.299 2.76 2.208l-1.632 1.296zm-.6-3.744l.96-1.824c.672.384 1.295.816 1.896 1.32L18.145 4.8c-.461-.401-.959-.754-1.489-1.056zm-.408-.216c-.54-.266-1.102-.483-1.68-.648l.504-1.992c.744.216 1.464.48 2.159.84l-.983 1.8zm-2.16-.768c-.6-.144-1.2-.216-1.824-.239V.479c.793.024 1.584.12 2.328.289l-.504 1.992zm-2.28-.239c-.605.021-1.207.094-1.8.216L9.528.744c.72-.168 1.487-.265 2.28-.265v2.042zm-2.28.334c-.586.167-1.156.384-1.704.649l-.96-1.824c.691-.343 1.415-.616 2.16-.816l.504 1.991zm-2.112.865c-.529.294-1.027.64-1.488 1.032L4.56 3.216c.6-.504 1.224-.936 1.896-1.319l.96 1.823zm.48.264l.888 1.871c-.792.408-1.464.96-2.04 1.608L5.136 6.168c.775-.895 1.711-1.636 2.76-2.184zM4.848 6.552l1.608 1.295c-.53.705-.921 1.503-1.152 2.353l-2.016-.456c.312-1.2.84-2.28 1.56-3.192zM3.24 8.4l-1.92-.72c.287-.72.648-1.416 1.08-2.04l1.68 1.176c-.341.494-.623 1.025-.84 1.584zm-.168.455c-.192.577-.36 1.152-.432 1.776L.6 10.393c.12-.769.288-1.537.553-2.257l1.919.719zm-.456 4.513c.096.6.239 1.2.432 1.776l-1.92.72c-.271-.728-.456-1.485-.552-2.257l2.04-.239zm.624 2.208c.239.576.528 1.104.84 1.607L2.4 18.336c-.435-.629-.797-1.306-1.08-2.016l1.92-.744zm.024-1.392l2.017-.456c.216.864.624 1.681 1.128 2.376L4.8 17.4c-.725-.957-1.247-2.051-1.536-3.216zm3.432 2.28c.577.672 1.272 1.248 2.064 1.656l-.912 1.872c-1.063-.557-2.009-1.315-2.784-2.232l1.632-1.296zm.72 3.815l-.96 1.825c-.674-.376-1.31-.819-1.896-1.321l1.368-1.535c.456.407.936.744 1.488 1.031zm.408.217c.528.264 1.104.48 1.705.647l-.504 1.992c-.747-.196-1.471-.469-2.16-.815l.959-1.824zm2.16.768c.576.12 1.176.193 1.8.217v2.039c-.774-.026-1.544-.114-2.305-.264l.505-1.992zm2.28.216c.605-.021 1.207-.094 1.801-.217l.479 1.992c-.749.168-1.513.264-2.28.287V21.48zm2.257-.336c.586-.165 1.155-.382 1.703-.647l.96 1.824c-.688.35-1.412.623-2.159.815l-.504-1.992zm2.086-.865c.528-.287 1.032-.647 1.488-1.031l1.369 1.535c-.588.502-1.223.945-1.896 1.321l-.961-1.825zm-.479-.263l-.888-1.871c.788-.414 1.489-.977 2.064-1.656l1.606 1.296c-.778.91-1.722 1.668-2.782 2.231zm3.071-2.592l-1.607-1.296c.532-.708.916-1.517 1.128-2.376l2.017.456c-.311 1.157-.831 2.248-1.538 3.216zM20.76 15.6l1.92.721c-.288.72-.648 1.392-1.079 2.04l-1.682-1.177c.337-.504.624-1.032.841-1.584zm.168-.455c.192-.553.336-1.152.433-1.752l2.039.239c-.11.761-.294 1.508-.551 2.232l-1.921-.719zm.456-9.841l-1.681 1.152c-.358-.49-.76-.947-1.199-1.368l1.368-1.536c.552.552 1.056 1.128 1.512 1.752zM4.2 3.528l1.368 1.536c-.456.408-.84.864-1.2 1.368l-1.68-1.176c.431-.636.94-1.216 1.512-1.728zM2.664 18.744l1.68-1.152c.36.48.769.937 1.2 1.369l-1.368 1.535c-.548-.545-1.054-1.131-1.512-1.752zm17.16 1.729l-1.368-1.537c.432-.407.841-.863 1.199-1.344l1.682 1.176c-.457.6-.961 1.175-1.513 1.705z" />
+                    </svg>
+                </a>
+                    <a href="https://alphauniverse.com/member/#/dotimothy" target="_blank" title="Sony Alpha Universe"
+                        class="social-icon">
+                        <svg viewBox="0 0 232 166"
+                            style="width: 22px; height: auto; fill: currentColor; display: block; margin: auto;">
+                            <path
+                                d="m219 142.7c-27 2-33-11.4-38.5-27-4-11-8-25-10-32 12.5-19 27-42 48.5-76h-40.3c-7 11-14 22.6-21 33.7-2-5.6-4.7-11.6-8-16.7-10.4-15-25-25-46.7-23.7-28.7 1.8-50.5 15.6-68 33-16 16.1-31.7 39.6-33.5 66.2-2.4 35.6 23.6 56 53 58.3 23.3 1.8 40.8-4.4 55.5-12.1 10-5.2 31-23 37.5-30.8 4.7 21.8 17 42.8 44.3 42.8 17 0 27.7-9.3 33.5-16.5-2 .2-4.3.4-6.8.5zM88.6 129.5c-6.3 4.5-14.4 9.4-22.8 10.7-21 3.3-30.4-13.1-28.9-35 1.1-17 7.9-32.8 15.8-46.6 8.1-14 17.6-26.5 28.4-34 3.9-2.7 9.7-5.9 17.7-6.5 19.4-1.6 26.5 19.4 31.4 37 2.3 8.2 3.8 16.6 4.6 21-5.5 8.1-22.7 36.3-46.3 53.4z" />
+                        </svg>
+                    </a>
+                <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" class="social-icon" title="Contact"><i class="fas fa-envelope"></i></a>
+            </div>
+            
+            <div class="gear-grid">
+                <div class="gear-box">
+                    <div class="gear-label">Primary Shooter</div>
+                    <div class="gear-item"><i class="fas fa-camera"></i> Sony Alpha A7 IV</div>
+                    <div class="gear-item"><i class="fas fa-circle-notch"></i> Sony FE 28-70mm</div>
                 </div>
-
-                <div class="gear-section-compact">
-                    <div class="gear-title-small">Mission Critical Gear</div>
-                    <div class="gear-group-container">
-                        <div class="gear-group">
-                            <div class="group-label">Primary System (Sony)</div>
-                            <div class="gear-item"><i class="fas fa-camera gear-icon"></i><span class="gear-name">Sony
-                                    Alpha A7 IV</span></div>
-                            <div class="gear-item"><i class="fas fa-circle-notch gear-icon"></i><span
-                                    class="gear-name">Sony FE 28-70mm f/3.5-5.6</span></div>
-                        </div>
-                        <div class="gear-group">
-                            <div class="group-label">Secondary System (Canon)</div>
-                            <div class="gear-item"><i class="fas fa-camera-retro gear-icon"></i><span
-                                    class="gear-name">Canon EOS Rebel T5</span></div>
-                            <div class="gear-item"><i class="fas fa-circle-notch gear-icon"></i><span
-                                    class="gear-name">Canon EF 18-55mm f/3.5-5.6</span></div>
-                            <div class="gear-item"><i class="fas fa-binoculars gear-icon"></i><span
-                                    class="gear-name">Canon EF 75-300mm f/4-5.6</span></div>
-                        </div>
-                        <div class="gear-group" style="min-width: 180px; flex: 0.5;">
-                            <div class="group-label">Mobile</div>
-                            <div class="gear-item"><i class="fas fa-mobile-alt gear-icon"></i><span
-                                    class="gear-name">Samsung S24 Ultra</span></div>
-                            <div class="gear-item"><i class="fas fa-mobile-alt gear-icon"></i><span
-                                    class="gear-name">Google Pixel 9 Pro</span></div>
-                        </div>
-                    </div>
+                <div class="gear-box">
+                    <div class="gear-label">Secondary Shooter</div>
+                    <div class="gear-item"><i class="fas fa-camera-retro"></i> Canon EOS Rebel</div>
+                    <div class="gear-item"><i class="fas fa-binoculars"></i> Canon EF 75-300mm</div>
+                </div>
+                <div class="gear-box">
+                    <div class="gear-label">Smartphone Shooters</div>
+                    <div class="gear-item"><i class="fas fa-mobile-alt"></i> Samsung S24 Ultra</div>
+                    <div class="gear-item"><i class="fas fa-mobile-alt"></i> Pixel 9 Pro</div>
                 </div>
             </div>
+            <div style="margin-top: 50px; animation: bounce 2s infinite; font-size: 0.8rem; letter-spacing: 3px; color:rgba(255,255,255,0.5);">SCROLL TO EXPLORE</div>
         </div>
 
-        <div id="section-1" class="section">
+        <div class="section" id="bio-journey">
             <h2>The Journey</h2>
-            <img src="./assets/photographer.jpg" alt="The Journey Placeholder" class="section-image">
-            <p>
-                My passion began years ago, watching my father capture family memories on his vintage Canon T2i. What
-                started as a hobby evolved into a relentless pursuit to paint thousands of words with the pictures I
-                take. From a dark scenic space to the vast wilderness, photography became my language for showcasing the
-                ever-changing beauty of the world.
-            </p>
+            <img src="./assets/photographer.jpg" class="section-image" alt="Journey">
+            <p>My passion began years ago, watching my father capture family memories on his vintage Canon T2i. What started as a hobby evolved into a relentless pursuit to paint thousands of words with the pictures I take. From a dark scenic space to the vast wilderness, photography became my language for showcasing the ever-changing beauty of the world.</p>
         </div>
 
-        <div id="section-2" class="section">
+        <div class="section" id="bio-photographer">
             <h2>The Photographer</h2>
-            <img src="./assets/starshalo.jpg" alt="The Photographer Placeholder" class="section-image">
-            <p>
-                My lens is drawn to the vast scenes around the earth. In the darkness of the night, I specialize in
-                astrophotography,capturing the dusty glow of the Milky Way and the deep colors of the Orion Nebula
-                far away from
-                artificial light pollution. By day, I traverse National and State Parks to honor the creations of Mother
-                Nature through
-                landscape photography. I also dedicate my time towards wildlife, zooming in from afar to capture animals
-                going about their habitats in a natural manner.
-            </p>
+            <img src="./assets/starshalo.jpg" class="section-image" alt="Photographer">
+            <p>My lens is drawn to the vast scenes around the earth. In the darkness of the night, I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep colors of the Orion Nebula far away from artificial light pollution. By day, I traverse National and State Parks to honor the creations of Mother Nature through landscape photography.</p>
         </div>
 
-        <div id="section-3" class="section">
+        <div class="section" id="bio-engineer">
             <h2>The Engineer</h2>
-            <img src="https://timothydo.me/images/TheDoProSolo.jpg" alt="The Engineer Placeholder"
-                class="section-image">
-            <p>
-                With a Master's degree in Electrical and Computer Engineering from UCLA, I bring technical precision
-                to the art of capturing a picture. Understanding image acquisition, sensor mechanics, and signal
-                processing allows me to push the boundaries of what a camera can capture, blending technology with
-                creativity.
-            </p>
+            <img src="https://timothydo.me/images/TheDoProSolo.jpg" class="section-image" alt="Engineer">
+            <p>With a Master's degree in Electrical and Computer Engineering from UCLA, I bring technical precision to the art of capturing a picture. Understanding image acquisition, sensor mechanics, and signal processing allows me to push the boundaries of what a camera can capture, blending technology with creativity.</p>
         </div>
 
-        <div id="section-4" class="section">
+        <div class="section" id="bio-explorer">
             <h2>The Explorer</h2>
-            <img src="./assets/zion.jpg" alt="The Explorer Placeholder" class="section-image">
-            <p>
-                From the depths of the cosmos to the raw display of national parks, I capture the most distinct parts
-                of a specific place. As an Eagle Scout with the photography merit badge, nature is my second home. This
-                portfolio is my window into a
-                collection of moments where the universe stood still just long enough for the shutter to click.
-            </p>
-            <button id="returnBtn" class="return-btn" onclick="goBack()">RETURN TO BASE</button>
+            <img src="./assets/zion.jpg" class="section-image" alt="Explorer">
+            <p>From the depths of the cosmos to the raw display of national parks, I capture the most distinct parts of a specific place. As an Eagle Scout with the photography merit badge, nature is my second home. This portfolio is my window into a collection of moments where the universe stood still just long enough for the shutter to click.</p>
         </div>
-
     </div>
 
-    <div class="progress-bar">
-        <div class="dot active" onclick="scrollToSection(0)"></div>
-        <div class="dot" onclick="scrollToSection(1)"></div>
-        <div class="dot" onclick="scrollToSection(2)"></div>
-        <div class="dot" onclick="scrollToSection(3)"></div>
-        <div class="dot" onclick="scrollToSection(4)"></div>
-    </div>
+    <!-- Spatial Mode Hint -->
+    <div class="mode-hint" id="spatial-hint">DRAG TO ORBIT • CLICK NODES TO SCAN</div>
 
-    <div class="scroll-hint">SCROLL TO EXPLORE</div>
+    <!-- Spatial Modal Popup -->
+    <div class="spatial-modal" id="spatial-modal">
+        <div class="close-modal" onclick="closeSpatialModal()">&times;</div>
+        <h2 id="modal-title">Title</h2>
+        <img id="modal-img" src="" alt="Node Image" class="modal-image-content" style="display:none;">
+        <div id="modal-text">Content</div>
+    </div>
 
     <script>
-        // --- 3D SCENE SETUP ---
-        let scene, camera, renderer;
-        let starGeo, stars, starMaterial;
-        let floatingGroups = [];
+        // --- STATE ---
+        const state = {
+            isSpatial: false,
+            starSpeed: 0.2,
+            targetSpeed: 0.2
+        };
 
-        // Scroll Logic
-        let scrollPercent = 0;
+        const dom = {
+            scroll: document.getElementById('scroll-content'),
+            modal: document.getElementById('spatial-modal'),
+            mTitle: document.getElementById('modal-title'),
+            mText: document.getElementById('modal-text'),
+            mImg: document.getElementById('modal-img'),
+            toggle: document.getElementById('mode-toggle'),
+            hint: document.getElementById('spatial-hint'),
+            canvas: document.getElementById('canvas-container'),
+            aurora: document.getElementById('aurora-bg'),
+            nav: document.getElementById('spatial-nav')
+        };
 
-        // Star Animation Logic
-        let starVelocity = 0.5;
-        const starTunnelDepth = 4000;
+        // --- THREE.JS ---
+        let scene, camera, renderer, composer, controls;
+        let starSystem;
+        let spatialGroup; 
+        let spatialNodes = []; // Store mesh references for navigation
+        let focusedNode = null; // Track currently focused node for camera following
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let currentNavIndex = -1;
+        
+        // --- DATA CONSTANTS ---
+        const gearHTML = `
+            <div class="gear-grid" style="grid-template-columns: 1fr;">
+                <div class="gear-box">
+                    <div class="gear-label">Primary Shooter</div>
+                    <div class="gear-item"><i class="fas fa-camera"></i> Sony Alpha A7 IV</div>
+                    <div class="gear-item"><i class="fas fa-circle-notch"></i> Sony FE 28-70mm</div>
+                </div>
+                <div class="gear-box">
+                    <div class="gear-label">Secondary Shooter</div>
+                    <div class="gear-item"><i class="fas fa-camera-retro"></i> Canon EOS Rebel</div>
+                    <div class="gear-item"><i class="fas fa-binoculars"></i> Canon EF 75-300mm</div>
+                </div>
+                <div class="gear-box">
+                    <div class="gear-label">Smartphone Shooters</div>
+                    <div class="gear-item"><i class="fas fa-mobile-alt"></i> Samsung S24 Ultra</div>
+                    <div class="gear-item"><i class="fas fa-mobile-alt"></i> Pixel 9 Pro</div>
+                </div>
+            </div>`;
+
+        // Social Media Icons HTML for Modal (Bigger size: 60px / 2rem)
+        const socialHTML = `
+        <div class="social-row" style="margin: 20px 0;">
+            <a href="https://instagram.com/thedoshoots" target="_blank" class="social-icon" title="Instagram" style="width: 60px; height: 60px; font-size: 2rem;"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" class="social-icon" title="Flickr" style="width: 60px; height: 60px; font-size: 2rem;"><i class="fab fa-flickr"></i></a>
+            <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-icon" title="YouTube" style="width: 60px; height: 60px; font-size: 2rem;"><i class="fab fa-youtube"></i></a>
+            <a href="https://tiktok.com/@TheDoShoots" target="_blank" class="social-icon" title="TikTok" style="width: 60px; height: 60px; font-size: 2rem;"><i class="fab fa-tiktok"></i></a>
+            <a href="https://vsco.co/thedoshoots" target="_blank" class="social-icon" title="VSCO" style="width: 60px; height: 60px; font-size: 2rem;">
+                <svg viewBox="0 0 24 24" style="width: 26px; height: auto; fill: currentColor; display: block; margin: auto;">
+                    <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm11.52 12c0 .408-.023.792-.072 1.176l-2.04-.24c.024-.312.05-.624.05-.936 0-.288-.025-.6-.05-.888l2.04-.24c.072.384.072.744.072 1.128zM.479 12c0-.384.024-.769.049-1.152l2.04.24c-.024.312-.047.6-.047.912s.023.6.047.912l-2.04.24C.479 12.769.479 12.384.479 12zm20.472-3.096l1.921-.72c.264.72.433 1.464.552 2.232l-2.04.24c-.097-.6-.24-1.2-.433-1.752zM21 12c0 .6-.072 1.176-.167 1.752l-2.017-.455c.071-.409.119-.841.119-1.297s-.048-.912-.119-1.344l2.017-.457c.118.577.167 1.177.167 1.801zm-9 6.456C8.435 18.455 5.545 15.565 5.544 12 5.545 8.435 8.435 5.545 12 5.544c3.565.001 6.455 2.891 6.456 6.456.008 3.559-2.871 6.448-6.429 6.456H12zM12.216 21v-2.064c.885-.029 1.756-.224 2.568-.575l.888 1.872c-1.09.482-2.264.742-3.456.767zm-3.936-.791l.912-1.873c.792.359 1.656.575 2.568.6V21c-1.202-.023-2.386-.293-3.48-.791zM3 12c0-.624.072-1.224.192-1.824l2.016.456c-.098.45-.146.908-.144 1.368 0 .432.048.864.12 1.272l-2.016.455C3.051 13.159 2.994 12.58 3 12zm8.76-9v2.064c-.877.029-1.74.224-2.544.576l-.888-1.871C9.411 3.291 10.577 3.03 11.76 3zm3.935.792l-.911 1.872c-.809-.363-1.682-.559-2.568-.576V3.024c1.248 0 2.424.288 3.479.768zm5.088 4.656c-.231-.56-.513-1.098-.84-1.608l1.681-1.152c.407.648.768 1.32 1.056 2.04l-1.897.72zm-.07 1.296l-2.018.456c-.23-.85-.621-1.648-1.151-2.352l1.632-1.295c.72.959 1.248 2.015 1.537 3.191zm-3.457-2.256c-.572-.667-1.264-1.22-2.04-1.633l.912-1.871c1.056.549 1.993 1.299 2.76 2.208l-1.632 1.296zm-.6-3.744l.96-1.824c.672.384 1.295.816 1.896 1.32L18.145 4.8c-.461-.401-.959-.754-1.489-1.056zm-.408-.216c-.54-.266-1.102-.483-1.68-.648l.504-1.992c.744.216 1.464.48 2.159.84l-.983 1.8zm-2.16-.768c-.6-.144-1.2-.216-1.824-.239V.479c.793.024 1.584.12 2.328.289l-.504 1.992zm-2.28-.239c-.605.021-1.207.094-1.8.216L9.528.744c.72-.168 1.487-.265 2.28-.265v2.042zm-2.28.334c-.586.167-1.156.384-1.704.649l-.96-1.824c.691-.343 1.415-.616 2.16-.816l.504 1.991zm-2.112.865c-.529.294-1.027.64-1.488 1.032L4.56 3.216c.6-.504 1.224-.936 1.896-1.319l.96 1.823zm.48.264l.888 1.871c-.792.408-1.464.96-2.04 1.608L5.136 6.168c.775-.895 1.711-1.636 2.76-2.184zM4.848 6.552l1.608 1.295c-.53.705-.921 1.503-1.152 2.353l-2.016-.456c.312-1.2.84-2.28 1.56-3.192zM3.24 8.4l-1.92-.72c.287-.72.648-1.416 1.08-2.04l1.68 1.176c-.341.494-.623 1.025-.84 1.584zm-.168.455c-.192.577-.36 1.152-.432 1.776L.6 10.393c.12-.769.288-1.537.553-2.257l1.919.719zm-.456 4.513c.096.6.239 1.2.432 1.776l-1.92.72c-.271-.728-.456-1.485-.552-2.257l2.04-.239zm.624 2.208c.239.576.528 1.104.84 1.607L2.4 18.336c-.435-.629-.797-1.306-1.08-2.016l1.92-.744zm.024-1.392l2.017-.456c.216.864.624 1.681 1.128 2.376L4.8 17.4c-.725-.957-1.247-2.051-1.536-3.216zm3.432 2.28c.577.672 1.272 1.248 2.064 1.656l-.912 1.872c-1.063-.557-2.009-1.315-2.784-2.232l1.632-1.296zm.72 3.815l-.96 1.825c-.674-.376-1.31-.819-1.896-1.321l1.368-1.535c.456.407.936.744 1.488 1.031zm.408.217c.528.264 1.104.48 1.705.647l-.504 1.992c-.747-.196-1.471-.469-2.16-.815l.959-1.824zm2.16.768c.576.12 1.176.193 1.8.217v2.039c-.774-.026-1.544-.114-2.305-.264l.505-1.992zm2.28.216c.605-.021 1.207-.094 1.801-.217l.479 1.992c-.749.168-1.513.264-2.28.287V21.48zm2.257-.336c.586-.165 1.155-.382 1.703-.647l.96 1.824c-.688.35-1.412.623-2.159.815l-.504-1.992zm2.086-.865c.528-.287 1.032-.647 1.488-1.031l1.369 1.535c-.588.502-1.223.945-1.896 1.321l-.961-1.825zm-.479-.263l-.888-1.871c.788-.414 1.489-.977 2.064-1.656l1.606 1.296c-.778.91-1.722 1.668-2.782 2.231zm3.071-2.592l-1.607-1.296c.532-.708.916-1.517 1.128-2.376l2.017.456c-.311 1.157-.831 2.248-1.538 3.216zM20.76 15.6l1.92.721c-.288.72-.648 1.392-1.079 2.04l-1.682-1.177c.337-.504.624-1.032.841-1.584zm.168-.455c.192-.553.336-1.152.433-1.752l2.039.239c-.11.761-.294 1.508-.551 2.232l-1.921-.719zm.456-9.841l-1.681 1.152c-.358-.49-.76-.947-1.199-1.368l1.368-1.536c.552.552 1.056 1.128 1.512 1.752zM4.2 3.528l1.368 1.536c-.456.408-.84.864-1.2 1.368l-1.68-1.176c.431-.636.94-1.216 1.512-1.728zM2.664 18.744l1.68-1.152c.36.48.769.937 1.2 1.369l-1.368 1.535c-.548-.545-1.054-1.131-1.512-1.752zm17.16 1.729l-1.368-1.537c.432-.407.841-.863 1.199-1.344l1.682 1.176c-.457.6-.961 1.175-1.513 1.705z" />
+                </svg>
+            </a>
+            <a href="https://alphauniverse.com/member/#/dotimothy" target="_blank" class="social-icon" title="Sony Alpha Universe" style="width: 60px; height: 60px; font-size: 2rem;">
+                <svg viewBox="0 0 232 166" style="width: 26px; height: auto; fill: currentColor; display: block; margin: auto;">
+                    <path d="m219 142.7c-27 2-33-11.4-38.5-27-4-11-8-25-10-32 12.5-19 27-42 48.5-76h-40.3c-7 11-14 22.6-21 33.7-2-5.6-4.7-11.6-8-16.7-10.4-15-25-25-46.7-23.7-28.7 1.8-50.5 15.6-68 33-16 16.1-31.7 39.6-33.5 66.2-2.4 35.6 23.6 56 53 58.3 23.3 1.8 40.8-4.4 55.5-12.1 10-5.2 31-23 37.5-30.8 4.7 21.8 17 42.8 44.3 42.8 17 0 27.7-9.3 33.5-16.5-2 .2-4.3.4-6.8.5zM88.6 129.5c-6.3 4.5-14.4 9.4-22.8 10.7-21 3.3-30.4-13.1-28.9-35 1.1-17 7.9-32.8 15.8-46.6 8.1-14 17.6-26.5 28.4-34 3.9-2.7 9.7-5.9 17.7-6.5 19.4-1.6 26.5 19.4 31.4 37 2.3 8.2 3.8 16.6 4.6 21-5.5 8.1-22.7 36.3-46.3 53.4z" />
+                </svg>
+            </a>
+            <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" class="social-icon" title="Contact" style="width: 60px; height: 60px; font-size: 2rem;"><i class="fas fa-envelope"></i></a>
+        </div>`;
+
+        const nodesData = [
+            { 
+                name: "TheDoShoots", pos: [0, 2, -10], color: 0xffffff, 
+                img: "./assets/tim.jpg",
+                text: "PHOTOGRAPHER • ENGINEER • EXPLORER." + socialHTML + gearHTML,
+                isProfile: true
+            },
+            { 
+                name: "Journey", pos: [-15, 5, -20], color: 0xffaa00, 
+                img: "./assets/photographer.jpg",
+                text: "My passion began years ago, watching my father capture family memories on his vintage Canon T2i. What started as a hobby evolved into a relentless pursuit to paint thousands of words with the pictures I take. From a dark scenic space to the vast wilderness, photography became my language for showcasing the ever-changing beauty of the world."
+            },
+            { 
+                name: "Photographer", pos: [12, 8, -30], color: 0xff0055, 
+                img: "./assets/starshalo.jpg",
+                text: "My lens is drawn to the vast scenes around the earth. In the darkness of the night, I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep colors of the Orion Nebula far away from artificial light pollution. By day, I traverse National and State Parks to honor the creations of Mother Nature through landscape photography."
+            },
+            { 
+                name: "Engineer", pos: [15, -5, -45], color: 0x00e5ff, 
+                img: "https://timothydo.me/images/TheDoProSolo.jpg",
+                text: "With a Master's degree in Electrical and Computer Engineering from UCLA, I bring technical precision to the art of capturing a picture. Understanding image acquisition, sensor mechanics, and signal processing allows me to push the boundaries of what a camera can capture, blending technology with creativity." 
+            },
+            { 
+                name: "Explorer", pos: [-10, -10, -60], color: 0x55ff55, 
+                img: "./assets/zion.jpg",
+                text: "From the depths of the cosmos to the raw display of national parks, I capture the most distinct parts of a specific place. As an Eagle Scout with the photography merit badge, nature is my second home. This portfolio is my window into a collection of moments where the universe stood still just long enough for the shutter to click." 
+            }
+        ];
+
+        window.onload = () => {
+            init3D();
+            setupScroll();
+            animate();
+            setTimeout(() => document.body.classList.add('shutter-open'), 100);
+            
+            // Keyboard Nav
+            document.addEventListener('keydown', (e) => {
+                if(!state.isSpatial) return;
+                if(e.key === 'ArrowLeft') navigateSpatial(-1);
+                if(e.key === 'ArrowRight') navigateSpatial(1);
+                if(e.key === 'Escape') closeSpatialModal();
+            });
+        };
 
         function init3D() {
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x050505, 0.0015);
-            scene.background = new THREE.Color(0x050505);
+            scene.fog = new THREE.FogExp2(0x050505, 0.002);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
             camera.position.z = 0;
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            dom.canvas.appendChild(renderer.domElement);
+
+            // Bloom
+            const renderPass = new THREE.RenderPass(scene, camera);
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0.1;
+            bloomPass.strength = 0.8;
+            bloomPass.radius = 0.5;
+            
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(renderPass);
+            composer.addPass(bloomPass);
 
             createStarTunnel();
-            createFloatingDecorations();
+            createSpatialNodes();
+
+            // Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.1);
+            scene.add(ambient);
+            const pLight = new THREE.PointLight(0xffffff, 1);
+            pLight.position.set(0, 0, 10);
+            scene.add(pLight);
+
+            // Controls (Locked initially for scroll mode)
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableZoom = false;
+            controls.enablePan = false;
+            controls.enabled = false; 
 
             window.addEventListener('resize', onResize);
-            window.addEventListener('scroll', onScroll);
-
-            updateContentVisibility(); // Initial check
-            animate();
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('click', onNodeClick);
         }
 
         function createStarTunnel() {
-            const count = 8000;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(count * 3);
-            const colors = new Float32Array(count * 3);
-            const color = new THREE.Color();
-
-            for (let i = 0; i < count; i++) {
-                const r = 20 + Math.random() * 100;
+            const count = 10000;
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(count * 3);
+            
+            for(let i=0; i<count; i++) {
+                const r = 20 + Math.random() * 200;
                 const theta = Math.random() * Math.PI * 2;
-                const z = (Math.random() * starTunnelDepth) - starTunnelDepth;
-
-                const x = r * Math.cos(theta) * (Math.random() * 5 + 1);
-                const y = r * Math.sin(theta) * (Math.random() * 5 + 1);
-
-                positions[i * 3] = x;
-                positions[i * 3 + 1] = y;
-                positions[i * 3 + 2] = z;
-
-                if (Math.random() > 0.8) color.setHex(0x00e5ff);
-                else color.setHex(0xffffff);
-
-                colors[i * 3] = color.r;
-                colors[i * 3 + 1] = color.g;
-                colors[i * 3 + 2] = color.b;
+                const z = (Math.random() * 2000) - 1000;
+                
+                pos[i*3] = r * Math.cos(theta);
+                pos[i*3+1] = r * Math.sin(theta);
+                pos[i*3+2] = z;
             }
-
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-            starMaterial = new THREE.PointsMaterial({
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            
+            const mat = new THREE.PointsMaterial({
+                color: 0xffffff,
                 size: 0.8,
-                vertexColors: true,
                 transparent: true,
-                opacity: 0.8,
-                sizeAttenuation: true
+                opacity: 0.6
             });
-
-            stars = new THREE.Points(geometry, starMaterial);
-            scene.add(stars);
+            starSystem = new THREE.Points(geo, mat);
+            scene.add(starSystem);
         }
 
-        function createFloatingDecorations() {
-            const geo = new THREE.IcosahedronGeometry(10, 0);
-            const mat = new THREE.MeshBasicMaterial({
-                color: 0x333333,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.1
-            });
+        function createSpatialNodes() {
+            spatialGroup = new THREE.Group();
+            spatialGroup.visible = false; 
+            scene.add(spatialGroup);
+            
+            const texLoader = new THREE.TextureLoader();
 
-            for (let i = 0; i < 5; i++) {
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(
-                    (Math.random() - 0.5) * 100,
-                    (Math.random() - 0.5) * 60,
-                    -500 - (i * 400)
+            nodesData.forEach((data, index) => {
+                // Parent Group for Roaming
+                const nodeParent = new THREE.Group();
+                nodeParent.userData = {
+                    initialPos: new THREE.Vector3(...data.pos),
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 0.5 + Math.random() * 0.5,
+                    range: 3 + Math.random() * 5
+                };
+                nodeParent.position.copy(nodeParent.userData.initialPos);
+                
+                let mesh;
+                
+                if (data.isProfile) {
+                    // Profile Planet - Sphere with Texture
+                    const geo = new THREE.SphereGeometry(4, 32, 32);
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: 0xffffff,
+                        map: texLoader.load(data.img),
+                        roughness: 0.4,
+                        metalness: 0.1
+                    });
+                    mesh = new THREE.Mesh(geo, mat);
+                } else {
+                    // Standard Node - Icosahedron
+                    const geo = new THREE.IcosahedronGeometry(4, 1);
+                    const mat = new THREE.MeshPhongMaterial({
+                        color: data.color,
+                        flatShading: true,
+                        emissive: data.color,
+                        emissiveIntensity: 0.2
+                    });
+                    mesh = new THREE.Mesh(geo, mat);
+                }
+
+                mesh.userData = { 
+                    originalColor: data.color, 
+                    isEngineer: data.name === 'Engineer',
+                    title: data.name,
+                    text: data.text,
+                    img: data.img,
+                    index: index // Store index for navigation
+                };
+                
+                // Ring (Child of Mesh)
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(6, 0.1, 16, 100),
+                    new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.3 })
                 );
-                mesh.scale.setScalar(Math.random() * 2 + 1);
-                scene.add(mesh);
-                floatingGroups.push(mesh);
+                mesh.add(ring);
+                nodeParent.add(mesh);
+
+                // Label (Child of Parent)
+                const label = createLabel(data.name);
+                label.position.set(0, 8, 0); 
+                label.scale.set(24, 6, 1); 
+                nodeParent.add(label);
+
+                spatialGroup.add(nodeParent);
+                spatialNodes.push(nodeParent); // Store for nav
+            });
+        }
+
+        function createLabel(text) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+            
+            ctx.fillStyle = "rgba(0,0,0,0)"; 
+            ctx.fillRect(0,0,512,128); 
+            
+            ctx.font = "bold 60px Roboto, sans-serif";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.shadowColor = "#00e5ff";
+            ctx.shadowBlur = 15;
+            ctx.fillText(text.toUpperCase(), 256, 64);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+            const sprite = new THREE.Sprite(mat);
+            return sprite;
+        }
+
+        function setupScroll() {
+            window.addEventListener('scroll', () => {
+                if(state.isSpatial) return;
+                
+                // Warp Drive Effect based on Scroll
+                const st = window.scrollY;
+                const max = document.body.scrollHeight - window.innerHeight;
+                
+                // Acceleration
+                state.targetSpeed = 0.2 + (Math.abs(st - (state.lastScroll || 0)) * 0.1);
+                state.lastScroll = st;
+
+                // Sync HTML Sections Visibility
+                const sections = document.querySelectorAll('.section');
+                sections.forEach(sec => {
+                    const rect = sec.getBoundingClientRect();
+                    // Threshold for activation (middle of screen)
+                    if(rect.top < window.innerHeight * 0.6 && rect.bottom > 0) {
+                        sec.classList.add('active');
+                    } else {
+                        sec.classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        window.toggleMode = function() {
+            state.isSpatial = !state.isSpatial;
+            dom.toggle.classList.toggle('active');
+
+            if (state.isSpatial) {
+                // Switch to Spatial 3D
+                dom.scroll.classList.add('hidden');
+                dom.aurora.classList.add('hidden'); // Hide CSS bg
+                dom.canvas.classList.add('active'); // Show 3D canvas
+                dom.nav.classList.add('active'); // Show Nav
+                
+                setTimeout(() => { if(state.isSpatial) dom.scroll.style.display = 'none'; }, 500);
+                
+                spatialGroup.visible = true;
+                controls.enabled = true;
+                dom.hint.classList.add('active');
+                
+                // Move camera back to start of "Hallway"
+                new TWEEN.Tween(camera.position).to({x:0, y:0, z: 20}, 1500).easing(TWEEN.Easing.Cubic.Out).start();
+
+            } else {
+                // Switch to 2D Scroll
+                dom.scroll.style.display = 'block';
+                dom.aurora.classList.remove('hidden'); // Show CSS bg
+                dom.canvas.classList.remove('active'); // Hide 3D canvas
+                dom.nav.classList.remove('active'); // Hide Nav
+                
+                setTimeout(() => dom.scroll.classList.remove('hidden'), 50);
+                
+                spatialGroup.visible = false;
+                controls.enabled = false;
+                controls.reset();
+                dom.hint.classList.remove('active');
+                
+                new TWEEN.Tween(camera.position).to({x:0, y:0, z: 0}, 1000).start();
+                
+                focusedNode = null;
             }
+        };
+        
+        window.navigateSpatial = function(dir) {
+            if(!state.isSpatial) return;
+            
+            // Cycle through nodes
+            currentNavIndex += dir;
+            if (currentNavIndex >= spatialNodes.length) currentNavIndex = 0;
+            if (currentNavIndex < 0) currentNavIndex = spatialNodes.length - 1;
+            
+            const targetNodeGroup = spatialNodes[currentNavIndex];
+            if(!targetNodeGroup) return;
+            
+            // Find the actual mesh inside the group (it's the first child usually)
+            const targetMesh = targetNodeGroup.children.find(c => c.isMesh);
+            if(targetMesh) {
+                openNodeContent(targetMesh.userData);
+                // Set as focused node for tracking
+                focusedNode = targetNodeGroup;
+            }
+        }
+        
+        window.goBack = function() {
+            if (window.parent && window.parent.closeFrame) {
+                window.parent.closeFrame();
+            } else {
+                window.location.href = 'index.html';
+            }
+        };
+
+        function onMouseMove(e) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            if (state.isSpatial && spatialGroup.visible) {
+                raycaster.setFromCamera(mouse, camera);
+                // Check against meshes (children of groups)
+                const targets = [];
+                spatialGroup.children.forEach(g => {
+                    g.children.forEach(c => {
+                        if (c.isMesh) targets.push(c);
+                    });
+                });
+                
+                const intersects = raycaster.intersectObjects(targets);
+
+                // Reset all to default
+                targets.forEach(mesh => {
+                    // Reset Engineer Material
+                    if (mesh.userData.isEngineer) {
+                        mesh.material.wireframe = false;
+                    }
+                    mesh.scale.setScalar(1);
+                });
+
+                if (intersects.length > 0) {
+                    const hit = intersects[0].object;
+                    document.body.style.cursor = 'pointer';
+                    hit.scale.setScalar(1.2);
+                    state.targetSpeed = 1.5; // Warp speed on hover
+                    
+                    // Engineer Special Effect
+                    if (hit.userData.isEngineer) {
+                        hit.material.wireframe = true;
+                    }
+                } else {
+                    document.body.style.cursor = 'default';
+                    state.targetSpeed = 0.2;
+                }
+            }
+        }
+
+        function onNodeClick() {
+            if (!state.isSpatial) return;
+            raycaster.setFromCamera(mouse, camera);
+             const targets = [];
+                spatialGroup.children.forEach(g => {
+                    g.children.forEach(c => {
+                        if (c.isMesh) targets.push(c);
+                    });
+                });
+            const intersects = raycaster.intersectObjects(targets);
+            
+            if (intersects.length > 0) {
+                const targetMesh = intersects[0].object;
+                openNodeContent(targetMesh.userData);
+                // Find parent group for tracking
+                focusedNode = targetMesh.parent;
+                // Update nav index
+                currentNavIndex = targetMesh.userData.index;
+            }
+        }
+        
+        function openNodeContent(data) {
+            dom.mTitle.innerText = data.title;
+            dom.mText.innerHTML = data.text;
+            
+            // Show Image if available
+            if (data.img) { 
+                dom.mImg.src = data.img;
+                dom.mImg.style.display = 'block';
+            } else {
+                dom.mImg.style.display = 'none';
+            }
+
+            dom.modal.classList.add('active');
+        }
+
+        window.closeSpatialModal = function() {
+            dom.modal.classList.remove('active');
+            focusedNode = null; // Stop tracking when closed
         }
 
         function onResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        function onScroll() {
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            const maxScroll = document.body.scrollHeight - window.innerHeight;
-            scrollPercent = Math.max(0, Math.min(1, scrollTop / maxScroll));
-
-            updateContentVisibility();
-        }
-
-        function updateContentVisibility() {
-            const sections = document.querySelectorAll('.section');
-            const dots = document.querySelectorAll('.dot');
-            const returnBtn = document.getElementById('returnBtn');
-
-            // Logic for 5 Sections (0, 1, 2, 3, 4)
-            let activeIndex = 0;
-            if (scrollPercent > 0.2) activeIndex = 1;
-            if (scrollPercent > 0.4) activeIndex = 2;
-            if (scrollPercent > 0.6) activeIndex = 3;
-            if (scrollPercent > 0.8) activeIndex = 4;
-
-            sections.forEach((sec, idx) => {
-                if (idx === activeIndex) sec.classList.add('active');
-                else sec.classList.remove('active');
-            });
-
-            dots.forEach((dot, idx) => {
-                if (idx === activeIndex) dot.classList.add('active');
-                else dot.classList.remove('active');
-            });
-
-            // Button Logic: Only enable on the final section (Index 4)
-            if (activeIndex === 4) {
-                returnBtn.classList.add('enabled');
-            } else {
-                returnBtn.classList.remove('enabled');
-            }
-        }
-
-        function scrollToSection(index) {
-            const maxScroll = document.body.scrollHeight - window.innerHeight;
-            let targetP = index * 0.25;
-
-            window.scrollTo({
-                top: targetP * maxScroll,
-                behavior: 'smooth'
-            });
-        }
-
-        function goBack() {
-            try {
-                if (window.parent && window.parent.closeIframe) {
-                    window.parent.closeIframe();
-                    return;
-                }
-            } catch (e) { }
-
-            try {
-                window.top.location.href = 'index.html';
-            } catch (e) {
-                window.location.href = 'index.html';
-            }
-        }
-
-        function animate() {
+        function animate(time) {
             requestAnimationFrame(animate);
+            TWEEN.update(time);
 
-            // 1. SCROLL MOVEMENT
-            const targetZ = -(scrollPercent * 1500);
-            camera.position.z += (targetZ - camera.position.z) * 0.05;
+            // Performance: Skip 3D render loop entirely if in 2D mode
+            if (!state.isSpatial && !dom.canvas.classList.contains('active')) return;
 
-            // 2. INFINITE STAR LOOP
-            if (stars) {
-                stars.rotation.z += 0.001;
+            controls.update();
 
-                const positions = stars.geometry.attributes.position.array;
-                const speed = 2.0 + (scrollPercent * 10);
+            // 1. STAR WARP (Ambient)
+            if(state.targetSpeed > 0.2) state.targetSpeed *= 0.95;
+            state.starSpeed += (state.targetSpeed - state.starSpeed) * 0.1;
 
-                for (let i = 2; i < positions.length; i += 3) {
-                    positions[i] += speed;
-                    if (positions[i] > 200) {
-                        positions[i] = -starTunnelDepth;
-                    }
+            if (starSystem) {
+                const positions = starSystem.geometry.attributes.position.array;
+                for(let i=2; i<positions.length; i+=3) {
+                    positions[i] += state.starSpeed;
+                    if (positions[i] > 200) positions[i] = -1000; // Reset loop
                 }
-                stars.geometry.attributes.position.needsUpdate = true;
+                starSystem.geometry.attributes.position.needsUpdate = true;
+                starSystem.rotation.z += 0.0005;
             }
 
-            floatingGroups.forEach((mesh, i) => {
-                mesh.rotation.x += 0.001 * (i + 1);
-                mesh.rotation.y += 0.002;
-                mesh.position.z += 0.5;
-                if (mesh.position.z > 200) mesh.position.z = -2000;
-            });
+            // 2. PLANET ROAMING (Independent)
+            if (spatialGroup.visible) {
+                const t = time * 0.001;
+                spatialGroup.children.forEach(nodeParent => {
+                    // Drift Position
+                    const p = nodeParent.userData;
+                    nodeParent.position.x = p.initialPos.x + Math.sin(t * p.speed + p.phase) * p.range;
+                    nodeParent.position.y = p.initialPos.y + Math.cos(t * p.speed * 0.8 + p.phase) * p.range;
+                    nodeParent.position.z = p.initialPos.z + Math.sin(t * p.speed * 0.5 + p.phase) * (p.range * 0.5);
 
-            renderer.render(scene, camera);
+                    // Spin Mesh (The first child is always the mesh)
+                    const mesh = nodeParent.children[0];
+                    if (mesh && mesh.isMesh) {
+                        mesh.rotation.y += 0.005; 
+                        mesh.rotation.x += 0.002;
+                    }
+                });
+                
+                // 3. CAMERA TRACKING
+                if (focusedNode) {
+                    // Smoothly interpolate lookAt to the moving node
+                    const targetPos = focusedNode.position.clone();
+                    controls.target.lerp(targetPos, 0.05);
+                    
+                    // Ideally, we might want to move the camera to keep distance, but orbit controls handles the orbit.
+                    // Just updating the target keeps the node centered.
+                }
+            }
+
+            composer.render();
         }
-
-        init3D();
     </script>
 </body>
-
 </html>
