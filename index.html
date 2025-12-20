@@ -43,9 +43,12 @@
         padding: 0;
         width: 100vw;
         height: 100vh;
-        background-color: var(--bg-dark);
+        background-color: #000000;
+        /* Pure black for drama */
         overflow: hidden;
         color: var(--primary-color);
+        touch-action: none;
+        /* Prevent scroll on 3D view */
     }
 
     /* --- 2D MODE (Northern Lights Style) --- */
@@ -58,8 +61,8 @@
         display: none;
         flex-direction: column;
 
-        /* Deep Base */
-        background-color: #02040a;
+        /* Pure Black Base */
+        background-color: #000000;
 
         /* The Moving Color Blobs */
         background-image:
@@ -114,6 +117,21 @@
         }
     }
 
+    /* Scanline Effect */
+    #mode-2d::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background-size: 100% 4px, 3px 100%;
+        pointer-events: none;
+        z-index: 100;
+        opacity: 0.15;
+    }
+
     #mode-2d.active {
         display: flex;
     }
@@ -150,13 +168,15 @@
     }
 
     .glitch-title {
-        font-size: 5rem;
+        font-size: clamp(2.5rem, 10vw, 5rem);
+        /* Fluid typography */
         font-weight: 900;
         letter-spacing: -2px;
         color: white;
-        margin-bottom: 4rem;
+        margin-bottom: 2rem;
         position: relative;
-        text-shadow: 2px 2px 0px var(--museum-theme);
+        text-shadow: 0 0 20px var(--museum-theme);
+        /* Enhanced glow */
         animation: glitch-anim 5s infinite;
     }
 
@@ -229,6 +249,44 @@
         border-radius: 4px;
         overflow: hidden;
         animation: fadeInUp 1s ease-out backwards;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .nav-card {
+            width: 90%;
+            max-width: 350px;
+            padding: 30px 20px;
+        }
+
+        .nav-grid {
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .hero-container {
+            justify-content: flex-start;
+            padding-top: 60px;
+        }
+
+        .profile-pic-2d {
+            width: 180px;
+            height: 180px;
+        }
+
+        .controls-container {
+            top: auto;
+            bottom: 30px;
+            right: 20px;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 45px;
+            height: 45px;
+        }
     }
 
     .nav-card:nth-child(1) {
@@ -476,13 +534,14 @@
     .welcome-text h1 {
         font-family: 'Roboto', sans-serif;
         font-weight: 900;
-        font-size: 4rem;
+        font-size: clamp(2.5rem, 12vw, 4rem);
         margin: 0;
         letter-spacing: -2px;
         background: linear-gradient(to right, #fff, #aaa);
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
     }
 
     .explore-btn {
@@ -636,20 +695,27 @@
 
     .close-iframe {
         position: absolute;
-        bottom: 30px;
-        right: 30px;
-        padding: 10px 20px;
-        background: rgba(0, 0, 0, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        bottom: 25px;
+        /* Moved to bottom */
+        left: 25px;
+        /* and left as requested */
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         color: white;
-        border-radius: 30px;
+        border-radius: 50%;
+        /* Circular X button */
         cursor: pointer;
-        font-weight: 700;
+        font-size: 1.2rem;
         transition: 0.2s;
-        z-index: 4001;
-        backdrop-filter: blur(5px);
-        font-family: 'Roboto', sans-serif;
-        letter-spacing: 1px;
+        z-index: 5000;
+        /* Higher priority */
+        backdrop-filter: blur(10px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     }
 
     .close-iframe:hover {
@@ -728,6 +794,11 @@
         <div id="fps-counter">FPS: 60</div>
 
         <div class="controls-container">
+            <!-- HOME BUTTON -->
+            <button class="icon-btn interactive-element" id="btn-home" title="Go to Home (2D)">
+                <i class="fas fa-home"></i>
+            </button>
+
             <button class="icon-btn interactive-element" id="btn-mute" title="Mute Audio">
                 <i class="fas fa-volume-mute"></i>
             </button>
@@ -835,10 +906,12 @@
         </div>
     </div>
 
-    <!-- IFRAME OVERLAY -->
-    <div class="iframe-container" id="iframe-overlay">
-        <button class="close-iframe" onclick="closeiFrame()">CLOSE PREVIEW</button>
-        <iframe id="content-frame" src="about:blank"></iframe>
+    <!-- IFRAME OVERLAY FOR EXHIBITS -->
+    <div class="iframe-container" id="iframe-container">
+        <button class="close-iframe" id="close-iframe" title="Close Preview">
+            <i class="fas fa-times"></i>
+        </button>
+        <iframe src="" id="exhibit-iframe"></iframe>
     </div>
 
     <script>
@@ -856,13 +929,13 @@
 
         // --- DOM ELEMENTS ---
         const els = {
-            mode3d: document.getElementById('mode-3d'),
             mode2d: document.getElementById('mode-2d'),
+            mode3d: document.getElementById('mode-3d'),
             welcome: document.getElementById('welcome-screen'),
             fps: document.getElementById('fps-counter'),
             settingsOverlay: document.getElementById('settings-overlay'),
-            iframeOverlay: document.getElementById('iframe-overlay'),
-            iframe: document.getElementById('content-frame'),
+            iframeOverlay: document.getElementById('iframe-container'), // Corrected
+            iframe: document.getElementById('exhibit-iframe'),        // Corrected
             toggles: {
                 mode3d: document.getElementById('toggle-3d-mode'),
                 stars: document.getElementById('toggle-stars'),
@@ -927,8 +1000,15 @@
             }
             state.hasExplored = false;
 
+            // Saved Data Saver
+            const savedSaver = localStorage.getItem('datasaver');
+            if (savedSaver !== null) {
+                state.dataSaver = savedSaver === 'true';
+            }
+
             // Sync UI Toggles
             updateToggleUI(els.toggles.mode3d, state.is3D);
+            updateToggleUI(els.toggles.saver, state.dataSaver);
         }
 
         function setupEventListeners() {
@@ -950,12 +1030,36 @@
             setupToggle(els.toggles.mode3d, (val) => toggleMode(val));
             setupToggle(els.toggles.stars, (val) => { state.highDensityStars = val; createStarfield(); });
             setupToggle(els.toggles.direct, (val) => { state.directLinks = val; updateUI(); });
-            setupToggle(els.toggles.saver, (val) => { state.dataSaver = val; updateUI(); });
+            setupToggle(els.toggles.saver, (val) => {
+                state.dataSaver = val;
+                localStorage.setItem('datasaver', val);
+                updateUI();
+            });
+
+            // Home Button Logic
+            document.getElementById('btn-home').addEventListener('click', () => {
+                sfx.click();
+                toggleMode(false); // Go to 2D
+            });
+
+            // Close Iframe Logic
+            document.getElementById('close-iframe').addEventListener('click', () => {
+                closeiFrame();
+            });
 
             // Raycaster Interaction
             window.addEventListener('resize', onResize);
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('click', onCanvasClick);
+
+            // Touch support for mobile interaction
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) {
+                    mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
+                    checkIntersections(true);
+                }
+            }, { passive: true });
 
             // Mute Toggle Logic
             const muteBtn = document.getElementById('btn-mute');
@@ -1070,7 +1174,7 @@
                 // Angle 0 = Front, Angle Math.PI (3.14) = Back
                 const orbitData = {
                     angle: 0,   // Start at the front
-                    radius: 75, // Start distance
+                    radius: window.innerWidth < 768 ? 100 : 75, // Match initial camera position
                     lift: 0     // Y height
                 };
 
@@ -1083,9 +1187,9 @@
                 new TWEEN.Tween(orbitData)
                     .to({
                         angle: Math.PI, // Rotate 180 degrees to the back
-                        radius: 25,     // Zoom in close to the screen
+                        radius: window.innerWidth < 768 ? 40 : 25, // Final zoom distance
                         lift: 0         // Keep vertically centered
-                    }, 1500)            // Duration: 1 Seconds (Slower is more cinematic)
+                    }, 1500)            // Duration
                     .easing(TWEEN.Easing.Cubic.InOut) // Smooth acceleration/deceleration
                     .onUpdate(() => {
                         // MATH: Convert Polar Angle to Cartesian (X, Z) Position
@@ -1120,9 +1224,9 @@
 
             // Position camera based on exploration state
             if (state.hasExplored) {
-                camera.position.set(0, 0, 25);
+                camera.position.set(0, 0, window.innerWidth < 768 ? 40 : 25);
             } else {
-                camera.position.set(0, 0, 75);
+                camera.position.set(0, 0, window.innerWidth < 768 ? 100 : 75);
             }
 
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -1226,8 +1330,8 @@
         function createStarfield() {
             if (starSystem) scene.remove(starSystem);
 
-            // Increased density
-            const count = state.highDensityStars ? 50000 : 10000;
+            // Increased density for drama
+            const count = state.highDensityStars ? 80000 : 20000;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(count * 3);
             const sizes = new Float32Array(count);
@@ -1479,11 +1583,16 @@
 
         // --- INTERACTION LOGIC ---
         function onResize() {
+            const width = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+            const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
             if (camera) {
-                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.aspect = width / height;
                 camera.updateProjectionMatrix();
             }
-            if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+            if (renderer) {
+                renderer.setSize(width, height);
+            }
         }
 
         function onMouseMove(e) {
@@ -1532,10 +1641,16 @@
         }
 
         window.handleNav = function (url, isInternal) {
+            // Passthrough logic: Append current settings to the URL
+            const modeParam = state.is3D ? '3d' : '2d';
+            const datasaverParam = state.dataSaver ? '1' : '0';
+            const separator = url.includes('?') ? '&' : '?';
+            const finalUrl = `${url}${separator}mode=${modeParam}&datasaver=${datasaverParam}`;
+
             if (state.directLinks || !isInternal) {
-                window.open(url, '_blank');
+                window.open(finalUrl, '_blank');
             } else {
-                els.iframe.src = url;
+                els.iframe.src = finalUrl;
                 els.iframeOverlay.classList.add('active');
             }
         };
@@ -1562,10 +1677,16 @@
             TWEEN.update();
             if (controls) controls.update();
 
-            // Subtle floating animation
+            // Dramatic Cam Pulse & Float
             if (camGroup) {
+                const isMobile = window.innerWidth < 768;
+                const baseScale = isMobile ? 1.0 : 1.4; // Smaller base scale for mobile
+                const pulseAmt = isMobile ? 0.05 : 0.2; // Subtler pulse for mobile
+                const pulse = Math.sin(now * 0.001) * pulseAmt;
+
                 camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
                 camGroup.rotation.z = Math.sin(now * 0.0002) * .02;
+                camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
             }
 
             if (starSystem) {
