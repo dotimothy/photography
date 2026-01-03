@@ -1,7 +1,11 @@
-tmp
+// TheDoShoots Photography Portfolio .gitignore
+
+tmp/
 *metadata/
 *thumbs/
 *css
 */index.html
 */css
 */js
+portfolios/
+*.DS_STORE*
