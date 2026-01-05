@@ -31,7 +31,8 @@ PORTFOLIOS_ROOT = './portfolios'
 # Map folder names to Display Titles
 GALLERY_CONFIG = {
     'astronomy': '🌌 Astronomy 🌌',
-    'wildlife':  '🐿️ Wildlife 🐿️'
+    'wildlife':  '🐿️ Wildlife 🐿️',
+    'landscape': '🏞️ Landscape 🏞️'
 }
 
 class color:
@@ -111,56 +112,69 @@ def download_worker(task):
 def watermark_worker(image_path):
     """
     Worker function to apply watermark to a single image.
-    Resizes watermark to 20% of image width.
-    Places watermark at bottom-right with 5% vertical padding.
-    Maximizes quality by detecting format and disabling subsampling for JPEGs.
+    Features:
+    - Resizes watermark to 20% of image width.
+    - Places watermark at bottom-right with 5% vertical padding.
+    - Sets watermark transparency to 70%.
+    - Preserves EXIF data from original image.
+    - Maximizes output quality.
     """
     if not os.path.exists(WATERMARK_PATH):
         return
         
     try:
-        # Open and detect format before conversion
+        exif_bytes = None
+        # Open and capture info before processing
         with Image.open(image_path) as img_src:
             original_format = img_src.format
+            # 1. Capture EXIF data
+            exif_bytes = img_src.info.get('exif')
             base_image = img_src.convert("RGBA")
             
         watermark = Image.open(WATERMARK_PATH).convert("RGBA")
 
-        # 1. Resize Watermark relative to image width (20%)
+        # 2. Adjust Watermark Opacity (Transparency)
+        # Scale alpha channel by 0.90 (90% opacity)
+        alpha = watermark.getchannel('A')
+        new_alpha = alpha.point(lambda i: int(i * 0.9))
+        watermark.putalpha(new_alpha)
+
+        # 3. Resize Watermark relative to image width (20%)
         target_width = int(base_image.width * 0.20)
         aspect_ratio = watermark.height / watermark.width
         target_height = int(target_width * aspect_ratio)
         
-        # High-quality resize using Lanczos
         if target_width > 0 and target_height > 0:
             watermark = watermark.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
-        # 2. Calculate position 
+        # 4. Calculate position 
         width, height = base_image.size
         wm_width, wm_height = watermark.size
         
-        # Bottom 5% calculation
-        padding_x = int(width * 0.02)  # Keep 2% right padding
-        padding_y = int(height * 0.05) # Set 5% bottom padding
         
-        position = (width - wm_width - padding_x, height - wm_height - padding_y)
+        position = (width - wm_width, height - wm_height)
 
-        # 3. Composite
+        # 5. Composite
         transparent_layer = Image.new('RGBA', base_image.size, (0,0,0,0))
         transparent_layer.paste(watermark, position, mask=watermark)
         output = Image.alpha_composite(base_image, transparent_layer)
         
-        # 4. Save preserving format and maximizing quality
+        # Prepare Save Arguments
+        save_kwargs = {}
+        if exif_bytes:
+            save_kwargs['exif'] = exif_bytes
+
+        # 6. Save preserving format, quality, and EXIF
         if original_format == 'JPEG' or image_path.lower().endswith(('.jpg', '.jpeg')):
             output = output.convert("RGB")
             # quality=100: Minimum compression
             # subsampling=0: Disable chroma subsampling (4:4:4)
-            output.save(image_path, format='JPEG', quality=100, subsampling=0)
+            output.save(image_path, format='JPEG', quality=100, subsampling=0, **save_kwargs)
         elif original_format == 'PNG' or image_path.lower().endswith('.png'):
-            output.save(image_path, format='PNG')
+            output.save(image_path, format='PNG', **save_kwargs)
         else:
             output = output.convert("RGB")
-            output.save(image_path, quality=100)
+            output.save(image_path, quality=100, **save_kwargs)
         
     except Exception as e:
         print(f"\n[Watermark Error] Failed to watermark {image_path}: {e}")
@@ -177,7 +191,6 @@ def download_portfolio_assets(csv_path):
                 # Flexibly handle 'File ID' or 'Link' columns
                 file_id = row.get('File ID') or row.get('Link')
                 file_name = row['File Name']
-                # UPDATED: Path includes PORTFOLIOS_ROOT
                 target_path = os.path.join(PORTFOLIOS_ROOT, gallery, 'fulls', file_name)
                 tasks.append((file_id, target_path))
     except FileNotFoundError:
@@ -185,6 +198,7 @@ def download_portfolio_assets(csv_path):
         return
 
     num_processes = min(16, cpu_count(), len(tasks))
+    print(f'Using {num_processes} Downloader Workers')
     with Pool(processes=num_processes) as pool:
         list(tqdm.tqdm(pool.imap_unordered(download_worker, tasks), total=len(tasks), unit="img"))
 
@@ -197,7 +211,6 @@ def prepareGallery(args_tuple):
         time.sleep(0.1)
         return f"{gallery} (Dry Run)"
 
-    # UPDATED: Paths include PORTFOLIOS_ROOT
     galleryDir = os.path.join(PORTFOLIOS_ROOT, gallery)
     htmlPath = os.path.join(galleryDir, 'index.html')
     fullsPath = os.path.join(galleryDir, 'fulls')
@@ -210,7 +223,6 @@ def prepareGallery(args_tuple):
     if modifyGPS:
          print(f"{color.BOLD} {log_prefix} Modifying EXIF...{color.END}")
          exif_script_path = os.path.abspath('./tmp/gallery/prepareExif.py')
-         # Calculate relative path from ./tmp/gallery back to the portfolio fulls
          fulls_rel_path = f'../../{fullsPath}'
 
          server_process = subprocess.Popen(
@@ -277,21 +289,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Determine galleries to process
     target_galleries = {k: v for k, v in GALLERY_CONFIG.items() if not args.select or k in args.select}
 
     print(f"{color.BOLD}*** TheDoShoots Portfolio Preperation Engine ***{color.END}")
     
-    # --- PRINT SELECTED GALLERIES ---
-    print(f"Target Galleries (Total: {len(target_galleries)}):")
-    for i, title in enumerate(target_galleries.values()):
-        print(f"{i+1}. {title}")
+    print(f"Target Galleries ({len(target_galleries)}):")
+    for key, title in target_galleries.items():
+        print(f" - {key}: {title}")
 
     # --- STEP 0: CLEANING ---
     if (args.clean or args.full_clean) and not args.dry_run:
         print(f"\n{color.BOLD}*** Step 0: Cleaning Workspace... ***{color.END}")
         
-        # UPDATED: Full clean now just nukes the PORTFOLIOS_ROOT
         if args.full_clean:
             if os.path.exists(PORTFOLIOS_ROOT):
                 print(f"[Full Clean] Removing {PORTFOLIOS_ROOT}/")
@@ -301,7 +310,6 @@ if __name__ == '__main__':
                 print(f"[Full Clean] Deleting {PORTFOLIO_CSV_PATH}")
                 os.remove(PORTFOLIO_CSV_PATH)
                 
-        # UPDATED: Normal clean iterates inside PORTFOLIOS_ROOT
         elif args.clean and os.path.exists(PORTFOLIOS_ROOT):
             print(f"[Normal Clean] Deleting Assets inside {PORTFOLIOS_ROOT}/ (Keeping images)")
             for gallery in target_galleries.keys():
@@ -330,10 +338,8 @@ if __name__ == '__main__':
         if not os.path.exists(WATERMARK_PATH):
             print(f"\n{color.BOLD}[Warning] Watermark file not found at {WATERMARK_PATH}. Skipping...{color.END}")
         else:
-            print(f"\n{color.BOLD}*** Step 1.5: Applying Watermarks... ***{color.END}")
             all_images = []
             
-            # UPDATED: Iterate inside PORTFOLIOS_ROOT
             for gallery in target_galleries.keys():
                 fulls_path = os.path.join(PORTFOLIOS_ROOT, gallery, 'fulls')
                 if os.path.exists(fulls_path):
@@ -343,6 +349,7 @@ if __name__ == '__main__':
             
             if all_images:
                 num_processes = args.jobs or min(cpu_count(), len(all_images))
+                print(f"\n{color.BOLD}*** Step 1.5: Applying Watermarks with {num_processes} Workers ***{color.END}")
                 with Pool(processes=num_processes) as pool:
                     list(tqdm.tqdm(pool.imap_unordered(watermark_worker, all_images), total=len(all_images), unit="img"))
             else:

@@ -7,4 +7,5 @@ tmp/
 */css
 */js
 portfolios/
+assets/portfolio.csv
 *.DS_STORE*
