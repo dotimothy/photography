@@ -1,5 +1,4 @@
 // TheDoShoots Photography Portfolio .gitignore
-
 tmp/
 *metadata/
 *thumbs/
