@@ -1,7 +1,9 @@
 tmp
+*.DS_STORE
 *metadata/
 *thumbs/
 *css
 */index.html
 */css
 */js
+portfolios/
