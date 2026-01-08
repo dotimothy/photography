@@ -28,11 +28,13 @@ PORTFOLIO_CSV_ID = '1PrLEoVooon_-rOZRGzH1BuZbNWLaHDqV'
 WATERMARK_PATH = './assets/watermark.png'
 PORTFOLIOS_ROOT = './portfolios'
 
-# Map folder names to Display Titles
-GALLERY_CONFIG = {
-    'astronomy': '🌌 Astronomy 🌌',
-    'wildlife':  '🐿️ Wildlife 🐿️',
-    'landscape': '🏞️ Landscape 🏞️'
+# Map folder names to Emojis
+GALLERY_EMOJIS = {
+    'astronomy': '🌌',
+    'food': '🍱',
+    'landscape': '🏞️',
+    'planes': '✈️',
+    'wildlife':  '🐿️ '
 }
 
 class color:
@@ -289,12 +291,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    target_galleries = {k: v for k, v in GALLERY_CONFIG.items() if not args.select or k in args.select}
+    target_galleries = {k: v for k, v in GALLERY_EMOJIS.items() if not args.select or k in args.select}
 
     print(f"{color.BOLD}*** TheDoShoots Portfolio Preperation Engine ***{color.END}")
     
     print(f"Target Galleries ({len(target_galleries)}):")
-    for key, title in target_galleries.items():
+    for key, emoji in target_galleries.items():
+        title = f'{emoji} {key.upper()} {emoji}'
         print(f" - {key}: {title}")
 
     # --- STEP 0: CLEANING ---
