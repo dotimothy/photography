@@ -1,5 +1,5 @@
-tmp
-*.DS_STORE
+// TheDoShoots Photography Portfolio .gitignore
+tmp/
 *metadata/
 *thumbs/
 *css
@@ -7,3 +7,5 @@ tmp
 */css
 */js
 portfolios/
+assets/portfolio.csv
+*.DS_STORE*

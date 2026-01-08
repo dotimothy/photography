@@ -37,7 +37,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Python script to generate site
-        run: python preparePortfolio.py
+        run: python preparePortfolio.py --watermark --full-clean
 
       - name: Prepare site for deployment
         run: |
@@ -46,8 +46,8 @@ jobs:
           cp about.html _site/
           cp LICENSE _site/
           cp -r assets _site/
-          cp -r astronomy _site/
-          cp -r wildlife _site/
+          cp -r portfolios _site/
+
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

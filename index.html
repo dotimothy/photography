@@ -772,14 +772,21 @@
                     <span>Exhibit 01: Biography</span>
                 </a>
                 <a href="#" class="nav-card" onclick="handleNav('./portfolios/astronomy/index.html', true); return false;">
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/astronomy/index.html', true); return false;">
                     <div class="card-emoji">🌌</div>
                     <h3>Astro</h3>
                     <span>Exhibit 02: Deep Space</span>
                 </a>
                 <a href="#" class="nav-card" onclick="handleNav('./portfolios/wildlife/index.html', true); return false;">
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/wildlife/index.html', true); return false;">
                     <div class="card-emoji">🐿️</div>
                     <h3>Wildlife</h3>
                     <span>Exhibit 03: Nature</span>
+                </a>
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/landscape/index.html', true); return false;">
+                    <div class="card-emoji">🏞️</div>
+                    <h3>Landscape</h3>
+                    <span>Exhibit 04: Landscape</span>
                 </a>
             </div>
         </div>
@@ -1559,9 +1566,11 @@
             drawUIBtn("👤 About", x, y, btnW, btnH, () => handleNav('./about.html', true));
             y += 120;
             drawUIBtn("🌌 Astro", x, y, btnW, btnH, () => handleNav('./portfolios/astronomy/index.html', true));
+            drawUIBtn("🌌 Astro", x, y, btnW, btnH, () => handleNav('./portfolios/astronomy/index.html', true));
             y += 120;
             drawUIBtn("🐿️ Wildlife", x, y, btnW, btnH, () => handleNav('./portfolios/wildlife/index.html', true));
             y += 120;
+
 
             // REMOVED: Data saver text hanging on screen
 
