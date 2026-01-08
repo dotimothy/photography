@@ -297,7 +297,7 @@ if __name__ == '__main__':
     
     print(f"Target Galleries ({len(target_galleries)}):")
     for key, emoji in target_galleries.items():
-        title = f'{emoji} {key.upper()} {emoji}'
+        title = f'{emoji} {key.title()} {emoji}'
         print(f" - {key}: {title}")
 
     # --- STEP 0: CLEANING ---
@@ -359,7 +359,7 @@ if __name__ == '__main__':
                 print("No images found to watermark.")
 
     # --- STEP 2: BUILDING ---
-    tasks = [(g, t, args.exif, args.dry_run) for g, t in target_galleries.items()]
+    tasks = [(g, f'{t} {g.title()} {t}', args.exif, args.dry_run) for g, t in target_galleries.items()]
     
     if args.exif:
         for task in tasks: prepareGallery(task)
