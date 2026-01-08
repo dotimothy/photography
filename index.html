@@ -695,8 +695,7 @@
 
     .close-iframe {
         position: absolute;
-        bottom: 25px;
-        /* Moved to bottom */
+        top: 25px;
         left: 25px;
         /* and left as requested */
         width: 45px;
@@ -773,19 +772,29 @@
                 </a>
                 <a href="#" class="nav-card" onclick="handleNav('./portfolios/astronomy/index.html', true); return false;">
                     <div class="card-emoji">🌌</div>
-                    <h3>Astro</h3>
+                    <h3>Astronomy</h3>
                     <span>Exhibit 02: Deep Space</span>
-                </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/wildlife/index.html', true); return false;">
-                    <div class="card-emoji">🐿️</div>
-                    <h3>Wildlife</h3>
-                    <span>Exhibit 03: Nature</span>
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;">
+                    <div class="card-emoji">🍱</div>
+                    <h3>Food</h3>
+                    <span>Exhibit 03: Delicious</span>
                 </a>
                 <a href="#" class="nav-card" onclick="handleNav('./portfolios/landscape/index.html', true); return false;">
                     <div class="card-emoji">🏞️</div>
                     <h3>Landscape</h3>
-                    <span>Exhibit 04: Landscape</span>
+                    <span>Exhibit 04: Breathtaking</span>
                 </a>
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/planes/index.html', true); return false;">
+                    <div class="card-emoji">✈️</div>
+                    <h3>Planes</h3>
+                    <span>Exhibit 05: Flying</span>
+                </a>
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/wildlife/index.html', true); return false;">
+                    <div class="card-emoji">🐿️</div>
+                    <h3>Wildlife</h3>
+                    <span>Exhibit 06: Animals</span>
+                </a>
+
             </div>
         </div>
         <footer style="text-align: center; padding: 20px; color: #444; font-size: 0.8em; margin-top: auto;">
@@ -1480,7 +1489,7 @@
         // --- VIRTUAL SCREEN UI ---
         function createUIScreen() {
             const canvas = document.createElement('canvas');
-            canvas.width = 1200; canvas.height = 800;
+            canvas.width = 1500; canvas.height = 1500;
             uiCtx = canvas.getContext('2d');
 
             // Load Font Awesome
@@ -1497,102 +1506,128 @@
 
             // Background
             uiCtx.fillStyle = '#000000';
-            uiCtx.fillRect(0, 0, 1200, 800);
+            uiCtx.fillRect(0, 0, 1500, 1500);
 
             // REMOVED GRID LINES (User Request)
 
-            // Info Overlay
+            // 1. Draw Text (Scaled vertically)
+            uiCtx.save();
+            uiCtx.translate(0, 100); // Move to the text baseline
+            uiCtx.scale(1, 1.5);     // STRETCH: 1.5x Taller
+            
             uiCtx.fillStyle = '#00e5ff';
-            // CHANGED: Force Roboto for consistency
             uiCtx.font = 'bold 40px Roboto';
-            uiCtx.fillText("RAW", 50, 100);
+            uiCtx.fillText("RAW", 50, 0);
+            
             uiCtx.fillStyle = '#fff';
-            uiCtx.fillText("ISO 3200", 250, 100);
-            uiCtx.fillText("1/250", 550, 100);
-            uiCtx.fillText("f/1.8", 900, 100);
+            uiCtx.fillText("ISO 3200", 250, 0);
+            uiCtx.fillText("1/250", 550, 0);
+            uiCtx.fillText("f/1.8", 900, 0);
+            uiCtx.restore();
 
-            // Battery Icon (Charging)
-            const bx = 1050, by = 65, bw = 60, bh = 30;
+            // 2. Draw Battery (Manually resized to be taller)
+            // bx=1050, by=50 (was 65), bw=60, bh=45 (was 30)
+            const bx = 1050, by = 50, bw = 60, bh = 45; 
+            
             uiCtx.strokeStyle = '#fff';
             uiCtx.lineWidth = 3;
             uiCtx.strokeRect(bx, by, bw, bh);
-            uiCtx.fillRect(bx + bw, by + 8, 4, 14); // Terminal
+            uiCtx.fillRect(bx + bw, by + 12, 4, 20); // Terminal (taller)
 
             // Green Fill
             uiCtx.fillStyle = '#00ff00';
             uiCtx.fillRect(bx + 4, by + 4, bw * 0.7, bh - 8);
 
-            // Lightning Bolt
+            // Lightning Bolt (Adjusted for height)
             uiCtx.fillStyle = '#fff';
             uiCtx.beginPath();
             uiCtx.moveTo(bx + 20, by - 5);
-            uiCtx.lineTo(bx + 10, by + 15);
-            uiCtx.lineTo(bx + 25, by + 15);
-            uiCtx.lineTo(bx + 15, by + 35);
-            uiCtx.lineTo(bx + 40, by + 15);
-            uiCtx.lineTo(bx + 25, by + 15);
+            uiCtx.lineTo(bx + 10, by + 20); // extended y
+            uiCtx.lineTo(bx + 25, by + 20);
+            uiCtx.lineTo(bx + 15, by + 50); // extended y
+            uiCtx.lineTo(bx + 40, by + 20);
+            uiCtx.lineTo(bx + 25, by + 20);
             uiCtx.closePath();
             uiCtx.fill();
 
 
             // Profile Picture
             if (pfpImage.complete && pfpImage.naturalHeight !== 0) {
-                const px = 200, py = 350, pr = 100;
+                const px = 350, py = 700;
+                const prX = 160;
+                const prY = 240; // 1.5x height to counteract the squish
+
                 uiCtx.save();
                 uiCtx.beginPath();
-                uiCtx.arc(px, py, pr, 0, Math.PI * 2);
+                // Draw an ellipse instead of a circle
+                uiCtx.ellipse(px, py, prX, prY, 0, 0, Math.PI * 2); 
                 uiCtx.closePath();
                 uiCtx.clip();
-                uiCtx.drawImage(pfpImage, px - pr, py - pr, pr * 2, pr * 2);
+                // Draw image slightly taller
+                uiCtx.drawImage(pfpImage, px - prX, py - prY, prX * 2, prY * 2);
                 uiCtx.restore();
 
                 // Ring around pfp
                 uiCtx.strokeStyle = '#fff';
                 uiCtx.lineWidth = 4;
                 uiCtx.beginPath();
-                uiCtx.arc(px, py, pr, 0, Math.PI * 2);
+                uiCtx.ellipse(px, py, prX, prY, 0, 0, Math.PI * 2);
                 uiCtx.stroke();
             }
 
-            // Menu Buttons
-            const btnW = 500;
-            const btnH = 100;
-            const x = 450;
-            let y = 200;
 
-            // UPDATED: Added emojis to text
+            const btnW = 600;
+            const btnH = 180;   
+            const x = 600;
+            let y = 160;        
+            const gap = 210;   
+
+            // UPDATED BUTTONS
             drawUIBtn("👤 About", x, y, btnW, btnH, () => handleNav('./about.html', true));
-            y += 120;
-            drawUIBtn("🌌 Astro", x, y, btnW, btnH, () => handleNav('./portfolios/astronomy/index.html', true));
-            y += 120;
+            y += gap;
+            drawUIBtn("🌌 Astronomy", x, y, btnW, btnH, () => handleNav('./portfolios/astronomy/index.html', true));
+            y += gap;
+            drawUIBtn("🍱 Food", x, y, btnW, btnH, () => handleNav('./portfolios/food/index.html', true));
+            y += gap;
             drawUIBtn("🏞️ Landscape", x, y, btnW, btnH, () => handleNav('./portfolios/landscape/index.html', true));
-            y += 120;
+            y += gap;
+            drawUIBtn("✈️ Planes", x, y, btnW, btnH, () => handleNav('./portfolios/planes/index.html', true));
+            y += gap;
             drawUIBtn("🐿️ Wildlife", x, y, btnW, btnH, () => handleNav('./portfolios/wildlife/index.html', true));
-            y += 120;
-
-
-            // REMOVED: Data saver text hanging on screen
 
             if (uiTexture) uiTexture.needsUpdate = true;
         }
 
-        function drawUIBtn(text, x, y, w, h, action) {
-            // Button Box
+    function drawUIBtn(text, x, y, w, h, action) {
+            // 1. Draw the Button Box (Standard)
             uiCtx.fillStyle = 'rgba(30,30,30,0.9)';
             uiCtx.fillRect(x, y, w, h);
             uiCtx.strokeStyle = '#fff';
             uiCtx.lineWidth = 4;
             uiCtx.strokeRect(x, y, w, h);
 
-            // Text
+            // 2. Draw the Text (Fixed Aspect Ratio)
+            uiCtx.save(); // Save current state
+
+            // Move origin to the center of the button
+            uiCtx.translate(x + w / 2, y + h / 2);
+
+            // SCALE Y by 1.5x
+            // This makes the text taller to counteract the 3D horizontal stretch
+            uiCtx.scale(1, 1.5); 
+
             uiCtx.fillStyle = '#fff';
-            // CHANGED: Force Roboto for consistency
-            uiCtx.font = 'bold 60px "Roboto"';
+            // Decreased font size slightly (54 -> 48) because the scaling makes it look bigger
+            uiCtx.font = 'bold 48px "Roboto"'; 
             uiCtx.textAlign = 'center';
             uiCtx.textBaseline = 'middle';
-            uiCtx.fillText(text, x + w / 2, y + h / 2);
+            
+            // Draw text at (0,0) which is now the center of the button
+            uiCtx.fillText(text, 0, 0);
 
-            // Click Zone (Inverted coordinates for back of camera)
+            uiCtx.restore(); // Restore state so next drawing isn't affected
+
+            // 3. Register Click Zone
             uiClickZones.push({
                 x: x, y: y, w: w, h: h, action: action
             });
@@ -1641,8 +1676,8 @@
                     // UV mapping on PlaneGeometry: x=0..1, y=0..1
                     // Since the mesh is rotated 180 deg (PI), UVs might be flipped depending on implementation.
                     // For a standard plane rotated y=PI, x is inverted visually.
-                    const canvasX = (1 - uv.x) * 1200;
-                    const canvasY = (1 - uv.y) * 800; // y is typically inverted in UV vs Canvas
+                    const canvasX = (1 - uv.x) * 1500;
+                    const canvasY = (1 - uv.y) * 1500; // y is typically inverted in UV vs Canvas
 
                     for (let zone of uiClickZones) {
                         if (canvasX >= zone.x && canvasX <= zone.x + zone.w &&
