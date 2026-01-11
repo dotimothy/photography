@@ -246,7 +246,7 @@ def prepareGallery(args_tuple):
             server_process.terminate()
     
     # 2. Copy Template Assets
-    assets_to_copy = ['prepareSite.py', 'index.html', 'css', 'js', 'templates']
+    assets_to_copy = ['prepareSite.py', 'index.html', 'immersive.html', 'css', 'js', 'templates']
     for asset in assets_to_copy:
         src = f'./tmp/gallery/{asset}'
         dst = os.path.join(galleryDir, asset)

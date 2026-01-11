@@ -899,36 +899,46 @@
                 <button class="close-settings" id="btn-close-settings">&times;</button>
             </div>
 
+            <div class="setting-category">General & Performance</div>
             <div class="setting-row">
-                <span class="setting-label">3D Immersive Mode</span>
-                <div class="toggle-switch active" id="toggle-3d-mode">
-                    <div class="toggle-knob"></div>
-                </div>
+                <span class="setting-label">3D Immersive Mode (?mode=2d)</span>
+                <div class="toggle-switch active" id="toggle-3d-mode"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Data Saver (Low Res) (?datasaver)</span>
+                <div class="toggle-switch" id="toggle-saver"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Debug Mode (?debug)</span>
+                <div class="toggle-switch" id="toggle-debug"><div class="toggle-knob"></div></div>
             </div>
 
+            <div class="setting-category">Gallery Experience</div>
             <div class="setting-row">
-                <span class="setting-label">Star Density (Hyper)</span>
-                <div class="toggle-switch active" id="toggle-stars">
-                    <div class="toggle-knob"></div>
-                </div>
+                <span class="setting-label">Auto Slideshow (?slideshow)</span>
+                <div class="toggle-switch" id="toggle-slideshow"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Interval (ms) (?interval=)</span>
+                <input type="number" id="input-interval" value="3000" step="500" style="width: 80px; background: #222; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Auto Fullscreen Viewer (?fullscreen)</span>
+                <div class="toggle-switch" id="toggle-viewer-fs"><div class="toggle-knob"></div></div>
+            </div>
+            
+            <div class="setting-category">Deep Linking</div>
+            <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                <span class="setting-label">Deep Link Image Filename (?img=)</span>
+                <input type="text" id="input-img-link" placeholder="e.g. sunset" style="width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 4px;">
             </div>
 
-            <div class="setting-row">
+            <div class="setting-row" style="margin-top: 20px;">
                 <span class="setting-label">Direct Links (No iFrame)</span>
-                <div class="toggle-switch" id="toggle-direct">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-
-            <div class="setting-row">
-                <span class="setting-label">Data Saver</span>
-                <div class="toggle-switch" id="toggle-saver">
-                    <div class="toggle-knob"></div>
-                </div>
+                <div class="toggle-switch" id="toggle-direct"><div class="toggle-knob"></div></div>
             </div>
         </div>
     </div>
-
     <!-- IFRAME OVERLAY FOR EXHIBITS -->
     <div class="iframe-container" id="iframe-container">
         <button class="close-iframe" id="close-iframe" title="Close Preview">
@@ -945,7 +955,13 @@
             highDensityStars: true,
             directLinks: false,
             dataSaver: false,
+            slideshow: false,
+            viewerFullscreen: false,
+            debugMode: false, // Added
+            slideshowInterval: 3000, // Added
+            deepLinkImg: '', // Added
             isAnimating: true,
+            isPaused: false,
             muted: true,
             isFullscreen: false
         };
@@ -1122,6 +1138,19 @@
                     icon.classList.remove('fa-compress');
                     icon.classList.add('fa-expand');
                 }
+            });
+
+            // Debug Toggle
+            setupToggle(document.getElementById('toggle-debug'), (val) => { state.debugMode = val; });
+
+            // Interval Input
+            document.getElementById('input-interval').addEventListener('change', (e) => {
+                state.slideshowInterval = e.target.value;
+            });
+
+            // Deep Link Input
+            document.getElementById('input-img-link').addEventListener('input', (e) => {
+                state.deepLinkImg = e.target.value;
             });
         }
 
@@ -1692,18 +1721,40 @@
             }
         }
 
+        // --- UPDATED CORE NAVIGATION LOGIC ---
         window.handleNav = function (url, isInternal) {
-            // Passthrough logic: Append current settings to the URL
-            const modeParam = state.is3D ? '3d' : '2d';
-            const datasaverParam = state.dataSaver ? '1' : '0';
+            const params = new URLSearchParams();
+            
+            // Mode
+            params.set('mode', state.is3D ? '3d' : '2d');
+            
+            // Performance & Debug
+            if (state.dataSaver) params.set('datasaver', '1');
+            if (state.debugMode) params.set('debug', '1');
+            
+            // Gallery Experiences
+            if (state.slideshow) {
+                params.set('slideshow', '');
+                params.set('interval', state.slideshowInterval);
+            }
+            if (state.viewerFullscreen) {
+                params.set('fullscreen', '');
+            }
+
+            // Deep Link Image
+            if (state.deepLinkImg.trim() !== '') {
+                params.set('img', state.deepLinkImg.trim());
+            }
+
             const separator = url.includes('?') ? '&' : '?';
-            const finalUrl = `${url}${separator}mode=${modeParam}&datasaver=${datasaverParam}`;
+            const finalUrl = `${url}${separator}${params.toString()}`;
 
             if (state.directLinks || !isInternal) {
                 window.open(finalUrl, '_blank');
             } else {
                 els.iframe.src = finalUrl;
                 els.iframeOverlay.classList.add('active');
+                state.isPaused = true;
             }
         };
 
