@@ -905,6 +905,10 @@
                 <div class="toggle-switch active" id="toggle-3d-mode"><div class="toggle-knob"></div></div>
             </div>
             <div class="setting-row">
+                <span class="setting-label">High Density Stars</span>
+                <div class="toggle-switch active" id="toggle-stars"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="setting-row">
                 <span class="setting-label">Data Saver (Low Res) (?datasaver)</span>
                 <div class="toggle-switch" id="toggle-saver"><div class="toggle-knob"></div></div>
             </div>
@@ -925,12 +929,6 @@
             <div class="setting-row">
                 <span class="setting-label">Auto Fullscreen Viewer (?fullscreen)</span>
                 <div class="toggle-switch" id="toggle-viewer-fs"><div class="toggle-knob"></div></div>
-            </div>
-            
-            <div class="setting-category">Deep Linking</div>
-            <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-                <span class="setting-label">Deep Link Image Filename (?img=)</span>
-                <input type="text" id="input-img-link" placeholder="e.g. sunset" style="width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 4px;">
             </div>
 
             <div class="setting-row" style="margin-top: 20px;">
@@ -1139,6 +1137,12 @@
                     icon.classList.add('fa-expand');
                 }
             });
+            
+            // Slideshow Toggle
+            setupToggle(document.getElementById('toggle-slideshow'), (val) => { state.slideshow = val; });
+            
+            // Image Viewer Toggle
+            setupToggle(document.getElementById('toggle-viewer-fs'), (val) => { state.viewerFullscreen = val; });
 
             // Debug Toggle
             setupToggle(document.getElementById('toggle-debug'), (val) => { state.debugMode = val; });
@@ -1148,10 +1152,7 @@
                 state.slideshowInterval = e.target.value;
             });
 
-            // Deep Link Input
-            document.getElementById('input-img-link').addEventListener('input', (e) => {
-                state.deepLinkImg = e.target.value;
-            });
+
         }
 
         function toggleFullscreen() {
