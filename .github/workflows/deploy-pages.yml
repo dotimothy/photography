@@ -37,7 +37,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Python script to generate site
-        run: python preparePortfolio.py --watermark --full-clean
+        run: python preparePortfolio.py --watermark --full-clean --quality 80
 
       - name: Prepare site for deployment
         run: |

@@ -41,6 +41,14 @@ class color:
      BOLD = '\033[1m'
      END = '\033[0m'
 
+# Global variable to hold quality setting in workers
+QUALITY = 100
+
+def init_worker(q):
+    global QUALITY
+    QUALITY = int(q)
+
+
 def is_port_open(host, port, timeout=1):
     """Checks if a given TCP port on a host is open."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -169,9 +177,9 @@ def watermark_worker(image_path):
         # 6. Save preserving format, quality, and EXIF
         if original_format == 'JPEG' or image_path.lower().endswith(('.jpg', '.jpeg')):
             output = output.convert("RGB")
-            # quality=100: Minimum compression
+            # quality=QUALITY: User defined compression
             # subsampling=0: Disable chroma subsampling (4:4:4)
-            output.save(image_path, format='JPEG', quality=100, subsampling=0, **save_kwargs)
+            output.save(image_path, format='JPEG', quality=QUALITY, subsampling=0, **save_kwargs)
         elif original_format == 'PNG' or image_path.lower().endswith('.png'):
             output.save(image_path, format='PNG', **save_kwargs)
         else:
@@ -206,7 +214,7 @@ def download_portfolio_assets(csv_path):
 
 def prepareGallery(args_tuple):
     """Worker function to build a single gallery."""
-    gallery, title, modifyGPS, dry_run = args_tuple
+    gallery, title, modifyGPS, dry_run, quality = args_tuple
     log_prefix = f"[{gallery}]"
 
     if dry_run:
@@ -246,7 +254,7 @@ def prepareGallery(args_tuple):
             server_process.terminate()
     
     # 2. Copy Template Assets
-    assets_to_copy = ['prepareSite.py', 'index.html', 'css', 'js', 'templates']
+    assets_to_copy = ['prepareSite.py', 'index.html', 'immersive.html', 'css', 'js', 'templates']
     for asset in assets_to_copy:
         src = f'./tmp/gallery/{asset}'
         dst = os.path.join(galleryDir, asset)
@@ -272,7 +280,7 @@ def prepareGallery(args_tuple):
 
     # 4. Run Site Generator
     try:
-        subprocess.run(['python', 'prepareSite.py'], cwd=galleryDir, check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(['python', 'prepareSite.py', '--quality', str(quality)], cwd=galleryDir, check=True, stdout=subprocess.DEVNULL)
     except Exception:
         print(f"{log_prefix} Error: prepareSite.py failed.")
 
@@ -288,6 +296,7 @@ if __name__ == '__main__':
     parser.add_argument('--full-clean', action='store_true', help='Wipe entire portfolios folder and CSV')
     parser.add_argument('--dry-run', action='store_true', help='Simulation mode')
     parser.add_argument('-j', '--jobs', type=int, default=None, help='Parallel process count')
+    parser.add_argument('-q', '--quality', type=int, default=100, help='JPEG Quality (1-100)')
 
     args = parser.parse_args()
 
@@ -353,13 +362,15 @@ if __name__ == '__main__':
             if all_images:
                 num_processes = args.jobs or min(cpu_count(), len(all_images))
                 print(f"\n{color.BOLD}*** Step 1.5: Applying Watermarks with {num_processes} Workers ***{color.END}")
-                with Pool(processes=num_processes) as pool:
+                num_processes = args.jobs or min(cpu_count(), len(all_images))
+                print(f"\n{color.BOLD}*** Step 1.5: Applying Watermarks (Quality: {args.quality}) with {num_processes} Workers ***{color.END}")
+                with Pool(processes=num_processes, initializer=init_worker, initargs=(args.quality,)) as pool:
                     list(tqdm.tqdm(pool.imap_unordered(watermark_worker, all_images), total=len(all_images), unit="img"))
             else:
                 print("No images found to watermark.")
 
     # --- STEP 2: BUILDING ---
-    tasks = [(g, f'{t} {g.title()} {t}', args.exif, args.dry_run) for g, t in target_galleries.items()]
+    tasks = [(g, f'{t} {g.title()} {t}', args.exif, args.dry_run, args.quality) for g, t in target_galleries.items()]
     
     if args.exif:
         for task in tasks: prepareGallery(task)

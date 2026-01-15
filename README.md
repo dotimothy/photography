@@ -13,6 +13,7 @@ This project automates the creation of gallery pages based on a template reposit
     - **Data Saver Mode**: Optimized for slower connections.
     - **Direct Links**: Option to open images directly.
     - **Auto Fullscreen**: Immersive viewing.
+    - **Immersive Viewer**: Deep-zoom capability for high-res images.
     - **Custom Settings**: Persisted user preferences via local storage.
 - **Responsive Design**: Works across desktop and mobile devices.
 
@@ -55,6 +56,18 @@ python preparePortfolio.py --exif
 - This launches a local Flask server.
 - Follow the on-screen prompts to open the web interface.
 - **Note**: The script waits for the server to be ready and attempts to open your browser automatically.
+
+### Command Line Options
+
+| Argument | Description |
+| :--- | :--- |
+| `--quality`/`-q` | **[NEW]** Set JPEG quality (1-100) for watermarked images and thumbnails. Default: `100`. |
+| `--jobs`/`-j` | Set number of parallel workers for faster processing. |
+| `--clean` | Wipe generated assets (keeps images). |
+| `--full-clean` | Wipe everything including downloaded porfolio images. |
+| `--dry-run` | Simulate the build process without making changes. |
+| `--watermark` | Apply watermark to images. |
+| `--select` | Build only specific galleries (e.g. `--select astronomy`). |
 
 ## 📂 Project Structure
 
