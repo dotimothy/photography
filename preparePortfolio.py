@@ -4,11 +4,10 @@ TheDoShoots Portfolio Engine (Consolidated & Optimized)
 A single-file, high-performance build tool for photography portfolios.
 Features:
 - Global Parallelization (Image-level vs Gallery-level)
-- OpenCV-based Image Processing pipeline (No PIL for building)
-- Incremental Builds (Skips existing up-to-date files)
-- Detailed Performance Profiling
-- Auto-Logging to file
-- Step-by-step Duration Reporting
+- Smart Incremental Builds (Skips worker queue for cached files)
+- Manifest-Based Caching (Skips asset checks if CSV is unchanged)
+- OpenCV-based Image Processing pipeline
+- Auto-Logging and Profiling
 """
 
 import os
@@ -24,6 +23,7 @@ import json
 import cv2 as cv
 import exifread
 import sys
+import hashlib
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 
@@ -111,6 +111,14 @@ def get_dir_size(start_path='.'):
                 total_size += os.path.getsize(fp)
     return total_size / (1024 * 1024)
 
+def calculate_file_hash(filepath):
+    """Calculates MD5 hash of a file."""
+    hasher = hashlib.md5()
+    with open(filepath, 'rb') as f:
+        buf = f.read()
+        hasher.update(buf)
+    return hasher.hexdigest()
+
 # --- Global Worker State ---
 worker_watermark = None
 
@@ -165,16 +173,9 @@ def download_worker(task):
 # --- Image Processing Worker ---
 def process_image_worker(task):
     """
-    Single-pass processing:
-    1. Check Incremental status
-    2. Read Source (OpenCV)
-    3. Extract Metadata (ExifRead)
-    4. Apply Watermark
-    5. Save Full (OpenCV)
-    6. Generate & Save Thumb (OpenCV)
-    7. Return Metadata Dict
+    Single-pass processing.
     """
-    source_path, full_out_path, thumb_out_path, quality, apply_watermark = task
+    source_path, full_out_path, thumb_out_path, quality, apply_watermark, gallery_name = task
     
     file_name = os.path.basename(source_path)
     name_no_ext = os.path.splitext(file_name)[0]
@@ -197,7 +198,7 @@ def process_image_worker(task):
     except Exception:
         metadata['__dt'] = os.path.getmtime(source_path)
 
-    # 2. Check Incremental Status
+    # 2. Safety Incremental Check
     if (os.path.exists(full_out_path) and os.path.exists(thumb_out_path) and
         os.path.getmtime(full_out_path) > os.path.getmtime(source_path)):
         
@@ -207,12 +208,12 @@ def process_image_worker(task):
                 h, w, _ = img.shape
                 metadata['Image Width'], metadata['Image Height'] = w, h
         metadata['File Size'] = os.path.getsize(full_out_path)
-        return (name_no_ext, metadata)
+        return (gallery_name, name_no_ext, metadata)
 
     # 3. Load Image
     img = cv.imread(source_path)
     if img is None:
-        return (name_no_ext, {"Error": "Corrupt Image"})
+        return (gallery_name, name_no_ext, {"Error": "Corrupt Image"})
 
     h, w, _ = img.shape
     metadata['Image Width'] = w
@@ -256,7 +257,7 @@ def process_image_worker(task):
     thumb = cv.resize(processed_img, (new_w, new_h), interpolation=cv.INTER_AREA)
     cv.imwrite(thumb_out_path, thumb, [cv.IMWRITE_JPEG_QUALITY, min(quality, 85), cv.IMWRITE_JPEG_PROGRESSIVE, 1])
 
-    return (name_no_ext, metadata)
+    return (gallery_name, name_no_ext, metadata)
 
 def update_gallery_repo():
     os.makedirs('tmp', exist_ok=True)
@@ -278,6 +279,7 @@ def main():
     parser.add_argument('--skip-repo', action='store_true', help='Skip git updates')
     parser.add_argument('--clean', action='store_true', help='Clean builds')
     parser.add_argument('--full-clean', action='store_true', help='Wipe everything')
+    parser.add_argument('--force-download', action='store_true', help='Force verify downloads')
     parser.add_argument('-j', '--jobs', type=int, default=None, help='Threads')
     parser.add_argument('-q', '--quality', type=int, default=100, help='JPEG Quality')
     args = parser.parse_args()
@@ -324,13 +326,34 @@ def main():
         update_gallery_repo()
         profiler.stop('Git Update')
     
-    # Download
+    # Asset Management
     profiler.start('Asset Download')
     os.makedirs('assets', exist_ok=True)
-    if not os.path.exists(PORTFOLIO_CSV_PATH):
-        print(" - Fetching Portfolio CSV...")
-        download_worker((PORTFOLIO_CSV_ID, PORTFOLIO_CSV_PATH, None))
     
+    # Logic: Download new CSV to temp, check if changed
+    temp_csv_path = PORTFOLIO_CSV_PATH + ".tmp"
+    csv_changed = True
+    
+    print(" - Checking Portfolio Manifest...")
+    # Attempt download of CSV to temp
+    if download_worker((PORTFOLIO_CSV_ID, temp_csv_path, None)):
+        if os.path.exists(PORTFOLIO_CSV_PATH):
+            old_hash = calculate_file_hash(PORTFOLIO_CSV_PATH)
+            new_hash = calculate_file_hash(temp_csv_path)
+            
+            if old_hash == new_hash and not args.force_download:
+                csv_changed = False
+                os.remove(temp_csv_path) # Cleanup temp
+                print(" - Manifest unchanged. Skipping asset verification.")
+            else:
+                print(" - Manifest updated (or forced). Verifying assets...")
+                shutil.move(temp_csv_path, PORTFOLIO_CSV_PATH)
+        else:
+            print(" - Initial Manifest Download.")
+            shutil.move(temp_csv_path, PORTFOLIO_CSV_PATH)
+    else:
+        print(" - Warning: Could not check Manifest (Offline?). Using local if available.")
+
     download_tasks = []
     galleries_to_process = []
     
@@ -343,15 +366,22 @@ def main():
                     fid = row.get('File ID') or row.get('Link')
                     fname = row['File Name']
                     cache_p = os.path.join(CACHE_ROOT, g, fname)
-                    download_tasks.append((fid, cache_p, None))
+                    
+                    # Always build the list for the next step (Build Step)
                     galleries_to_process.append((g, fname, cache_p))
+                    
+                    # Only add to download queue if CSV changed or Force flag is set
+                    if csv_changed:
+                        download_tasks.append((fid, cache_p, None))
     
-    if download_tasks:
-        print(f" - Checking {len(download_tasks)} assets...")
+    # Run Downloads only if needed
+    if download_tasks and csv_changed:
+        print(f" - Verifying {len(download_tasks)} assets...")
         with Pool(num_workers) as pool:
             list(tqdm.tqdm(pool.imap_unordered(download_worker, download_tasks), 
                            total=len(download_tasks), unit='file', desc="Downloading"))
-    profiler.stop('Asset Download', count=len(download_tasks))
+    
+    profiler.stop('Asset Download', count=len(download_tasks) if csv_changed else 0)
     print(f"{color.BOLD}*** Step 1 Completed in {time.time() - step1_start:.2f}s ***{color.END}")
 
     # --- STEP 2: IMAGE PROCESSING ---
@@ -361,6 +391,19 @@ def main():
     
     gallery_map = {k: [] for k in target_keys}
     processing_tasks = []
+    
+    # Pre-load existing metadata
+    existing_metadata = {}
+    for g in target_keys:
+        meta_path = os.path.join(PORTFOLIOS_ROOT, g, 'metadata', 'metadata.json')
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, 'r') as f:
+                    existing_metadata[g] = json.load(f)
+            except: pass
+
+    results_map = {k: {} for k in target_keys}
+    skipped_count = 0
 
     for gallery, fname, cache_path in galleries_to_process:
         if not os.path.exists(cache_path): continue
@@ -373,19 +416,47 @@ def main():
         os.makedirs(os.path.join(g_root, 'thumbs'), exist_ok=True)
         os.makedirs(os.path.join(g_root, 'metadata'), exist_ok=True)
 
-        task = (cache_path, full_path, thumb_path, args.quality, args.watermark)
-        processing_tasks.append(task)
+        name_no_ext = os.path.splitext(fname)[0]
         gallery_map[gallery].append(fname)
-
-    results_map = {}
-    print(f" - Queued {len(processing_tasks)} images for processing...")
-    
-    with Pool(num_workers, initializer=init_worker, initargs=(WATERMARK_PATH,)) as pool:
-        for name, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
-                                    total=len(processing_tasks), unit='img', desc="Processing"):
-            results_map[name] = meta
+        
+        # --- SMART CHECK ---
+        is_fully_cached = False
+        if (os.path.exists(full_path) and os.path.exists(thumb_path) and 
+            os.path.getmtime(full_path) > os.path.getmtime(cache_path)):
             
-    profiler.stop('Image Processing', count=len(processing_tasks))
+            if gallery in existing_metadata and name_no_ext in existing_metadata[gallery]:
+                meta = existing_metadata[gallery][name_no_ext]
+                # Reconstruct sorting key
+                if 'EXIF DateTimeOriginal' in meta:
+                    try:
+                        dt_str = str(meta['EXIF DateTimeOriginal'])
+                        meta['__dt'] = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").timestamp()
+                    except:
+                        meta['__dt'] = os.path.getmtime(cache_path)
+                else:
+                    meta['__dt'] = os.path.getmtime(cache_path)
+                    
+                results_map[gallery][name_no_ext] = meta
+                is_fully_cached = True
+                skipped_count += 1
+        
+        if not is_fully_cached:
+            task = (cache_path, full_path, thumb_path, args.quality, args.watermark, gallery)
+            processing_tasks.append(task)
+    
+    if skipped_count > 0:
+        print(f" - Skipped {skipped_count} up-to-date images.")
+    
+    if processing_tasks:
+        print(f" - Queued {len(processing_tasks)} images for processing...")
+        with Pool(num_workers, initializer=init_worker, initargs=(WATERMARK_PATH,)) as pool:
+            for gallery_name, name_no_ext, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
+                                        total=len(processing_tasks), unit='img', desc="Processing"):
+                results_map[gallery_name][name_no_ext] = meta
+    else:
+        print(" - All images are up to date.")
+            
+    profiler.stop('Image Processing', count=len(processing_tasks) + skipped_count)
     print(f"{color.BOLD}*** Step 2 Completed in {time.time() - step2_start:.2f}s ***{color.END}")
 
     # --- STEP 3: SITE GENERATION ---
@@ -406,14 +477,19 @@ def main():
         gallery_meta = {}
         file_list = []
         
-        sorted_files = sorted(gallery_map[gallery], 
-                              key=lambda x: results_map.get(os.path.splitext(x)[0], {}).get('__dt', 0))
+        def get_sort_key(fname):
+            n = os.path.splitext(fname)[0]
+            if n in results_map[gallery]:
+                return results_map[gallery][n].get('__dt', 0)
+            return 0
+
+        sorted_files = sorted(gallery_map[gallery], key=get_sort_key)
         
         for fname in sorted_files:
             name_no_ext = os.path.splitext(fname)[0]
             file_list.append(name_no_ext)
-            if name_no_ext in results_map:
-                clean_meta = results_map[name_no_ext].copy()
+            if name_no_ext in results_map[gallery]:
+                clean_meta = results_map[gallery][name_no_ext].copy()
                 clean_meta.pop('__dt', None)
                 gallery_meta[name_no_ext] = clean_meta
         
