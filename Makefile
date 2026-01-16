@@ -8,10 +8,12 @@ jobs ?= 0
 
 .PHONY: all build clean install help fast exif
 
-all: install build
+default: build
+
+all: deepclean install build
 
 help:
-	@echo "TheDoShoots Portfolio Build System (Linux)"
+	@echo "TheDoShoots Portfolio Makefile"
 	@echo "------------------------------------------"
 	@echo "Usage: make [target] quality=[value]"
 	@echo ""
@@ -19,6 +21,7 @@ help:
 	@echo "make build    - Run full build (clean, watermark, quality $(quality))"
 	@echo "make fast     - Run build without watermarking or git updates"
 	@echo "make clean    - Remove build directory"
+	@echo "make deepclean - Remove build directory, template repo, and cache"
 	@echo "make exif     - Launch EXIF Editor"
 	
 install:
@@ -34,8 +37,7 @@ fast:
 clean:
 	rm -rf $(BUILD_DIR)
 
-deepclean:
-	rm -rf $(BUILD_DIR)
+deepclean: clean
 	rm -rf .cache
 	rm -rf tmp
 

@@ -1,25 +1,31 @@
 """
-TheDoShoots Portfolio Preparer
-------------------------------
-A multiprocessing-enabled build tool for generating photography galleries.
-Handles Git synchronization, asset copying, EXIF data modification, 
-watermarking, and site generation via external scripts.
+TheDoShoots Portfolio Engine (Consolidated & Optimized)
+-------------------------------------------------------
+A single-file, high-performance build tool for photography portfolios.
+Features:
+- Global Parallelization (Image-level vs Gallery-level)
+- Smart Incremental Builds (Skips worker queue for cached files)
+- Manifest-Based Caching (Skips asset checks if CSV is unchanged)
+- OpenCV-based Image Processing pipeline
+- Auto-Logging and Profiling
 """
 
 import os
 import shutil
 import git
 import tqdm
-import webbrowser
 import argparse
-import subprocess
-import socket
 import time
 import csv
 import re
 import requests
+import json
+import cv2 as cv
+import exifread
+import sys
+import hashlib
+from datetime import datetime
 from multiprocessing import Pool, cpu_count
-from PIL import Image  # Requires pip install Pillow
 
 # --- Configuration ---
 GALLERY_REPO = 'https://github.com/dotimothy/gallery.git'
@@ -29,430 +35,528 @@ WATERMARK_PATH = './assets/watermark.png'
 PORTFOLIOS_ROOT = './build/portfolios'
 CACHE_ROOT = './.cache/images'
 
-# Map folder names to Emojis
 GALLERY_EMOJIS = {
-    'astronomy': '🌌',
-    'food': '🍱',
-    'landscape': '🏞️',
-    'planes': '✈️',
-    'wildlife':  '🐿️ '
+    'astronomy': '🌌', 'food': '🍱', 'landscape': '🏞️', 'planes': '✈️', 'wildlife':  '🐿️ '
 }
 
+# --- Formatting, Profiling & Logging ---
 class color:
      BOLD = '\033[1m'
      END = '\033[0m'
 
-# Global variable to hold quality setting in workers
-QUALITY = 100
+class DualLogger(object):
+    """Writes to both stdout (terminal) and a log file."""
+    def __init__(self):
+        self.terminal = sys.stdout
+        os.makedirs('logs', exist_ok=True)
+        log_name = f"logs/build_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        self.log_file = open(log_name, "a", encoding='utf-8')
 
-def init_worker(q):
-    global QUALITY
-    QUALITY = int(q)
+    def write(self, message):
+        self.terminal.write(message)
+        self.log_file.write(message)
+        self.log_file.flush()
 
+    def flush(self):
+        self.terminal.flush()
+        self.log_file.flush()
 
-def is_port_open(host, port, timeout=1):
-    """Checks if a given TCP port on a host is open."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(timeout)
-    try:
-        sock.connect((host, port))
-        return True
-    except socket.error:
-        return False
-    finally:
-        sock.close()
+class Profiler:
+    def __init__(self):
+        self.metrics = {}
+        self.start_times = {}
 
+    def start(self, name):
+        self.start_times[name] = time.time()
+
+    def stop(self, name, count=0):
+        if name in self.start_times:
+            duration = time.time() - self.start_times[name]
+            self.metrics[name] = {'time': duration, 'count': count}
+
+    def report(self):
+        print(f"\n{color.BOLD}*** Performance Report ***{color.END}")
+        print(f"{'-'*75}")
+        print(f"{'Step Name':<25} | {'Time':<12} | {'% Total':<10} | {'Throughput':<15}")
+        print(f"{'-'*75}")
+        
+        total_time = sum(m['time'] for m in self.metrics.values())
+        
+        for name, data in self.metrics.items():
+            t = data['time']
+            pct = (t / total_time * 100) if total_time > 0 else 0
+            
+            time_str = f"{t:.2f} s"
+            pct_str = f"{pct:.1f} %"
+            
+            if data['count'] > 0 and t > 0:
+                throughput_str = f"{data['count']/t:.1f} it/s"
+            else:
+                throughput_str = "-"
+
+            print(f"{name:<25} | {time_str:<12} | {pct_str:<10} | {throughput_str:<15}")
+            
+        print(f"{'-'*75}")
+        print(f"{'Total Duration':<25} | {total_time:.2f} s     | 100.0 %    |")
+        print(f"{'-'*75}")
+
+# --- Helpers ---
 def get_dir_size(start_path='.'):
     """Calculates the total size of a directory in MB."""
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
             fp = os.path.join(dirpath, f)
-            # skip if it is symbolic link
             if not os.path.islink(fp):
                 total_size += os.path.getsize(fp)
     return total_size / (1024 * 1024)
 
-def updateGalleryRepo():
-    """Clones or pulls the latest gallery template."""
-    os.makedirs('tmp', exist_ok=True)
-    if not os.path.exists('./tmp/gallery'):
-        print(f"{color.BOLD}Cloning gallery repo from {GALLERY_REPO}{color.END}")
-        git.Repo.clone_from(GALLERY_REPO, 'tmp/gallery')
-    else:
-        print(f"Gallery repo already exists. Pulling latest changes...")
-        repo = git.Repo('./tmp/gallery')
-        repo.remotes.origin.pull()
+def calculate_file_hash(filepath):
+    """Calculates MD5 hash of a file."""
+    hasher = hashlib.md5()
+    with open(filepath, 'rb') as f:
+        buf = f.read()
+        hasher.update(buf)
+    return hasher.hexdigest()
 
+# --- Global Worker State ---
+worker_watermark = None
+
+def init_worker(watermark_path):
+    """Initialize worker process: Load watermark into memory once."""
+    global worker_watermark
+    if os.path.exists(watermark_path):
+        worker_watermark = cv.imread(watermark_path, cv.IMREAD_UNCHANGED)
+
+# --- Network Worker ---
 def download_worker(task):
-    """
-    Worker function to download a single file to cache, then copy to target.
-    """
-    if len(task) == 3:
-        input_val, cache_path, target_path = task
-    else:
-        # Support for legacy caller (csv download)
-        input_val, cache_path = task
-        target_path = None
+    """Downloads a single asset using a persistent session strategy."""
+    input_val, cache_path, _ = task
+    
+    # Return immediately if already cached
+    if os.path.exists(cache_path):
+        return 1
 
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     
-    # 1. Download to Cache if missing
-    if not os.path.exists(cache_path):
-        # Extract File ID from link or use direct ID
-        file_id = input_val
-        if 'id=' in str(input_val):
-            file_id = input_val.split('id=')[-1].split('&')[0]
-        elif 'd/' in str(input_val):
-            file_id = input_val.split('d/')[-1].split('/')[0]
+    file_id = input_val
+    if 'id=' in str(input_val):
+        file_id = input_val.split('id=')[-1].split('&')[0]
+    elif 'd/' in str(input_val):
+        file_id = input_val.split('d/')[-1].split('/')[0]
 
-        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-        session = requests.Session()
-        
-        try:
-            # Initial request to check for large file warning
-            response = session.get(download_url, stream=True)
-            
-            # Look for the confirmation token in cookies
-            token = None
-            for key, value in response.cookies.items():
-                if key.startswith('download_warning'):
-                    token = value
-                    break
-
-            # If warning present, resubmit with confirmation token
-            if token:
-                params = {'confirm': token, 'id': file_id}
-                response = session.get("https://drive.google.com/uc?export=download", params=params, stream=True)
-
-            if response.status_code == 200:
-                with open(cache_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=32768):
-                        if chunk: f.write(chunk)
-            else:
-                print(f"\n[Error] {cache_path} failed with status {response.status_code}")
-
-        except Exception as e:
-            print(f"\n[Network Error] {cache_path}: {e}")
-
-    # 2. Copy from Cache to Target Build directory
-    if target_path:
-        if os.path.exists(cache_path):
-            os.makedirs(os.path.dirname(target_path), exist_ok=True)
-            shutil.copy2(cache_path, target_path)
-        else:
-            print(f"\n[Warning] Skipped copying {cache_path} (File not found)")
-
-def watermark_worker(image_path):
-    """
-    Worker function to apply watermark to a single image.
-    Features:
-    - Resizes watermark to 20% of image width.
-    - Places watermark at bottom-right with 5% vertical padding.
-    - Sets watermark transparency to 70%.
-    - Preserves EXIF data from original image.
-    - Maximizes output quality.
-    """
-    if not os.path.exists(WATERMARK_PATH):
-        return
-        
-    try:
-        exif_bytes = None
-        # Open and capture info before processing
-        with Image.open(image_path) as img_src:
-            original_format = img_src.format
-            # 1. Capture EXIF data
-            exif_bytes = img_src.info.get('exif')
-            base_image = img_src.convert("RGBA")
-            
-        watermark = Image.open(WATERMARK_PATH).convert("RGBA")
-
-        # 2. Adjust Watermark Opacity (Transparency)
-        # Scale alpha channel by 0.90 (90% opacity)
-        alpha = watermark.getchannel('A')
-        new_alpha = alpha.point(lambda i: int(i * 0.9))
-        watermark.putalpha(new_alpha)
-
-        # 3. Resize Watermark relative to image width (20%)
-        target_width = int(base_image.width * 0.20)
-        aspect_ratio = watermark.height / watermark.width
-        target_height = int(target_width * aspect_ratio)
-        
-        if target_width > 0 and target_height > 0:
-            watermark = watermark.resize((target_width, target_height), Image.Resampling.LANCZOS)
-
-        # 4. Calculate position 
-        width, height = base_image.size
-        wm_width, wm_height = watermark.size
-        
-        
-        position = (width - wm_width, height - wm_height)
-
-        # 5. Composite
-        transparent_layer = Image.new('RGBA', base_image.size, (0,0,0,0))
-        transparent_layer.paste(watermark, position, mask=watermark)
-        output = Image.alpha_composite(base_image, transparent_layer)
-        
-        # Prepare Save Arguments
-        save_kwargs = {}
-        if exif_bytes:
-            save_kwargs['exif'] = exif_bytes
-
-        # 6. Save preserving format, quality, and EXIF
-        if original_format == 'JPEG' or image_path.lower().endswith(('.jpg', '.jpeg')):
-            output = output.convert("RGB")
-            # quality=QUALITY: User defined compression
-            # subsampling=0: Disable chroma subsampling (4:4:4)
-            output.save(image_path, format='JPEG', quality=QUALITY, subsampling=0, progressive=True, optimize=True, **save_kwargs)
-        elif original_format == 'PNG' or image_path.lower().endswith('.png'):
-            output.save(image_path, format='PNG', **save_kwargs)
-        else:
-            output = output.convert("RGB")
-            output.save(image_path, quality=100, **save_kwargs)
-        
-    except Exception as e:
-        print(f"\n[Watermark Error] Failed to watermark {image_path}: {e}")
-
-def download_portfolio_assets(csv_path,jobs=0):
-    """Parses the portfolio CSV and downloads assets in parallel."""
+    url = "https://drive.google.com/uc?export=download"
+    session = requests.Session()
     
-    tasks = []
     try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
+        response = session.get(url, params={'id': file_id}, stream=True)
+        token = None
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                token = value
+                break
+
+        if token:
+            response = session.get(url, params={'id': file_id, 'confirm': token}, stream=True)
+
+        if response.status_code == 200:
+            with open(cache_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=32768):
+                    if chunk: f.write(chunk)
+            return 1
+        else:
+            return 0
+    except Exception as e:
+        print(f"Download Error {cache_path}: {e}")
+        return 0
+
+# --- Image Processing Worker ---
+def process_image_worker(task):
+    """
+    Single-pass processing.
+    """
+    source_path, full_out_path, thumb_out_path, quality, apply_watermark, gallery_name = task
+    
+    file_name = os.path.basename(source_path)
+    name_no_ext = os.path.splitext(file_name)[0]
+    
+    metadata = {}
+    
+    # 1. Metadata Extraction (Must read raw file for ExifRead)
+    try:
+        with open(source_path, 'rb') as f:
+            tags = exifread.process_file(f, stop_tag='DateTimeOriginal')
+            for tag in tags.keys():
+                if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
+                    metadata[tag] = str(tags[tag])
+            
+            if 'EXIF DateTimeOriginal' in tags:
+                metadata['__dt'] = datetime.strptime(str(tags['EXIF DateTimeOriginal']), "%Y:%m:%d %H:%M:%S").timestamp()
+            else:
+                metadata['__dt'] = os.path.getmtime(source_path)
+
+    except Exception:
+        metadata['__dt'] = os.path.getmtime(source_path)
+
+    # 2. Safety Incremental Check
+    if (os.path.exists(full_out_path) and os.path.exists(thumb_out_path) and
+        os.path.getmtime(full_out_path) > os.path.getmtime(source_path)):
+        
+        if 'Image Width' not in metadata:
+             img = cv.imread(full_out_path)
+             if img is not None:
+                h, w, _ = img.shape
+                metadata['Image Width'], metadata['Image Height'] = w, h
+        metadata['File Size'] = os.path.getsize(full_out_path)
+        return (gallery_name, name_no_ext, metadata)
+
+    # 3. Load Image
+    img = cv.imread(source_path)
+    if img is None:
+        return (gallery_name, name_no_ext, {"Error": "Corrupt Image"})
+
+    h, w, _ = img.shape
+    metadata['Image Width'] = w
+    metadata['Image Height'] = h
+
+    # 4. Watermarking
+    processed_img = img
+    if apply_watermark and worker_watermark is not None:
+        wm = worker_watermark
+        wm_target_w = int(w * 0.20)
+        wm_aspect = wm.shape[0] / wm.shape[1]
+        wm_target_h = int(wm_target_w * wm_aspect)
+        
+        if wm_target_w > 0 and wm_target_h > 0:
+            wm_resized = cv.resize(wm, (wm_target_w, wm_target_h), interpolation=cv.INTER_AREA)
+            
+            pad_y = int(h * 0.05)
+            pad_x = int(w * 0.02)
+            y1, y2 = h - wm_target_h - pad_y, h - pad_y
+            x1, x2 = w - wm_target_w - pad_x, w - pad_x
+
+            if y1 > 0 and x1 > 0:
+                wm_bgr = wm_resized[:, :, :3]
+                wm_alpha = wm_resized[:, :, 3] / 255.0
+                wm_alpha = wm_alpha * 0.7 
+
+                roi = img[y1:y2, x1:x2]
+                for c in range(0, 3):
+                    roi[:, :, c] = (wm_alpha * wm_bgr[:, :, c] + (1.0 - wm_alpha) * roi[:, :, c])
+                
+                processed_img = img
+                processed_img[y1:y2, x1:x2] = roi
+
+    # 5. Save Full
+    cv.imwrite(full_out_path, processed_img, [cv.IMWRITE_JPEG_QUALITY, quality, cv.IMWRITE_JPEG_PROGRESSIVE, 1])
+    metadata['File Size'] = os.path.getsize(full_out_path)
+
+    # 6. Generate & Save Thumb
+    scale = min(1200/w, 900/h)
+    new_w, new_h = int(w * scale), int(h * scale)
+    thumb = cv.resize(processed_img, (new_w, new_h), interpolation=cv.INTER_AREA)
+    cv.imwrite(thumb_out_path, thumb, [cv.IMWRITE_JPEG_QUALITY, min(quality, 85), cv.IMWRITE_JPEG_PROGRESSIVE, 1])
+
+    return (gallery_name, name_no_ext, metadata)
+
+def update_gallery_repo():
+    os.makedirs('tmp', exist_ok=True)
+    if not os.path.exists('./tmp/gallery'):
+        print(f" - Cloning gallery repo...")
+        git.Repo.clone_from(GALLERY_REPO, 'tmp/gallery')
+    else:
+        print(f" - Pulling latest changes...")
+        repo = git.Repo('./tmp/gallery')
+        repo.remotes.origin.pull()
+
+# --- Main Engine ---
+def main():
+    sys.stdout = DualLogger()
+
+    parser = argparse.ArgumentParser(description='TheDoShoots Portfolio Engine')
+    parser.add_argument('--select', nargs='+', help='Build specific galleries')
+    parser.add_argument('--watermark', action='store_true', help='Apply watermark')
+    parser.add_argument('--skip-repo', action='store_true', help='Skip git updates')
+    parser.add_argument('--clean', action='store_true', help='Clean builds')
+    parser.add_argument('--full-clean', action='store_true', help='Wipe everything')
+    parser.add_argument('--force-download', action='store_true', help='Force verify downloads')
+    parser.add_argument('-j', '--jobs', type=int, default=None, help='Threads')
+    parser.add_argument('-q', '--quality', type=int, default=100, help='JPEG Quality')
+    args = parser.parse_args()
+
+    profiler = Profiler()
+    num_workers = args.jobs or cpu_count()
+    
+    print(f"{color.BOLD}*** TheDoShoots Portfolio Engine ***{color.END}")
+    print(f"Configuration: {num_workers} Workers | Quality: {args.quality}")
+
+    target_keys = [k for k in GALLERY_EMOJIS.keys() if not args.select or k in args.select]
+    print(f"Target Galleries ({len(target_keys)}):")
+    for key in target_keys:
+        emoji = GALLERY_EMOJIS.get(key, '')
+        print(f" - {emoji} {key.title()} {emoji}")
+
+    # --- STEP 0: CLEANUP ---
+    if args.clean or args.full_clean:
+        print(f"\n{color.BOLD}*** Step 0: Cleaning Workspace... ***{color.END}")
+        step0_start = time.time()
+        profiler.start('Cleanup')
+        if args.full_clean and os.path.exists('./build'):
+            print(" - [Full Clean] Removing build directory")
+            shutil.rmtree('./build')
+            if os.path.exists(PORTFOLIO_CSV_PATH): os.remove(PORTFOLIO_CSV_PATH)
+        elif args.clean and os.path.exists(PORTFOLIOS_ROOT):
+            print(" - [Fast Clean] Removing HTML/JSON/Thumbs (Keeping Fulls)")
+            for g in os.listdir(PORTFOLIOS_ROOT):
+                for item in ['index.html', 'thumbs', 'metadata', 'js', 'css']:
+                    p = os.path.join(PORTFOLIOS_ROOT, g, item)
+                    if os.path.exists(p):
+                        if os.path.isdir(p): shutil.rmtree(p)
+                        else: os.remove(p)
+        profiler.stop('Cleanup')
+        print(f"{color.BOLD}*** Step 0 Completed in {time.time() - step0_start:.2f}s ***{color.END}")
+
+    # --- STEP 1: ASSETS & REPO ---
+    print(f"\n{color.BOLD}*** Step 1: Updating Assets & Repo... ***{color.END}")
+    step1_start = time.time()
+    
+    # Git
+    if not args.skip_repo:
+        profiler.start('Git Update')
+        update_gallery_repo()
+        profiler.stop('Git Update')
+    
+    # Asset Management
+    profiler.start('Asset Download')
+    os.makedirs('assets', exist_ok=True)
+    
+    # Logic: Download new CSV to temp, check if changed
+    temp_csv_path = PORTFOLIO_CSV_PATH + ".tmp"
+    csv_changed = True
+    
+    print(" - Checking Portfolio Manifest...")
+    # Attempt download of CSV to temp
+    if download_worker((PORTFOLIO_CSV_ID, temp_csv_path, None)):
+        if os.path.exists(PORTFOLIO_CSV_PATH):
+            old_hash = calculate_file_hash(PORTFOLIO_CSV_PATH)
+            new_hash = calculate_file_hash(temp_csv_path)
+            
+            if old_hash == new_hash and not args.force_download:
+                csv_changed = False
+                os.remove(temp_csv_path) # Cleanup temp
+                print(" - Manifest unchanged. Skipping asset verification.")
+            else:
+                print(" - Manifest updated (or forced). Verifying assets...")
+                shutil.move(temp_csv_path, PORTFOLIO_CSV_PATH)
+        else:
+            print(" - Initial Manifest Download.")
+            shutil.move(temp_csv_path, PORTFOLIO_CSV_PATH)
+    else:
+        print(" - Warning: Could not check Manifest (Offline?). Using local if available.")
+
+    download_tasks = []
+    galleries_to_process = []
+    
+    if os.path.exists(PORTFOLIO_CSV_PATH):
+        with open(PORTFOLIO_CSV_PATH, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                gallery = row['Gallery'].strip().lower()
-                # Flexibly handle 'File ID' or 'Link' columns
-                file_id = row.get('File ID') or row.get('Link')
-                file_name = row['File Name']
-                
-                # Path in persistent cache
-                cache_path = os.path.join(CACHE_ROOT, gallery, file_name)
-                # Path in active build
-                target_path = os.path.join(PORTFOLIOS_ROOT, gallery, 'fulls', file_name)
-                
-                tasks.append((file_id, cache_path, target_path))
-    except FileNotFoundError:
-        print(f"Error: {csv_path} not found.")
-        return
-
-    num_processes = min(jobs, cpu_count(), len(tasks)) if jobs > 0 else min(cpu_count(), len(tasks))
-    print(f'Using {num_processes} Downloader Workers')
-    with Pool(processes=num_processes) as pool:
-        list(tqdm.tqdm(pool.imap_unordered(download_worker, tasks), total=len(tasks), unit="img"))
-
-def prepareGallery(args_tuple):
-    """Worker function to build a single gallery."""
-    gallery, title, modifyGPS, dry_run, quality = args_tuple
-    log_prefix = f"[{gallery}]"
-
-    if dry_run:
-        time.sleep(0.1)
-        return f"{gallery} (Dry Run)"
-
-    galleryDir = os.path.join(PORTFOLIOS_ROOT, gallery)
-    htmlPath = os.path.join(galleryDir, 'index.html')
-    fullsPath = os.path.join(galleryDir, 'fulls')
+                g = row['Gallery'].strip().lower()
+                if g in target_keys:
+                    fid = row.get('File ID') or row.get('Link')
+                    fname = row['File Name']
+                    cache_p = os.path.join(CACHE_ROOT, g, fname)
+                    
+                    # Always build the list for the next step (Build Step)
+                    galleries_to_process.append((g, fname, cache_p))
+                    
+                    # Only add to download queue if CSV changed or Force flag is set
+                    if csv_changed:
+                        download_tasks.append((fid, cache_p, None))
     
-    # Ensure structure exists
-    os.makedirs(galleryDir, exist_ok=True)
-    os.makedirs(fullsPath, exist_ok=True)
-
-    # 1. EXIF Modification
-    if modifyGPS:
-         print(f"{color.BOLD} {log_prefix} Modifying EXIF...{color.END}")
-         exif_script_path = os.path.abspath('./tmp/gallery/prepareExif.py')
-         fulls_rel_path = f'../../{fullsPath}'
-
-         server_process = subprocess.Popen(
-             ['python', exif_script_path, '--fulls', fulls_rel_path],
-             cwd='./tmp/gallery' 
-         )
-
-         host, port = '127.0.0.1', 8000
-         for _ in range(30):
-             if is_port_open(host, port):
-                 webbrowser.open_new_tab(f'http://{host}:{port}')
-                 break
-             time.sleep(1)
-         
-         print(f"{color.BOLD}{log_prefix} Press Ctrl+C when EXIF edits are done.{color.END}")
-         try:
-            server_process.wait()
-         except KeyboardInterrupt:
-            server_process.terminate()
+    # Run Downloads only if needed
+    if download_tasks and csv_changed:
+        print(f" - Verifying {len(download_tasks)} assets...")
+        with Pool(num_workers) as pool:
+            list(tqdm.tqdm(pool.imap_unordered(download_worker, download_tasks), 
+                           total=len(download_tasks), unit='file', desc="Downloading"))
     
-    # 2. Copy Template Assets
-    assets_to_copy = ['prepareSite.py', 'index.html', 'immersive.html', 'css', 'js', 'templates']
-    for asset in assets_to_copy:
-        src = f'./tmp/gallery/{asset}'
-        dst = os.path.join(galleryDir, asset)
+    profiler.stop('Asset Download', count=len(download_tasks) if csv_changed else 0)
+    print(f"{color.BOLD}*** Step 1 Completed in {time.time() - step1_start:.2f}s ***{color.END}")
+
+    # --- STEP 2: IMAGE PROCESSING ---
+    print(f"\n{color.BOLD}*** Step 2: Processing Images... ***{color.END}")
+    step2_start = time.time()
+    profiler.start('Image Processing')
+    
+    gallery_map = {k: [] for k in target_keys}
+    processing_tasks = []
+    
+    # Pre-load existing metadata
+    existing_metadata = {}
+    for g in target_keys:
+        meta_path = os.path.join(PORTFOLIOS_ROOT, g, 'metadata', 'metadata.json')
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, 'r') as f:
+                    existing_metadata[g] = json.load(f)
+            except: pass
+
+    results_map = {k: {} for k in target_keys}
+    skipped_count = 0
+
+    for gallery, fname, cache_path in galleries_to_process:
+        if not os.path.exists(cache_path): continue
+
+        g_root = os.path.join(PORTFOLIOS_ROOT, gallery)
+        full_path = os.path.join(g_root, 'fulls', fname)
+        thumb_path = os.path.join(g_root, 'thumbs', fname)
+        
+        os.makedirs(os.path.join(g_root, 'fulls'), exist_ok=True)
+        os.makedirs(os.path.join(g_root, 'thumbs'), exist_ok=True)
+        os.makedirs(os.path.join(g_root, 'metadata'), exist_ok=True)
+
+        name_no_ext = os.path.splitext(fname)[0]
+        gallery_map[gallery].append(fname)
+        
+        # --- SMART CHECK ---
+        is_fully_cached = False
+        if (os.path.exists(full_path) and os.path.exists(thumb_path) and 
+            os.path.getmtime(full_path) > os.path.getmtime(cache_path)):
+            
+            if gallery in existing_metadata and name_no_ext in existing_metadata[gallery]:
+                meta = existing_metadata[gallery][name_no_ext]
+                # Reconstruct sorting key
+                if 'EXIF DateTimeOriginal' in meta:
+                    try:
+                        dt_str = str(meta['EXIF DateTimeOriginal'])
+                        meta['__dt'] = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").timestamp()
+                    except:
+                        meta['__dt'] = os.path.getmtime(cache_path)
+                else:
+                    meta['__dt'] = os.path.getmtime(cache_path)
+                    
+                results_map[gallery][name_no_ext] = meta
+                is_fully_cached = True
+                skipped_count += 1
+        
+        if not is_fully_cached:
+            task = (cache_path, full_path, thumb_path, args.quality, args.watermark, gallery)
+            processing_tasks.append(task)
+    
+    if skipped_count > 0:
+        print(f" - Skipped {skipped_count} up-to-date images.")
+    
+    if processing_tasks:
+        print(f" - Queued {len(processing_tasks)} images for processing...")
+        with Pool(num_workers, initializer=init_worker, initargs=(WATERMARK_PATH,)) as pool:
+            for gallery_name, name_no_ext, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
+                                        total=len(processing_tasks), unit='img', desc="Processing"):
+                results_map[gallery_name][name_no_ext] = meta
+    else:
+        print(" - All images are up to date.")
+            
+    profiler.stop('Image Processing', count=len(processing_tasks) + skipped_count)
+    print(f"{color.BOLD}*** Step 2 Completed in {time.time() - step2_start:.2f}s ***{color.END}")
+
+    # --- STEP 3: SITE GENERATION ---
+    print(f"\n{color.BOLD}*** Step 3: Generating Sites... ***{color.END}")
+    step3_start = time.time()
+    profiler.start('Site Generation')
+    
+    for gallery in target_keys:
+        if gallery not in gallery_map or not gallery_map[gallery]:
+            continue
+
+        emoji = GALLERY_EMOJIS.get(gallery, '')
+        title = f"{emoji} {gallery.title()} {emoji}"
+        print(f" - Building {title}")
+
+        # Metadata
+        g_root = os.path.join(PORTFOLIOS_ROOT, gallery)
+        gallery_meta = {}
+        file_list = []
+        
+        def get_sort_key(fname):
+            n = os.path.splitext(fname)[0]
+            if n in results_map[gallery]:
+                return results_map[gallery][n].get('__dt', 0)
+            return 0
+
+        sorted_files = sorted(gallery_map[gallery], key=get_sort_key)
+        
+        for fname in sorted_files:
+            name_no_ext = os.path.splitext(fname)[0]
+            file_list.append(name_no_ext)
+            if name_no_ext in results_map[gallery]:
+                clean_meta = results_map[gallery][name_no_ext].copy()
+                clean_meta.pop('__dt', None)
+                gallery_meta[name_no_ext] = clean_meta
+        
+        gallery_meta['image_order'] = file_list
+        with open(os.path.join(g_root, 'metadata', 'metadata.json'), 'w') as f:
+            json.dump(gallery_meta, f, indent=4)
+
+        # Inject Assets
+        tmpl_src = './tmp/gallery'
+        if os.path.exists(tmpl_src):
+            for asset in ['index.html', 'immersive.html', 'css', 'js', 'templates']:
+                src = os.path.join(tmpl_src, asset)
+                dst = os.path.join(g_root, asset)
+                if os.path.exists(src):
+                    if os.path.isdir(src):
+                        if os.path.exists(dst): shutil.rmtree(dst)
+                        shutil.copytree(src, dst)
+                    else:
+                        shutil.copy2(src, dst)
+            
+            # Inject Titles
+            html_path = os.path.join(g_root, 'index.html')
+            if os.path.exists(html_path):
+                with open(html_path, 'r', encoding='utf-8') as f: content = f.read()
+                content = re.sub(r'<title>.*?</title>', f'<title>{title}</title>', content, flags=re.DOTALL)
+                content = re.sub(r'<h1 id="title">.*?</h1>', f'<h1 id="title">{title}</h1>', content, flags=re.DOTALL)
+                with open(html_path, 'w', encoding='utf-8') as f: f.write(content)
+
+            js_path = os.path.join(g_root, 'js/app.js')
+            if os.path.exists(js_path):
+                with open(js_path, 'r', encoding='utf-8') as f: js_content = f.read()
+                js_content = re.sub(r'const titleText = ".*Gallery Template.*";', f'const titleText = "{title}";', js_content)
+                with open(js_path, 'w', encoding='utf-8') as f: f.write(js_content)
+
+    profiler.stop('Site Generation', count=len(target_keys))
+    print(f"{color.BOLD}*** Step 3 Completed in {time.time() - step3_start:.2f}s ***{color.END}")
+    
+    # --- STEP 4: DEPLOYMENT PREP ---
+    print(f"\n{color.BOLD}*** Step 4: Preparing Deployment... ***{color.END}")
+    step4_start = time.time()
+    profiler.start('Deployment Prep')
+    
+    deploy_assets = ['index.html', 'about.html', 'assets', 'LICENSE']
+    for item in deploy_assets:
+        src = item
+        dst = os.path.join('./build', item)
         if os.path.exists(src):
             if os.path.isdir(src):
                 if os.path.exists(dst): shutil.rmtree(dst)
                 shutil.copytree(src, dst)
             else:
-                shutil.copyfile(src, dst)
-
-    # 3. Inject Titles
-    if os.path.exists(htmlPath):
-        with open(htmlPath, 'r', encoding='utf-8') as f: content = f.read()
-        content = re.sub(r'<title>.*?</title>', f'<title>{title}</title>', content, flags=re.DOTALL)
-        content = re.sub(r'<h1 id="title">.*?</h1>', f'<h1 id="title">{title}</h1>', content, flags=re.DOTALL)
-        with open(htmlPath, 'w', encoding='utf-8') as f: f.write(content)
-
-    jsPath = os.path.join(galleryDir, 'js/app.js')
-    if os.path.exists(jsPath):
-        with open(jsPath, 'r', encoding='utf-8') as f: jsContent = f.read()
-        jsContent = re.sub(r'const titleText = ".*Gallery Template.*";', f'const titleText = "{title}";', jsContent)
-        with open(jsPath, 'w', encoding='utf-8') as f: f.write(jsContent)
-
-    # 4. Run Site Generator
-    try:
-        subprocess.run(['python', 'prepareSite.py', '--quality', str(quality)], cwd=galleryDir, check=True, stdout=subprocess.DEVNULL)
-    except Exception:
-        print(f"{log_prefix} Error: prepareSite.py failed.")
-
-    return f"{gallery} Done"
-
-def prepare_deployment_site():
-    """Copies static site files to the build directory for deployment."""
-    print(f"\n{color.BOLD}*** Step 3: Preparing Site for Deployment... ***{color.END}")
-    build_dir = 'build'
-    os.makedirs(build_dir, exist_ok=True)
-    
-    # Files/folders to copy to site root (matching previous GitHub Action steps)
-    to_copy = ['index.html', 'about.html', 'LICENSE', 'assets']
-    
-    for item in to_copy:
-        if os.path.exists(item):
-            dst = os.path.join(build_dir, item)
-            
-            # Avoid self-copying if build is somehow in the list
-            if os.path.abspath(item) == os.path.abspath(build_dir):
-                continue
-                
-            if os.path.isdir(item):
-                if os.path.exists(dst): 
-                    shutil.rmtree(dst)
-                shutil.copytree(item, dst)
-            else:
-                shutil.copy2(item, dst)
-            print(f" - Copied {item} to {build_dir}/")
+                shutil.copy2(src, dst)
+            print(f" - Copied {item}")
         else:
-            print(f" - {color.BOLD}[Warning]{color.END} {item} not found, skipping.")
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='TheDoShoots Portfolio Preparation Engine')
-    parser.add_argument('--exif', action='store_true', help='Launch EXIF Editor')
-    parser.add_argument('--select', nargs='+', help='Build specific galleries')
-    parser.add_argument('--watermark', action='store_true', help='Apply watermark to downloaded images')
-    parser.add_argument('--skip-repo', action='store_true', help='Skip git updates')
-    parser.add_argument('--clean', action='store_true', help='Wipe generated assets (Keep images)')
-    parser.add_argument('--full-clean', action='store_true', help='Wipe entire portfolios folder and CSV')
-    parser.add_argument('--dry-run', action='store_true', help='Simulation mode')
-    parser.add_argument('-j', '--jobs', type=int, default=None, help='Parallel process count')
-    parser.add_argument('-q', '--quality', type=int, default=100, help='JPEG Quality (1-100)')
-
-    args = parser.parse_args()
-
-    target_galleries = {k: v for k, v in GALLERY_EMOJIS.items() if not args.select or k in args.select}
-
-    print(f"{color.BOLD}*** TheDoShoots Portfolio Preperation Engine ***{color.END}")
-    
-    print(f"Target Galleries ({len(target_galleries)}):")
-    for key, emoji in target_galleries.items():
-        title = f'{emoji} {key.title()} {emoji}'
-        print(f" - {key}: {title}")
-
-    # --- STEP 0: CLEANING ---
-    if (args.clean or args.full_clean) and not args.dry_run:
-        print(f"\n{color.BOLD}*** Step 0: Cleaning Workspace... ***{color.END}")
-        
-        if args.full_clean:
-            build_dir = './build'
-            if os.path.exists(build_dir):
-                print(f"[Full Clean] Removing {build_dir}/")
-                shutil.rmtree(build_dir)
+            print(f" - Warning: {item} not found")
             
-            # Maintain legacy cleanup Support
-            if os.path.exists('./portfolios'):
-                print(f"[Full Clean] Removing legacy portfolios/ folder")
-                shutil.rmtree('./portfolios')
-            
-            if os.path.exists(PORTFOLIO_CSV_PATH):
-                print(f"[Full Clean] Deleting {PORTFOLIO_CSV_PATH}")
-                os.remove(PORTFOLIO_CSV_PATH)
-                
-        elif args.clean and os.path.exists(PORTFOLIOS_ROOT):
-            print(f"[Normal Clean] Deleting Assets inside {PORTFOLIOS_ROOT}/ (Keeping images)")
-            for gallery in target_galleries.keys():
-                gallery_path = os.path.join(PORTFOLIOS_ROOT, gallery)
-                if os.path.exists(gallery_path):
-                    for item in os.listdir(gallery_path):
-                        if item == 'fulls': continue
-                        path = os.path.join(gallery_path, item)
-                        if os.path.isdir(path): shutil.rmtree(path)
-                        else: os.remove(path)
-
-    # --- STEP 1: ASSETS & REPO ---
-    print(f"\n{color.BOLD}*** Step 1: Downloading Portfolio Assets... ***{color.END}")
-    os.makedirs('assets', exist_ok=True)
-    if not os.path.exists(PORTFOLIO_CSV_PATH):
-        download_worker((PORTFOLIO_CSV_ID, PORTFOLIO_CSV_PATH))
-
-    if not args.dry_run:
-        download_portfolio_assets(PORTFOLIO_CSV_PATH,jobs=args.jobs)
-    
-    if not args.skip_repo:
-        updateGalleryRepo()
-
-    # --- STEP 1.5: WATERMARKING ---
-    if args.watermark and not args.dry_run:
-        if not os.path.exists(WATERMARK_PATH):
-            print(f"\n{color.BOLD}[Warning] Watermark file not found at {WATERMARK_PATH}. Skipping...{color.END}")
-        else:
-            all_images = []
-            
-            for gallery in target_galleries.keys():
-                fulls_path = os.path.join(PORTFOLIOS_ROOT, gallery, 'fulls')
-                if os.path.exists(fulls_path):
-                    for f in os.listdir(fulls_path):
-                        if f.lower().endswith(('.jpg', '.jpeg', '.png')):
-                            all_images.append(os.path.join(fulls_path, f))
-            
-            if all_images:
-                num_processes = args.jobs or min(cpu_count(), len(all_images))
-                print(f"\n{color.BOLD}*** Step 1.5: Applying Watermarks with {num_processes} Workers ***{color.END}")
-                num_processes = args.jobs or min(cpu_count(), len(all_images))
-                print(f"\n{color.BOLD}*** Step 1.5: Applying Watermarks (Quality: {args.quality}) with {num_processes} Workers ***{color.END}")
-                with Pool(processes=num_processes, initializer=init_worker, initargs=(args.quality,)) as pool:
-                    list(tqdm.tqdm(pool.imap_unordered(watermark_worker, all_images), total=len(all_images), unit="img"))
-            else:
-                print("No images found to watermark.")
-
-    # --- STEP 2: BUILDING ---
-    tasks = [(g, f'{t} {g.title()} {t}', args.exif, args.dry_run, args.quality) for g, t in target_galleries.items()]
-    
-    if args.exif:
-        for task in tasks: prepareGallery(task)
-    else:
-        count = args.jobs or min(cpu_count() or 1, len(tasks))
-        print(f"\n{color.BOLD}*** Step 2: Building {len(tasks)} Galleries with {count} Workers ***{color.END}")
-        with Pool(processes=count) as pool:
-            list(tqdm.tqdm(pool.imap_unordered(prepareGallery, tasks), total=len(tasks)))
-
-    # --- STEP 3: DEPLOYMENT PREP ---
-    if not args.dry_run:
-        prepare_deployment_site()
-
-    # Cleanup
-    if os.path.exists('tmp'): shutil.rmtree('tmp')
+    profiler.stop('Deployment Prep')
+    print(f"{color.BOLD}*** Step 4 Completed in {time.time() - step4_start:.2f}s ***{color.END}")
 
     # Stats
     cache_size = get_dir_size(CACHE_ROOT) if os.path.exists(CACHE_ROOT) else 0
     build_size = get_dir_size('./build') if os.path.exists('./build') else 0
 
-    print(f"\n{color.BOLD}Preparation Complete!{color.END}")
+    profiler.report()
+    print(f"\n{color.BOLD}*** TheDoShoots Portfolio Build Complete! ***{color.END}")
     print(f" - Local Cache Size: {cache_size:.2f} MB")
     print(f" - Final Build Size: {build_size:.2f} MB")
+
+if __name__ == '__main__':
+    main()
