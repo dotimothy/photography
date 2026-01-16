@@ -20,7 +20,7 @@ help:
 	@echo "make fast     - Run build without watermarking or git updates"
 	@echo "make clean    - Remove build directory"
 	@echo "make exif     - Launch EXIF Editor"
-
+	
 install:
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install -r requirements.txt
@@ -33,6 +33,11 @@ fast:
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+deepclean:
+	rm -rf $(BUILD_DIR)
+	rm -rf .cache
+	rm -rf tmp
 
 exif:
 	$(PYTHON) $(SCRIPT) --exif
