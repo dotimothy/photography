@@ -26,7 +26,8 @@ GALLERY_REPO = 'https://github.com/dotimothy/gallery.git'
 PORTFOLIO_CSV_PATH = './assets/portfolio.csv'
 PORTFOLIO_CSV_ID = '1PrLEoVooon_-rOZRGzH1BuZbNWLaHDqV'
 WATERMARK_PATH = './assets/watermark.png'
-PORTFOLIOS_ROOT = './portfolios'
+PORTFOLIOS_ROOT = './build/portfolios'
+CACHE_ROOT = './.cache/images'
 
 # Map folder names to Emojis
 GALLERY_EMOJIS = {
@@ -61,6 +62,17 @@ def is_port_open(host, port, timeout=1):
     finally:
         sock.close()
 
+def get_dir_size(start_path='.'):
+    """Calculates the total size of a directory in MB."""
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+    return total_size / (1024 * 1024)
+
 def updateGalleryRepo():
     """Clones or pulls the latest gallery template."""
     os.makedirs('tmp', exist_ok=True)
@@ -74,50 +86,62 @@ def updateGalleryRepo():
 
 def download_worker(task):
     """
-    Worker function to download a single file using requests.
-    Handles the Google Drive virus scan warning for large files.
+    Worker function to download a single file to cache, then copy to target.
     """
-    input_val, output_path = task
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
-    if os.path.exists(output_path):
-        return
+    if len(task) == 3:
+        input_val, cache_path, target_path = task
+    else:
+        # Support for legacy caller (csv download)
+        input_val, cache_path = task
+        target_path = None
 
-    # Extract File ID from link or use direct ID
-    file_id = input_val
-    if 'id=' in str(input_val):
-        file_id = input_val.split('id=')[-1].split('&')[0]
-    elif 'd/' in str(input_val):
-        file_id = input_val.split('d/')[-1].split('/')[0]
-
-    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    session = requests.Session()
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     
-    try:
-        # Initial request to check for large file warning
-        response = session.get(download_url, stream=True)
+    # 1. Download to Cache if missing
+    if not os.path.exists(cache_path):
+        # Extract File ID from link or use direct ID
+        file_id = input_val
+        if 'id=' in str(input_val):
+            file_id = input_val.split('id=')[-1].split('&')[0]
+        elif 'd/' in str(input_val):
+            file_id = input_val.split('d/')[-1].split('/')[0]
+
+        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        session = requests.Session()
         
-        # Look for the confirmation token in cookies
-        token = None
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                token = value
-                break
+        try:
+            # Initial request to check for large file warning
+            response = session.get(download_url, stream=True)
+            
+            # Look for the confirmation token in cookies
+            token = None
+            for key, value in response.cookies.items():
+                if key.startswith('download_warning'):
+                    token = value
+                    break
 
-        # If warning present, resubmit with confirmation token
-        if token:
-            params = {'confirm': token, 'id': file_id}
-            response = session.get("https://drive.google.com/uc?export=download", params=params, stream=True)
+            # If warning present, resubmit with confirmation token
+            if token:
+                params = {'confirm': token, 'id': file_id}
+                response = session.get("https://drive.google.com/uc?export=download", params=params, stream=True)
 
-        if response.status_code == 200:
-            with open(output_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=32768):
-                    if chunk: f.write(chunk)
+            if response.status_code == 200:
+                with open(cache_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=32768):
+                        if chunk: f.write(chunk)
+            else:
+                print(f"\n[Error] {cache_path} failed with status {response.status_code}")
+
+        except Exception as e:
+            print(f"\n[Network Error] {cache_path}: {e}")
+
+    # 2. Copy from Cache to Target Build directory
+    if target_path:
+        if os.path.exists(cache_path):
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            shutil.copy2(cache_path, target_path)
         else:
-            print(f"\n[Error] {output_path} failed with status {response.status_code}")
-
-    except Exception as e:
-        print(f"\n[Network Error] {output_path}: {e}")
+            print(f"\n[Warning] Skipped copying {cache_path} (File not found)")
 
 def watermark_worker(image_path):
     """
@@ -179,7 +203,7 @@ def watermark_worker(image_path):
             output = output.convert("RGB")
             # quality=QUALITY: User defined compression
             # subsampling=0: Disable chroma subsampling (4:4:4)
-            output.save(image_path, format='JPEG', quality=QUALITY, subsampling=0, **save_kwargs)
+            output.save(image_path, format='JPEG', quality=QUALITY, subsampling=0, progressive=True, optimize=True, **save_kwargs)
         elif original_format == 'PNG' or image_path.lower().endswith('.png'):
             output.save(image_path, format='PNG', **save_kwargs)
         else:
@@ -189,7 +213,7 @@ def watermark_worker(image_path):
     except Exception as e:
         print(f"\n[Watermark Error] Failed to watermark {image_path}: {e}")
 
-def download_portfolio_assets(csv_path):
+def download_portfolio_assets(csv_path,jobs=0):
     """Parses the portfolio CSV and downloads assets in parallel."""
     
     tasks = []
@@ -201,13 +225,18 @@ def download_portfolio_assets(csv_path):
                 # Flexibly handle 'File ID' or 'Link' columns
                 file_id = row.get('File ID') or row.get('Link')
                 file_name = row['File Name']
+                
+                # Path in persistent cache
+                cache_path = os.path.join(CACHE_ROOT, gallery, file_name)
+                # Path in active build
                 target_path = os.path.join(PORTFOLIOS_ROOT, gallery, 'fulls', file_name)
-                tasks.append((file_id, target_path))
+                
+                tasks.append((file_id, cache_path, target_path))
     except FileNotFoundError:
         print(f"Error: {csv_path} not found.")
         return
 
-    num_processes = min(16, cpu_count(), len(tasks))
+    num_processes = min(jobs, cpu_count(), len(tasks)) if jobs > 0 else min(cpu_count(), len(tasks))
     print(f'Using {num_processes} Downloader Workers')
     with Pool(processes=num_processes) as pool:
         list(tqdm.tqdm(pool.imap_unordered(download_worker, tasks), total=len(tasks), unit="img"))
@@ -286,6 +315,33 @@ def prepareGallery(args_tuple):
 
     return f"{gallery} Done"
 
+def prepare_deployment_site():
+    """Copies static site files to the build directory for deployment."""
+    print(f"\n{color.BOLD}*** Step 3: Preparing Site for Deployment... ***{color.END}")
+    build_dir = 'build'
+    os.makedirs(build_dir, exist_ok=True)
+    
+    # Files/folders to copy to site root (matching previous GitHub Action steps)
+    to_copy = ['index.html', 'about.html', 'LICENSE', 'assets']
+    
+    for item in to_copy:
+        if os.path.exists(item):
+            dst = os.path.join(build_dir, item)
+            
+            # Avoid self-copying if build is somehow in the list
+            if os.path.abspath(item) == os.path.abspath(build_dir):
+                continue
+                
+            if os.path.isdir(item):
+                if os.path.exists(dst): 
+                    shutil.rmtree(dst)
+                shutil.copytree(item, dst)
+            else:
+                shutil.copy2(item, dst)
+            print(f" - Copied {item} to {build_dir}/")
+        else:
+            print(f" - {color.BOLD}[Warning]{color.END} {item} not found, skipping.")
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='TheDoShoots Portfolio Preparation Engine')
     parser.add_argument('--exif', action='store_true', help='Launch EXIF Editor')
@@ -314,9 +370,15 @@ if __name__ == '__main__':
         print(f"\n{color.BOLD}*** Step 0: Cleaning Workspace... ***{color.END}")
         
         if args.full_clean:
-            if os.path.exists(PORTFOLIOS_ROOT):
-                print(f"[Full Clean] Removing {PORTFOLIOS_ROOT}/")
-                shutil.rmtree(PORTFOLIOS_ROOT)
+            build_dir = './build'
+            if os.path.exists(build_dir):
+                print(f"[Full Clean] Removing {build_dir}/")
+                shutil.rmtree(build_dir)
+            
+            # Maintain legacy cleanup Support
+            if os.path.exists('./portfolios'):
+                print(f"[Full Clean] Removing legacy portfolios/ folder")
+                shutil.rmtree('./portfolios')
             
             if os.path.exists(PORTFOLIO_CSV_PATH):
                 print(f"[Full Clean] Deleting {PORTFOLIO_CSV_PATH}")
@@ -340,7 +402,7 @@ if __name__ == '__main__':
         download_worker((PORTFOLIO_CSV_ID, PORTFOLIO_CSV_PATH))
 
     if not args.dry_run:
-        download_portfolio_assets(PORTFOLIO_CSV_PATH)
+        download_portfolio_assets(PORTFOLIO_CSV_PATH,jobs=args.jobs)
     
     if not args.skip_repo:
         updateGalleryRepo()
@@ -380,6 +442,17 @@ if __name__ == '__main__':
         with Pool(processes=count) as pool:
             list(tqdm.tqdm(pool.imap_unordered(prepareGallery, tasks), total=len(tasks)))
 
+    # --- STEP 3: DEPLOYMENT PREP ---
+    if not args.dry_run:
+        prepare_deployment_site()
+
     # Cleanup
     if os.path.exists('tmp'): shutil.rmtree('tmp')
+
+    # Stats
+    cache_size = get_dir_size(CACHE_ROOT) if os.path.exists(CACHE_ROOT) else 0
+    build_size = get_dir_size('./build') if os.path.exists('./build') else 0
+
     print(f"\n{color.BOLD}Preparation Complete!{color.END}")
+    print(f" - Local Cache Size: {cache_size:.2f} MB")
+    print(f" - Final Build Size: {build_size:.2f} MB")

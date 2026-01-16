@@ -1,11 +1,7 @@
 // TheDoShoots Photography Portfolio .gitignore
 tmp/
-*metadata/
-*thumbs/
-*css
+.cache/
 */index.html
-*/css
-*/js
-portfolios/
+build
 assets/portfolio.csv
 *.DS_STORE*
