@@ -10,7 +10,7 @@ jobs ?= 0
 
 default: build
 
-all: install build
+all: deepclean install build
 
 help:
 	@echo "TheDoShoots Portfolio Makefile"
@@ -21,6 +21,7 @@ help:
 	@echo "make build    - Run full build (clean, watermark, quality $(quality))"
 	@echo "make fast     - Run build without watermarking or git updates"
 	@echo "make clean    - Remove build directory"
+	@echo "make deepclean - Remove build directory, template repo, and cache"
 	@echo "make exif     - Launch EXIF Editor"
 	
 install:

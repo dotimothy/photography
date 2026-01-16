@@ -23,27 +23,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Choose your desired Python version
+          python-version: '3.11' 
 
-      - name: Install dependencies
+      - name: Install Builder Dependencies
         run: make install
 
-      - name: Run Python script to build photography portfolio
+      - name: Build TheDoShoots Photography Portfolio
         run: make build
 
-      - name: Upload artifact
+      - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './build'
           
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+
+      - name: Cleanup Runner Environment
+        run: make deepclean
         
   deploy:
     environment:
