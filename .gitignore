@@ -1,6 +1,7 @@
 // TheDoShoots Photography Portfolio .gitignore
 tmp/
 .cache/
+logs/
 */index.html
 build
 assets/portfolio.csv

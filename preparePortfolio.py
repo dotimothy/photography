@@ -7,6 +7,8 @@ Features:
 - OpenCV-based Image Processing pipeline (No PIL for building)
 - Incremental Builds (Skips existing up-to-date files)
 - Detailed Performance Profiling
+- Auto-Logging to file
+- Step-by-step Duration Reporting
 """
 
 import os
@@ -21,6 +23,7 @@ import requests
 import json
 import cv2 as cv
 import exifread
+import sys
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 
@@ -36,10 +39,27 @@ GALLERY_EMOJIS = {
     'astronomy': '🌌', 'food': '🍱', 'landscape': '🏞️', 'planes': '✈️', 'wildlife':  '🐿️ '
 }
 
-# --- Formatting & Profiling ---
+# --- Formatting, Profiling & Logging ---
 class color:
      BOLD = '\033[1m'
      END = '\033[0m'
+
+class DualLogger(object):
+    """Writes to both stdout (terminal) and a log file."""
+    def __init__(self):
+        self.terminal = sys.stdout
+        os.makedirs('logs', exist_ok=True)
+        log_name = f"logs/build_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        self.log_file = open(log_name, "a", encoding='utf-8')
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log_file.write(message)
+        self.log_file.flush()
+
+    def flush(self):
+        self.terminal.flush()
+        self.log_file.flush()
 
 class Profiler:
     def __init__(self):
@@ -56,30 +76,48 @@ class Profiler:
 
     def report(self):
         print(f"\n{color.BOLD}*** Performance Report ***{color.END}")
-        print(f"{'-'*65}")
-        print(f"{'Step Name':<25} | {'Time (s)':<10} | {'% Total':<8} | {'Throughput':<10}")
-        print(f"{'-'*65}")
+        print(f"{'-'*75}")
+        print(f"{'Step Name':<25} | {'Time':<12} | {'% Total':<10} | {'Throughput':<15}")
+        print(f"{'-'*75}")
         
         total_time = sum(m['time'] for m in self.metrics.values())
         
         for name, data in self.metrics.items():
             t = data['time']
             pct = (t / total_time * 100) if total_time > 0 else 0
-            throughput = f"{data['count']/t:.1f} it/s" if data['count'] > 0 else "-"
-            print(f"{name:<25} | {t:<10.2f} | {pct:<8.1f} | {throughput}")
-        print(f"{'-'*65}")
-        print(f"{'Total Duration':<25} | {total_time:<10.2f} | 100.0    |")
-        print(f"{'-'*65}")
+            
+            time_str = f"{t:.2f} s"
+            pct_str = f"{pct:.1f} %"
+            
+            if data['count'] > 0 and t > 0:
+                throughput_str = f"{data['count']/t:.1f} it/s"
+            else:
+                throughput_str = "-"
+
+            print(f"{name:<25} | {time_str:<12} | {pct_str:<10} | {throughput_str:<15}")
+            
+        print(f"{'-'*75}")
+        print(f"{'Total Duration':<25} | {total_time:.2f} s     | 100.0 %    |")
+        print(f"{'-'*75}")
+
+# --- Helpers ---
+def get_dir_size(start_path='.'):
+    """Calculates the total size of a directory in MB."""
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+    return total_size / (1024 * 1024)
 
 # --- Global Worker State ---
-# Used to cache the watermark image in memory per worker process
 worker_watermark = None
 
 def init_worker(watermark_path):
     """Initialize worker process: Load watermark into memory once."""
     global worker_watermark
     if os.path.exists(watermark_path):
-        # Load watermark as BGRA (Includes Alpha)
         worker_watermark = cv.imread(watermark_path, cv.IMREAD_UNCHANGED)
 
 # --- Network Worker ---
@@ -159,7 +197,7 @@ def process_image_worker(task):
     except Exception:
         metadata['__dt'] = os.path.getmtime(source_path)
 
-    # 2. Check Incremental Status (Skip if output is newer than input)
+    # 2. Check Incremental Status
     if (os.path.exists(full_out_path) and os.path.exists(thumb_out_path) and
         os.path.getmtime(full_out_path) > os.path.getmtime(source_path)):
         
@@ -171,7 +209,7 @@ def process_image_worker(task):
         metadata['File Size'] = os.path.getsize(full_out_path)
         return (name_no_ext, metadata)
 
-    # 3. Load Image (OpenCV)
+    # 3. Load Image
     img = cv.imread(source_path)
     if img is None:
         return (name_no_ext, {"Error": "Corrupt Image"})
@@ -191,7 +229,6 @@ def process_image_worker(task):
         if wm_target_w > 0 and wm_target_h > 0:
             wm_resized = cv.resize(wm, (wm_target_w, wm_target_h), interpolation=cv.INTER_AREA)
             
-            # Position: Bottom Right with padding
             pad_y = int(h * 0.05)
             pad_x = int(w * 0.02)
             y1, y2 = h - wm_target_h - pad_y, h - pad_y
@@ -200,7 +237,7 @@ def process_image_worker(task):
             if y1 > 0 and x1 > 0:
                 wm_bgr = wm_resized[:, :, :3]
                 wm_alpha = wm_resized[:, :, 3] / 255.0
-                wm_alpha = wm_alpha * 0.7 # 70% opacity
+                wm_alpha = wm_alpha * 0.7 
 
                 roi = img[y1:y2, x1:x2]
                 for c in range(0, 3):
@@ -233,6 +270,8 @@ def update_gallery_repo():
 
 # --- Main Engine ---
 def main():
+    sys.stdout = DualLogger()
+
     parser = argparse.ArgumentParser(description='TheDoShoots Portfolio Engine')
     parser.add_argument('--select', nargs='+', help='Build specific galleries')
     parser.add_argument('--watermark', action='store_true', help='Apply watermark')
@@ -249,9 +288,16 @@ def main():
     print(f"{color.BOLD}*** TheDoShoots Portfolio Engine ***{color.END}")
     print(f"Configuration: {num_workers} Workers | Quality: {args.quality}")
 
+    target_keys = [k for k in GALLERY_EMOJIS.keys() if not args.select or k in args.select]
+    print(f"Target Galleries ({len(target_keys)}):")
+    for key in target_keys:
+        emoji = GALLERY_EMOJIS.get(key, '')
+        print(f" - {emoji} {key.title()} {emoji}")
+
     # --- STEP 0: CLEANUP ---
     if args.clean or args.full_clean:
         print(f"\n{color.BOLD}*** Step 0: Cleaning Workspace... ***{color.END}")
+        step0_start = time.time()
         profiler.start('Cleanup')
         if args.full_clean and os.path.exists('./build'):
             print(" - [Full Clean] Removing build directory")
@@ -266,9 +312,11 @@ def main():
                         if os.path.isdir(p): shutil.rmtree(p)
                         else: os.remove(p)
         profiler.stop('Cleanup')
+        print(f"{color.BOLD}*** Step 0 Completed in {time.time() - step0_start:.2f}s ***{color.END}")
 
     # --- STEP 1: ASSETS & REPO ---
     print(f"\n{color.BOLD}*** Step 1: Updating Assets & Repo... ***{color.END}")
+    step1_start = time.time()
     
     # Git
     if not args.skip_repo:
@@ -285,7 +333,6 @@ def main():
     
     download_tasks = []
     galleries_to_process = []
-    target_keys = [k for k in GALLERY_EMOJIS.keys() if not args.select or k in args.select]
     
     if os.path.exists(PORTFOLIO_CSV_PATH):
         with open(PORTFOLIO_CSV_PATH, 'r', encoding='utf-8') as f:
@@ -302,13 +349,14 @@ def main():
     if download_tasks:
         print(f" - Checking {len(download_tasks)} assets...")
         with Pool(num_workers) as pool:
-            # We use list() to force execution, but we don't strictly need the return values here
             list(tqdm.tqdm(pool.imap_unordered(download_worker, download_tasks), 
                            total=len(download_tasks), unit='file', desc="Downloading"))
     profiler.stop('Asset Download', count=len(download_tasks))
+    print(f"{color.BOLD}*** Step 1 Completed in {time.time() - step1_start:.2f}s ***{color.END}")
 
     # --- STEP 2: IMAGE PROCESSING ---
     print(f"\n{color.BOLD}*** Step 2: Processing Images... ***{color.END}")
+    step2_start = time.time()
     profiler.start('Image Processing')
     
     gallery_map = {k: [] for k in target_keys}
@@ -338,9 +386,11 @@ def main():
             results_map[name] = meta
             
     profiler.stop('Image Processing', count=len(processing_tasks))
+    print(f"{color.BOLD}*** Step 2 Completed in {time.time() - step2_start:.2f}s ***{color.END}")
 
     # --- STEP 3: SITE GENERATION ---
     print(f"\n{color.BOLD}*** Step 3: Generating Sites... ***{color.END}")
+    step3_start = time.time()
     profiler.start('Site Generation')
     
     for gallery in target_keys:
@@ -351,7 +401,7 @@ def main():
         title = f"{emoji} {gallery.title()} {emoji}"
         print(f" - Building {title}")
 
-        # Sort and Write Metadata
+        # Metadata
         g_root = os.path.join(PORTFOLIOS_ROOT, gallery)
         gallery_meta = {}
         file_list = []
@@ -371,7 +421,7 @@ def main():
         with open(os.path.join(g_root, 'metadata', 'metadata.json'), 'w') as f:
             json.dump(gallery_meta, f, indent=4)
 
-        # Copy & Inject
+        # Inject Assets
         tmpl_src = './tmp/gallery'
         if os.path.exists(tmpl_src):
             for asset in ['index.html', 'immersive.html', 'css', 'js', 'templates']:
@@ -384,7 +434,7 @@ def main():
                     else:
                         shutil.copy2(src, dst)
             
-            # Inject Title
+            # Inject Titles
             html_path = os.path.join(g_root, 'index.html')
             if os.path.exists(html_path):
                 with open(html_path, 'r', encoding='utf-8') as f: content = f.read()
@@ -399,8 +449,38 @@ def main():
                 with open(js_path, 'w', encoding='utf-8') as f: f.write(js_content)
 
     profiler.stop('Site Generation', count=len(target_keys))
+    print(f"{color.BOLD}*** Step 3 Completed in {time.time() - step3_start:.2f}s ***{color.END}")
+    
+    # --- STEP 4: DEPLOYMENT PREP ---
+    print(f"\n{color.BOLD}*** Step 4: Preparing Deployment... ***{color.END}")
+    step4_start = time.time()
+    profiler.start('Deployment Prep')
+    
+    deploy_assets = ['index.html', 'about.html', 'assets', 'LICENSE']
+    for item in deploy_assets:
+        src = item
+        dst = os.path.join('./build', item)
+        if os.path.exists(src):
+            if os.path.isdir(src):
+                if os.path.exists(dst): shutil.rmtree(dst)
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+            print(f" - Copied {item}")
+        else:
+            print(f" - Warning: {item} not found")
+            
+    profiler.stop('Deployment Prep')
+    print(f"{color.BOLD}*** Step 4 Completed in {time.time() - step4_start:.2f}s ***{color.END}")
+
+    # Stats
+    cache_size = get_dir_size(CACHE_ROOT) if os.path.exists(CACHE_ROOT) else 0
+    build_size = get_dir_size('./build') if os.path.exists('./build') else 0
+
     profiler.report()
-    print(f"\n{color.BOLD}Preparation Complete!{color.END}")
+    print(f"\n{color.BOLD}*** TheDoShoots Portfolio Build Complete! ***{color.END}")
+    print(f" - Local Cache Size: {cache_size:.2f} MB")
+    print(f" - Final Build Size: {build_size:.2f} MB")
 
 if __name__ == '__main__':
     main()

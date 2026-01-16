@@ -8,10 +8,12 @@ jobs ?= 0
 
 .PHONY: all build clean install help fast exif
 
+default: build
+
 all: install build
 
 help:
-	@echo "TheDoShoots Portfolio Build System (Linux)"
+	@echo "TheDoShoots Portfolio Makefile"
 	@echo "------------------------------------------"
 	@echo "Usage: make [target] quality=[value]"
 	@echo ""
@@ -34,8 +36,7 @@ fast:
 clean:
 	rm -rf $(BUILD_DIR)
 
-deepclean:
-	rm -rf $(BUILD_DIR)
+deepclean: clean
 	rm -rf .cache
 	rm -rf tmp
 
