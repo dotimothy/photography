@@ -32,27 +32,15 @@ jobs:
           python-version: '3.11' # Choose your desired Python version
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: make install
 
-      - name: Run Python script to generate site
-        run: python preparePortfolio.py --watermark --full-clean --quality 80
-
-      - name: Prepare site for deployment
-        run: |
-          mkdir _site
-          cp index.html _site/
-          cp about.html _site/
-          cp LICENSE _site/
-          cp -r assets _site/
-          cp -r portfolios _site/
-
+      - name: Run Python script to build photography portfolio
+        run: make build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './_site'
+          path: './build'
           
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
