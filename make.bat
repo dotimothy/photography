@@ -10,31 +10,43 @@ set "BUILD_DIR=build"
 set "VENV=.venv"
 set "VENV_PYTHON=%VENV%\Scripts\python.exe"
 
-:: Variable Defaults (equivalent to ?=)
-:: You can override these by setting them before running the script
-:: Example: set quality=80 && make.bat build
-if not defined quality set "quality=60"
-if not defined jobs set "jobs=0"
+:: Default Values (equivalent to ?=)
+set "quality=60"
+set "jobs=0"
+set "target=build"
 
 :: ==========================================
-:: Main Logic / Argument Parsing
+:: Argument Parsing Logic
 :: ==========================================
+:parse_args
+if "%~1"=="" goto :execute_target
 
-:: If no argument is provided, go to default (build)
-if "%~1"=="" goto :build
+:: Check if argument contains "=" (Variable assignment)
+echo %~1 | findstr "=" >nul
+if %errorlevel%==0 (
+    set "%~1"
+) else (
+    set "target=%~1"
+)
+shift
+goto :parse_args
 
-:: Switch case for targets
-if /i "%~1"=="all"       goto :all
-if /i "%~1"=="build"     goto :build
-if /i "%~1"=="install"   goto :install
-if /i "%~1"=="fast"      goto :fast
-if /i "%~1"=="exif"      goto :exif
-if /i "%~1"=="clean"     goto :clean
-if /i "%~1"=="deepclean" goto :deepclean
-if /i "%~1"=="help"      goto :help
+:: ==========================================
+:: Execution Router
+:: ==========================================
+:execute_target
 
-:: If unknown target
-echo Unknown target: %~1
+if /i "%target%"=="all"       goto :all
+if /i "%target%"=="build"     goto :build
+if /i "%target%"=="install"   goto :install
+if /i "%target%"=="fast"      goto :fast
+if /i "%target%"=="exif"      goto :exif
+if /i "%target%"=="clean"     goto :clean
+if /i "%target%"=="deepclean" goto :deepclean
+if /i "%target%"=="help"      goto :help
+
+:: Unknown target
+echo Unknown target: %target%
 goto :help
 
 :: ==========================================
@@ -47,15 +59,14 @@ call :build
 goto :eof
 
 :install
-:: Check if venv exists to mimic Makefile dependency checking
-if exist "%VENV%\Scripts\activate.bat" (
-    exit /b 0
-)
+:: Check if activate script exists (Simple dependency check)
+if exist "%VENV%\Scripts\activate.bat" goto :eof
+
 echo Creating virtual environment...
 if not exist "%VENV%" %PYTHON% -m venv %VENV%
-"%VENV_PYTHON%" -m pip install --upgrade pip
-"%VENV_PYTHON%" -m pip install -r requirements.txt
-:: "touch" equivalent to update timestamp
+"%VENV_PYTHON%" -m pip install --upgrade pip >nul
+"%VENV_PYTHON%" -m pip install -r requirements.txt >nul
+:: Update timestamp
 copy /b "%VENV%\Scripts\activate.bat" +,, >nul 2>&1
 goto :eof
 
@@ -87,17 +98,13 @@ if exist "logs" rd /s /q "logs"
 goto :eof
 
 :help
-echo TheDoShoots Portfolio Batch Script
+echo TheDoShoots Portfolio Makefile
 echo ------------------------------------------
-echo Usage: make.bat [target]
+echo Usage: make [target] quality=[value]
 echo.
-echo To override variables:
-echo   set quality=80 ^&^& make.bat build
-echo.
-echo Targets:
-echo   install   - Create venv and install dependencies
-echo   build     - Run full build (Default)
-echo   fast      - Run build without watermarking or git updates
-echo   clean     - Remove build directory
-echo   deepclean - Remove venv, logs, build dir, and cache
+echo make install   - Create venv and install dependencies
+echo make build     - Run full build (auto-installs venv if missing)
+echo make fast      - Run build without watermarking or git updates
+echo make clean     - Remove build directory
+echo make deepclean - Remove venv, logs folder, build dir, and cache
 goto :eof
