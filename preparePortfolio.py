@@ -258,15 +258,15 @@ def process_image_worker(task):
     processed_img = img
     if apply_watermark and worker_watermark is not None:
         wm = worker_watermark
-        wm_target_w = int(w * 0.20)
+        wm_target_w = int(w * 0.25)
         wm_aspect = wm.shape[0] / wm.shape[1]
         wm_target_h = int(wm_target_w * wm_aspect)
         
         if wm_target_w > 0 and wm_target_h > 0:
             wm_resized = cv.resize(wm, (wm_target_w, wm_target_h), interpolation=cv.INTER_AREA)
             
-            pad_y = int(h * 0.05)
-            pad_x = int(w * 0.02)
+            pad_y = 0
+            pad_x = 0
             y1, y2 = h - wm_target_h - pad_y, h - pad_y
             x1, x2 = w - wm_target_w - pad_x, w - pad_x
 
