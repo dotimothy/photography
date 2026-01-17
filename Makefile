@@ -41,6 +41,7 @@ deepclean: clean
 	rm -rf $(VENV)
 	rm -rf .cache
 	rm -rf tmp
+	rm -rf logs
 
 help:
 	@echo "TheDoShoots Portfolio Makefile"
@@ -51,4 +52,4 @@ help:
 	@echo "make build     - Run full build (auto-installs venv if missing)"
 	@echo "make fast      - Run build without watermarking or git updates"
 	@echo "make clean     - Remove build directory"
-	@echo "make deepclean - Remove venv, build dir, and cache"
+	@echo "make deepclean - Remove venv, logs folder, build dir, and cache"
