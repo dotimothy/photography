@@ -5,7 +5,8 @@ A single-file, high-performance build tool for photography portfolios.
 Features:
 - Global Parallelization (Image-level vs Gallery-level)
 - Smart Incremental Builds (Skips worker queue for cached files)
-- Manifest-Based Caching (Skips asset checks if CSV is unchanged)
+- Manifest-Based Caching (Only verifies assets if missing or CSV changed)
+- CPU Affinity Pinning (Locks workers to specific cores)
 - OpenCV-based Image Processing pipeline
 - Auto-Logging and Profiling
 """
@@ -25,7 +26,7 @@ import exifread
 import sys
 import hashlib
 from datetime import datetime
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, cpu_count, Value, current_process
 
 # --- Configuration ---
 GALLERY_REPO = 'https://github.com/dotimothy/gallery.git'
@@ -122,11 +123,34 @@ def calculate_file_hash(filepath):
 # --- Global Worker State ---
 worker_watermark = None
 
-def init_worker(watermark_path):
-    """Initialize worker process: Load watermark into memory once."""
+def init_worker(watermark_path, worker_counter, total_cores):
+    """
+    Initialize worker process:
+    1. Load watermark into memory.
+    2. Set CPU Affinity (Pin process to a specific core).
+    """
     global worker_watermark
+    
+    # 1. Load Watermark
     if os.path.exists(watermark_path):
         worker_watermark = cv.imread(watermark_path, cv.IMREAD_UNCHANGED)
+        
+    # 2. Set CPU Affinity
+    # Use the shared counter to assign a unique index to this worker
+    try:
+        if hasattr(os, 'sched_setaffinity'):
+            with worker_counter.get_lock():
+                worker_id = worker_counter.value
+                worker_counter.value += 1
+            
+            # Map worker_id to a CPU core (cycling if tasks > cores)
+            core_id = worker_id % total_cores
+            os.sched_setaffinity(0, {core_id})
+            # Optional debug print (commented out to keep output clean)
+            # print(f"[Worker {worker_id}] Pinned to Core {core_id}")
+    except Exception as e:
+        # Fallback for systems that don't support affinity (e.g., MacOS/Windows sometimes)
+        pass
 
 # --- Network Worker ---
 def download_worker(task):
@@ -185,7 +209,6 @@ def process_image_worker(task):
     # 1. Metadata Extraction (Must read raw file for ExifRead)
     try:
         with open(source_path, 'rb') as f:
-            tags = exifread.process_file(f, stop_tag='DateTimeOriginal')
             for tag in tags.keys():
                 if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
                     metadata[tag] = str(tags[tag])
@@ -223,22 +246,22 @@ def process_image_worker(task):
     processed_img = img
     if apply_watermark and worker_watermark is not None:
         wm = worker_watermark
-        wm_target_w = int(w * 0.20)
+        wm_target_w = int(w * 0.3)
         wm_aspect = wm.shape[0] / wm.shape[1]
         wm_target_h = int(wm_target_w * wm_aspect)
         
         if wm_target_w > 0 and wm_target_h > 0:
             wm_resized = cv.resize(wm, (wm_target_w, wm_target_h), interpolation=cv.INTER_AREA)
             
-            pad_y = int(h * 0.05)
-            pad_x = int(w * 0.02)
+            pad_y = int(h * 0.01)
+            pad_x = int(w * 0.01)
             y1, y2 = h - wm_target_h - pad_y, h - pad_y
             x1, x2 = w - wm_target_w - pad_x, w - pad_x
 
             if y1 > 0 and x1 > 0:
                 wm_bgr = wm_resized[:, :, :3]
                 wm_alpha = wm_resized[:, :, 3] / 255.0
-                wm_alpha = wm_alpha * 0.7 
+                wm_alpha = wm_alpha * 0.6
 
                 roi = img[y1:y2, x1:x2]
                 for c in range(0, 3):
@@ -289,6 +312,12 @@ def main():
     
     print(f"{color.BOLD}*** TheDoShoots Portfolio Engine ***{color.END}")
     print(f"Configuration: {num_workers} Workers | Quality: {args.quality}")
+    
+    # Check if CPU Affinity is supported
+    if hasattr(os, 'sched_setaffinity'):
+        print(f" - CPU Affinity: Enabled (Pinning processes to cores)")
+    else:
+        print(f" - CPU Affinity: Not supported on this OS (Standard scheduling)")
 
     target_keys = [k for k in GALLERY_EMOJIS.keys() if not args.select or k in args.select]
     print(f"Target Galleries ({len(target_keys)}):")
@@ -344,9 +373,9 @@ def main():
             if old_hash == new_hash and not args.force_download:
                 csv_changed = False
                 os.remove(temp_csv_path) # Cleanup temp
-                print(" - Manifest unchanged. Skipping asset verification.")
+                print(" - Manifest unchanged. Will only download missing files.")
             else:
-                print(" - Manifest updated (or forced). Verifying assets...")
+                print(" - Manifest updated (or forced). Verifying all assets...")
                 shutil.move(temp_csv_path, PORTFOLIO_CSV_PATH)
         else:
             print(" - Initial Manifest Download.")
@@ -367,21 +396,25 @@ def main():
                     fname = row['File Name']
                     cache_p = os.path.join(CACHE_ROOT, g, fname)
                     
-                    # Always build the list for the next step (Build Step)
+                    # Always track logic for build step
                     galleries_to_process.append((g, fname, cache_p))
                     
-                    # Only add to download queue if CSV changed or Force flag is set
-                    if csv_changed:
+                    # Add to download queue if:
+                    # 1. Manifest changed OR
+                    # 2. Local file is missing (even if manifest is same)
+                    if csv_changed or not os.path.exists(cache_p):
                         download_tasks.append((fid, cache_p, None))
     
-    # Run Downloads only if needed
-    if download_tasks and csv_changed:
-        print(f" - Verifying {len(download_tasks)} assets...")
+    # Run Downloads if we have tasks
+    if download_tasks:
+        print(f" - Downloading/Verifying {len(download_tasks)} assets...")
         with Pool(num_workers) as pool:
             list(tqdm.tqdm(pool.imap_unordered(download_worker, download_tasks), 
                            total=len(download_tasks), unit='file', desc="Downloading"))
+    else:
+        print(" - All assets are present locally.")
     
-    profiler.stop('Asset Download', count=len(download_tasks) if csv_changed else 0)
+    profiler.stop('Asset Download', count=len(download_tasks))
     print(f"{color.BOLD}*** Step 1 Completed in {time.time() - step1_start:.2f}s ***{color.END}")
 
     # --- STEP 2: IMAGE PROCESSING ---
@@ -449,7 +482,13 @@ def main():
     
     if processing_tasks:
         print(f" - Queued {len(processing_tasks)} images for processing...")
-        with Pool(num_workers, initializer=init_worker, initargs=(WATERMARK_PATH,)) as pool:
+        
+        # Initialize Shared Counter for Worker ID assignment
+        worker_counter = Value('i', 0)
+        
+        # Init pool with cpu_pinning arguments
+        with Pool(num_workers, initializer=init_worker, 
+                  initargs=(WATERMARK_PATH, worker_counter, cpu_count())) as pool:
             for gallery_name, name_no_ext, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
                                         total=len(processing_tasks), unit='img', desc="Processing"):
                 results_map[gallery_name][name_no_ext] = meta
