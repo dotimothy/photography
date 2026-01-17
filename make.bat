@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
 :: ==========================================
 :: Configuration
@@ -10,22 +10,28 @@ set "BUILD_DIR=build"
 set "VENV=.venv"
 set "VENV_PYTHON=%VENV%\Scripts\python.exe"
 
+:: ------------------------------------------
 :: Default Values (equivalent to ?=)
+:: ------------------------------------------
 set "quality=60"
 set "jobs=0"
+:: This sets the default target if none is provided
 set "target=build"
 
 :: ==========================================
 :: Argument Parsing Logic
 :: ==========================================
 :parse_args
+:: If no more arguments, proceed to execution
 if "%~1"=="" goto :execute_target
 
-:: Check if argument contains "=" (Variable assignment)
+:: Check if the argument is a variable assignment (contains "=")
 echo %~1 | findstr "=" >nul
 if %errorlevel%==0 (
+    :: It is a variable (e.g., jobs=4 or quality=80)
     set "%~1"
 ) else (
+    :: It is a target (e.g., fast, clean, install)
     set "target=%~1"
 )
 shift
@@ -45,7 +51,7 @@ if /i "%target%"=="clean"     goto :clean
 if /i "%target%"=="deepclean" goto :deepclean
 if /i "%target%"=="help"      goto :help
 
-:: Unknown target
+:: If target is unknown
 echo Unknown target: %target%
 goto :help
 
@@ -66,7 +72,7 @@ echo Creating virtual environment...
 if not exist "%VENV%" %PYTHON% -m venv %VENV%
 "%VENV_PYTHON%" -m pip install --upgrade pip >nul
 "%VENV_PYTHON%" -m pip install -r requirements.txt >nul
-:: Update timestamp
+:: Update timestamp to mark as installed
 copy /b "%VENV%\Scripts\activate.bat" +,, >nul 2>&1
 goto :eof
 
@@ -100,11 +106,16 @@ goto :eof
 :help
 echo TheDoShoots Portfolio Makefile
 echo ------------------------------------------
-echo Usage: make [target] quality=[value]
+echo Usage: make [target] quality=[value] jobs=[value]
 echo.
-echo make install   - Create venv and install dependencies
-echo make build     - Run full build (auto-installs venv if missing)
-echo make fast      - Run build without watermarking or git updates
-echo make clean     - Remove build directory
-echo make deepclean - Remove venv, logs folder, build dir, and cache
+echo Options:
+echo   quality=[0-100] : Set JPEG quality (default 60)
+echo   jobs=[num]      : Set number of CPU cores (default 0 = all)
+echo.
+echo Targets:
+echo   install   - Create venv and install dependencies
+echo   build     - Run full build (Default)
+echo   fast      - Run build without watermarking or git updates
+echo   clean     - Remove build directory
+echo   deepclean - Remove venv, logs folder, build dir, and cache
 goto :eof
