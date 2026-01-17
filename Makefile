@@ -13,6 +13,8 @@ jobs ?= 0
 
 default: build
 
+all: deepclean build
+
 # The 'install' target now acts as a prerequisite for build
 install: $(VENV)/bin/activate
 
