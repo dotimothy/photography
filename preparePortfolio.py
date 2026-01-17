@@ -7,7 +7,7 @@ Features:
 - Smart Incremental Builds (Skips worker queue for cached files)
 - Manifest-Based Caching (Only verifies assets if missing or CSV changed)
 - CPU Affinity Pinning (Locks workers to specific cores)
-- OpenCV-based Image Processing pipeline
+- Hybrid Processing: OpenCV for speed, PIL for EXIF preservation
 - Auto-Logging and Profiling
 """
 
@@ -27,6 +27,7 @@ import sys
 import hashlib
 from datetime import datetime
 from multiprocessing import Pool, cpu_count, Value, current_process
+from PIL import Image  # Re-imported for EXIF I/O
 
 # --- Configuration ---
 GALLERY_REPO = 'https://github.com/dotimothy/gallery.git'
@@ -136,20 +137,15 @@ def init_worker(watermark_path, worker_counter, total_cores):
         worker_watermark = cv.imread(watermark_path, cv.IMREAD_UNCHANGED)
         
     # 2. Set CPU Affinity
-    # Use the shared counter to assign a unique index to this worker
     try:
         if hasattr(os, 'sched_setaffinity'):
             with worker_counter.get_lock():
                 worker_id = worker_counter.value
                 worker_counter.value += 1
             
-            # Map worker_id to a CPU core (cycling if tasks > cores)
             core_id = worker_id % total_cores
             os.sched_setaffinity(0, {core_id})
-            # Optional debug print (commented out to keep output clean)
-            # print(f"[Worker {worker_id}] Pinned to Core {core_id}")
-    except Exception as e:
-        # Fallback for systems that don't support affinity (e.g., MacOS/Windows sometimes)
+    except Exception:
         pass
 
 # --- Network Worker ---
@@ -197,7 +193,11 @@ def download_worker(task):
 # --- Image Processing Worker ---
 def process_image_worker(task):
     """
-    Single-pass processing.
+    Hybrid Pipeline:
+    1. Read EXIF & Subsampling (PIL - Lazy)
+    2. Process Image (OpenCV - Fast)
+    3. Save Full (PIL - Preserves EXIF & Original Subsampling)
+    4. Save Thumb (OpenCV - Fast, No EXIF)
     """
     source_path, full_out_path, thumb_out_path, quality, apply_watermark, gallery_name = task
     
@@ -205,10 +205,23 @@ def process_image_worker(task):
     name_no_ext = os.path.splitext(file_name)[0]
     
     metadata = {}
-    
-    # 1. Metadata Extraction (Must read raw file for ExifRead)
+    exif_bytes = None
+    original_subsampling = -1 # Default: let PIL choose based on quality
+
+    # 1. Capture EXIF & Subsampling using PIL (Lazy read)
+    try:
+        with Image.open(source_path) as pil_img:
+            exif_bytes = pil_img.info.get('exif')
+            if hasattr(pil_img, 'subsampling'):
+                original_subsampling = pil_img.subsampling
+    except Exception:
+        pass 
+
+    # 2. Parse Metadata for JSON (using exifread)
     try:
         with open(source_path, 'rb') as f:
+            # Removed stop_tag='DateTimeOriginal' to ensure FocalLength/ISO are read
+            tags = exifread.process_file(f)
             for tag in tags.keys():
                 if tag not in ('JPEGThumbnail', 'TIFFThumbnail'):
                     metadata[tag] = str(tags[tag])
@@ -217,11 +230,10 @@ def process_image_worker(task):
                 metadata['__dt'] = datetime.strptime(str(tags['EXIF DateTimeOriginal']), "%Y:%m:%d %H:%M:%S").timestamp()
             else:
                 metadata['__dt'] = os.path.getmtime(source_path)
-
     except Exception:
         metadata['__dt'] = os.path.getmtime(source_path)
 
-    # 2. Safety Incremental Check
+    # 3. Safety Incremental Check
     if (os.path.exists(full_out_path) and os.path.exists(thumb_out_path) and
         os.path.getmtime(full_out_path) > os.path.getmtime(source_path)):
         
@@ -233,7 +245,7 @@ def process_image_worker(task):
         metadata['File Size'] = os.path.getsize(full_out_path)
         return (gallery_name, name_no_ext, metadata)
 
-    # 3. Load Image
+    # 4. Load Image (OpenCV)
     img = cv.imread(source_path)
     if img is None:
         return (gallery_name, name_no_ext, {"Error": "Corrupt Image"})
@@ -242,26 +254,26 @@ def process_image_worker(task):
     metadata['Image Width'] = w
     metadata['Image Height'] = h
 
-    # 4. Watermarking
+    # 5. Watermarking (OpenCV)
     processed_img = img
     if apply_watermark and worker_watermark is not None:
         wm = worker_watermark
-        wm_target_w = int(w * 0.3)
+        wm_target_w = int(w * 0.20)
         wm_aspect = wm.shape[0] / wm.shape[1]
         wm_target_h = int(wm_target_w * wm_aspect)
         
         if wm_target_w > 0 and wm_target_h > 0:
             wm_resized = cv.resize(wm, (wm_target_w, wm_target_h), interpolation=cv.INTER_AREA)
             
-            pad_y = int(h * 0.01)
-            pad_x = int(w * 0.01)
+            pad_y = int(h * 0.05)
+            pad_x = int(w * 0.02)
             y1, y2 = h - wm_target_h - pad_y, h - pad_y
             x1, x2 = w - wm_target_w - pad_x, w - pad_x
 
             if y1 > 0 and x1 > 0:
                 wm_bgr = wm_resized[:, :, :3]
                 wm_alpha = wm_resized[:, :, 3] / 255.0
-                wm_alpha = wm_alpha * 0.6
+                wm_alpha = wm_alpha * 0.7 
 
                 roi = img[y1:y2, x1:x2]
                 for c in range(0, 3):
@@ -270,11 +282,28 @@ def process_image_worker(task):
                 processed_img = img
                 processed_img[y1:y2, x1:x2] = roi
 
-    # 5. Save Full
-    cv.imwrite(full_out_path, processed_img, [cv.IMWRITE_JPEG_QUALITY, quality, cv.IMWRITE_JPEG_PROGRESSIVE, 1])
-    metadata['File Size'] = os.path.getsize(full_out_path)
+    # 6. Save Full Resolution (Convert to PIL to inject EXIF)
+    try:
+        # Convert BGR (OpenCV) to RGB (PIL)
+        img_rgb = cv.cvtColor(processed_img, cv.COLOR_BGR2RGB)
+        pil_out = Image.fromarray(img_rgb)
+        
+        save_kwargs = {
+            'quality': quality,
+            'optimize': True,
+            'progressive': True,
+            'subsampling': original_subsampling # Preserve Original Subsampling
+        }
+        
+        if exif_bytes:
+            save_kwargs['exif'] = exif_bytes
+            
+        pil_out.save(full_out_path, format='JPEG', **save_kwargs)
+        metadata['File Size'] = os.path.getsize(full_out_path)
+    except Exception as e:
+        print(f"Error Saving Full {name_no_ext}: {e}")
 
-    # 6. Generate & Save Thumb
+    # 7. Generate & Save Thumb (OpenCV - Fast, No EXIF needed)
     scale = min(1200/w, 900/h)
     new_w, new_h = int(w * scale), int(h * scale)
     thumb = cv.resize(processed_img, (new_w, new_h), interpolation=cv.INTER_AREA)
@@ -313,7 +342,6 @@ def main():
     print(f"{color.BOLD}*** TheDoShoots Portfolio Engine ***{color.END}")
     print(f"Configuration: {num_workers} Workers | Quality: {args.quality}")
     
-    # Check if CPU Affinity is supported
     if hasattr(os, 'sched_setaffinity'):
         print(f" - CPU Affinity: Enabled (Pinning processes to cores)")
     else:
@@ -396,7 +424,6 @@ def main():
                     fname = row['File Name']
                     cache_p = os.path.join(CACHE_ROOT, g, fname)
                     
-                    # Always track logic for build step
                     galleries_to_process.append((g, fname, cache_p))
                     
                     # Add to download queue if:
@@ -483,10 +510,8 @@ def main():
     if processing_tasks:
         print(f" - Queued {len(processing_tasks)} images for processing...")
         
-        # Initialize Shared Counter for Worker ID assignment
         worker_counter = Value('i', 0)
         
-        # Init pool with cpu_pinning arguments
         with Pool(num_workers, initializer=init_worker, 
                   initargs=(WATERMARK_PATH, worker_counter, cpu_count())) as pool:
             for gallery_name, name_no_ext, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
