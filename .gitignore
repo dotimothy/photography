@@ -6,4 +6,4 @@ logs/
 build
 assets/portfolio.csv
 *.DS_STORE*
-.gitignore
+.venv/
