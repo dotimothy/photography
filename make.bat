@@ -11,29 +11,51 @@ set "VENV=.venv"
 set "VENV_PYTHON=%VENV%\Scripts\python.exe"
 
 :: ------------------------------------------
-:: Default Values (equivalent to ?=)
+:: Default Values
 :: ------------------------------------------
 set "quality=60"
 set "jobs=0"
-:: This sets the default target if none is provided
 set "target=build"
+set "target_specified=false"
 
 :: ==========================================
-:: Argument Parsing Logic
+:: Robust Argument Parsing
 :: ==========================================
 :parse_args
-:: If no more arguments, proceed to execution
 if "%~1"=="" goto :execute_target
 
-:: Check if the argument is a variable assignment (contains "=")
-echo %~1 | findstr "=" >nul
-if %errorlevel%==0 (
-    :: It is a variable (e.g., jobs=4 or quality=80)
-    set "%~1"
-) else (
-    :: It is a target (e.g., fast, clean, install)
-    set "target=%~1"
+set "arg=%~1"
+
+:: 1. Handle "jobs=8" format (CMD standard)
+if /i "%arg:~0,5%"=="jobs=" (
+    set "jobs=%arg:~5%"
+    shift
+    goto :parse_args
 )
+if /i "%arg:~0,8%"=="quality=" (
+    set "quality=%arg:~8%"
+    shift
+    goto :parse_args
+)
+
+:: 2. Handle "jobs 8" format (PowerShell splitting)
+if /i "%arg%"=="jobs" (
+    set "jobs=%~2"
+    shift
+    shift
+    goto :parse_args
+)
+if /i "%arg%"=="quality" (
+    set "quality=%~2"
+    shift
+    shift
+    goto :parse_args
+)
+
+:: 3. Handle Targets (build, clean, etc.)
+:: If we haven't matched a variable above, assume it's the target.
+set "target=%arg%"
+set "target_specified=true"
 shift
 goto :parse_args
 
@@ -65,14 +87,11 @@ call :build
 goto :eof
 
 :install
-:: Check if activate script exists (Simple dependency check)
 if exist "%VENV%\Scripts\activate.bat" goto :eof
-
 echo Creating virtual environment...
 if not exist "%VENV%" %PYTHON% -m venv %VENV%
 "%VENV_PYTHON%" -m pip install --upgrade pip >nul
 "%VENV_PYTHON%" -m pip install -r requirements.txt >nul
-:: Update timestamp to mark as installed
 copy /b "%VENV%\Scripts\activate.bat" +,, >nul 2>&1
 goto :eof
 
