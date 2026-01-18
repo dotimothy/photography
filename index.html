@@ -770,17 +770,19 @@
                     <h3>About</h3>
                     <span>Exhibit 01: Biography</span>
                 </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/astronomy/index.html', true); return false;">
-                <div class="card-emoji">🌌</div>
+                <a href="#" class="nav-card"
+                    onclick="handleNav('./portfolios/astronomy/index.html', true); return false;">
+                    <div class="card-emoji">🌌</div>
                     <h3>Astronomy</h3>
                     <span>Exhibit 02: Deep Space</span>
-                </a> <a href="#" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;">
+                </a>
                 <a href="#" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;">
                     <div class="card-emoji">🍱</div>
                     <h3>Food</h3>
                     <span>Exhibit 03: Delicious</span>
                 </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/landscape/index.html', true); return false;">
+                <a href="#" class="nav-card"
+                    onclick="handleNav('./portfolios/landscape/index.html', true); return false;">
                     <div class="card-emoji">🏞️</div>
                     <h3>Landscape</h3>
                     <span>Exhibit 04: Breathtaking</span>
@@ -790,7 +792,8 @@
                     <h3>Planes</h3>
                     <span>Exhibit 05: Flying</span>
                 </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/wildlife/index.html', true); return false;">
+                <a href="#" class="nav-card"
+                    onclick="handleNav('./portfolios/wildlife/index.html', true); return false;">
                     <div class="card-emoji">🐿️</div>
                     <h3>Wildlife</h3>
                     <span>Exhibit 06: Animals</span>
@@ -903,38 +906,53 @@
             <div class="setting-category">General & Performance</div>
             <div class="setting-row">
                 <span class="setting-label">3D Immersive Mode (?mode=2d)</span>
-                <div class="toggle-switch active" id="toggle-3d-mode"><div class="toggle-knob"></div></div>
+                <div class="toggle-switch active" id="toggle-3d-mode">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
             <div class="setting-row">
                 <span class="setting-label">High Density Stars</span>
-                <div class="toggle-switch active" id="toggle-stars"><div class="toggle-knob"></div></div>
+                <div class="toggle-switch active" id="toggle-stars">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
             <div class="setting-row">
                 <span class="setting-label">Data Saver (Low Res) (?datasaver)</span>
-                <div class="toggle-switch" id="toggle-saver"><div class="toggle-knob"></div></div>
+                <div class="toggle-switch" id="toggle-saver">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
             <div class="setting-row">
                 <span class="setting-label">Debug Mode (?debug)</span>
-                <div class="toggle-switch" id="toggle-debug"><div class="toggle-knob"></div></div>
+                <div class="toggle-switch" id="toggle-debug">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
 
             <div class="setting-category">Gallery Experience</div>
             <div class="setting-row">
                 <span class="setting-label">Auto Slideshow (?slideshow)</span>
-                <div class="toggle-switch" id="toggle-slideshow"><div class="toggle-knob"></div></div>
+                <div class="toggle-switch" id="toggle-slideshow">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
             <div class="setting-row">
                 <span class="setting-label">Interval (ms) (?interval=)</span>
-                <input type="number" id="input-interval" value="3000" step="500" style="width: 80px; background: #222; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                <input type="number" id="input-interval" value="3000" step="500"
+                    style="width: 80px; background: #222; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px;">
             </div>
             <div class="setting-row">
                 <span class="setting-label">Auto Fullscreen Viewer (?fullscreen)</span>
-                <div class="toggle-switch" id="toggle-viewer-fs"><div class="toggle-knob"></div></div>
+                <div class="toggle-switch" id="toggle-viewer-fs">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
 
             <div class="setting-row" style="margin-top: 20px;">
                 <span class="setting-label">Direct Links (No iFrame)</span>
-                <div class="toggle-switch" id="toggle-direct"><div class="toggle-knob"></div></div>
+                <div class="toggle-switch" id="toggle-direct">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1091,11 +1109,33 @@
             document.addEventListener('click', onCanvasClick);
 
             // Touch support for mobile interaction
+            let touchStartTime = 0;
+            let touchStartX = 0;
+            let touchStartY = 0;
+
             document.addEventListener('touchstart', (e) => {
                 if (e.touches.length > 0) {
-                    mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
-                    mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
-                    checkIntersections(true);
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    touchStartTime = performance.now();
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length > 0) {
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const touchEndY = e.changedTouches[0].clientY;
+                    const dx = touchEndX - touchStartX;
+                    const dy = touchEndY - touchStartY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const duration = performance.now() - touchStartTime;
+
+                    // Only trigger if it's a quick tap with minimal movement (prevents accidental clicks during orbit)
+                    if (distance < 15 && duration < 350) {
+                        mouse.x = (touchEndX / window.innerWidth) * 2 - 1;
+                        mouse.y = -(touchEndY / window.innerHeight) * 2 + 1;
+                        checkIntersections(true);
+                    }
                 }
             }, { passive: true });
 
@@ -1138,10 +1178,10 @@
                     icon.classList.add('fa-expand');
                 }
             });
-            
+
             // Slideshow Toggle
             setupToggle(document.getElementById('toggle-slideshow'), (val) => { state.slideshow = val; });
-            
+
             // Image Viewer Toggle
             setupToggle(document.getElementById('toggle-viewer-fs'), (val) => { state.viewerFullscreen = val; });
 
@@ -1335,20 +1375,20 @@
             // --- OPTIMIZED NOISE GENERATION (Direct Pixel Manipulation) ---
             // Instead of drawing 800,000 rectangles, we write directly to the pixel array.
             // This reduces load time from ~4 seconds to ~5 milliseconds.
-            
+
             const imageData = ctx.createImageData(size, size);
             const data = imageData.data; // The array holding RGBA values
 
             for (let i = 0; i < data.length; i += 4) {
                 // Randomly choose between dark grey (#222 -> 34) and darker grey (#111 -> 17)
                 const colorVal = Math.random() > 0.5 ? 34 : 17;
-                
-                data[i]     = colorVal; // Red
+
+                data[i] = colorVal; // Red
                 data[i + 1] = colorVal; // Green
                 data[i + 2] = colorVal; // Blue
                 data[i + 3] = 255;      // Alpha (Opacity)
             }
-            
+
             // Put the noise onto the canvas instantly
             ctx.putImageData(imageData, 0, 0);
 
@@ -1371,7 +1411,7 @@
         function generateMetalTexture() {
             const size = 1024;
             const canvas = document.createElement('canvas');
-            canvas.width = size; 
+            canvas.width = size;
             canvas.height = size;
             const ctx = canvas.getContext('2d');
 
@@ -1385,19 +1425,19 @@
 
             // 2. Optimized Scratches
             // REMOVED: ctx.globalCompositeOperation = 'overlay'; (This was the bottleneck)
-            
+
             // Use low opacity instead of complex blending
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
-            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+
             // REDUCED LOOP: 50,000 -> 2,000
             // This looks visually identical but runs 25x faster
             for (let i = 0; i < 2000; i++) {
                 // Draw wider scratches to compensate for fewer iterations
                 const x = Math.random() * size;
                 const y = Math.random() * size;
-                const w = Math.random() * 100 + 20; 
-                
-                ctx.fillRect(x, y, w, 2); 
+                const w = Math.random() * 100 + 20;
+
+                ctx.fillRect(x, y, w, 2);
             }
 
             return new THREE.CanvasTexture(canvas);
@@ -1567,11 +1607,11 @@
             uiCtx.save();
             uiCtx.translate(0, 100); // Move to the text baseline
             uiCtx.scale(1, 1.5);     // STRETCH: 1.5x Taller
-            
+
             uiCtx.fillStyle = '#00e5ff';
             uiCtx.font = 'bold 40px Roboto';
             uiCtx.fillText("RAW", 50, 0);
-            
+
             uiCtx.fillStyle = '#fff';
             uiCtx.fillText("ISO 3200", 250, 0);
             uiCtx.fillText("1/250", 550, 0);
@@ -1580,8 +1620,8 @@
 
             // 2. Draw Battery (Manually resized to be taller)
             // bx=1050, by=50 (was 65), bw=60, bh=45 (was 30)
-            const bx = 1050, by = 50, bw = 60, bh = 45; 
-            
+            const bx = 1050, by = 50, bw = 60, bh = 45;
+
             uiCtx.strokeStyle = '#fff';
             uiCtx.lineWidth = 3;
             uiCtx.strokeRect(bx, by, bw, bh);
@@ -1613,7 +1653,7 @@
                 uiCtx.save();
                 uiCtx.beginPath();
                 // Draw an ellipse instead of a circle
-                uiCtx.ellipse(px, py, prX, prY, 0, 0, Math.PI * 2); 
+                uiCtx.ellipse(px, py, prX, prY, 0, 0, Math.PI * 2);
                 uiCtx.closePath();
                 uiCtx.clip();
                 // Draw image slightly taller
@@ -1629,11 +1669,11 @@
             }
 
 
-            const btnW = 600;
-            const btnH = 180;   
-            const x = 600;
-            let y = 160;        
-            const gap = 210;   
+            const btnW = 800;  // Increased for better touch target
+            const btnH = 190;  // Slightly taller
+            const x = 550;     // Shifted slightly to accommodate wider buttons
+            let y = 140;
+            const gap = 220;
 
             // UPDATED BUTTONS
             drawUIBtn("👤 About", x, y, btnW, btnH, () => handleNav('./about.html', true));
@@ -1651,7 +1691,7 @@
             if (uiTexture) uiTexture.needsUpdate = true;
         }
 
-    function drawUIBtn(text, x, y, w, h, action) {
+        function drawUIBtn(text, x, y, w, h, action) {
             // 1. Draw the Button Box (Standard)
             uiCtx.fillStyle = 'rgba(30,30,30,0.9)';
             uiCtx.fillRect(x, y, w, h);
@@ -1667,14 +1707,14 @@
 
             // SCALE Y by 1.5x
             // This makes the text taller to counteract the 3D horizontal stretch
-            uiCtx.scale(1, 1.5); 
+            uiCtx.scale(1, 1.5);
 
             uiCtx.fillStyle = '#fff';
             // Decreased font size slightly (54 -> 48) because the scaling makes it look bigger
-            uiCtx.font = 'bold 48px "Roboto"'; 
+            uiCtx.font = 'bold 48px "Roboto"';
             uiCtx.textAlign = 'center';
             uiCtx.textBaseline = 'middle';
-            
+
             // Draw text at (0,0) which is now the center of the button
             uiCtx.fillText(text, 0, 0);
 
@@ -1730,11 +1770,15 @@
                     // Since the mesh is rotated 180 deg (PI), UVs might be flipped depending on implementation.
                     // For a standard plane rotated y=PI, x is inverted visually.
                     const canvasX = (1 - uv.x) * 1500;
-                    const canvasY = (1 - uv.y) * 1500; // y is typically inverted in UV vs Canvas
+                    const canvasY = (1 - uv.y) * 1500;
+
+                    // Add forgiving padding for touch interactions
+                    const hPadding = 50;
+                    const vPadding = 25;
 
                     for (let zone of uiClickZones) {
-                        if (canvasX >= zone.x && canvasX <= zone.x + zone.w &&
-                            canvasY >= zone.y && canvasY <= zone.y + zone.h) {
+                        if (canvasX >= zone.x - hPadding && canvasX <= zone.x + zone.w + hPadding &&
+                            canvasY >= zone.y - vPadding && canvasY <= zone.y + zone.h + vPadding) {
                             zone.action();
                             break;
                         }
@@ -1748,14 +1792,14 @@
         // --- UPDATED CORE NAVIGATION LOGIC ---
         window.handleNav = function (url, isInternal) {
             const params = new URLSearchParams();
-            
+
             // Mode
             params.set('mode', state.is3D ? '3d' : '2d');
-            
+
             // Performance & Debug
             if (state.dataSaver) params.set('datasaver', '1');
             if (state.debugMode) params.set('debug', '1');
-            
+
             // Gallery Experiences
             if (state.slideshow) {
                 params.set('slideshow', '');
