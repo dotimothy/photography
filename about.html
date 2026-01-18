@@ -41,14 +41,14 @@
             overflow-x: hidden;
         }
 
-        /* --- 2D AURORA BACKGROUND (CSS ONLY) --- */
+        /* --- 2D AURORA BACKGROUND (REFINED) --- */
         .aurora-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #000;
+            background: radial-gradient(ellipse at bottom, #001a1a 0%, #000 100%);
             z-index: -2;
             overflow: hidden;
             opacity: 1;
@@ -60,52 +60,76 @@
             pointer-events: none;
         }
 
+        /* The moving light bands */
         .aurora-light {
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.4) 0%, transparent 60%),
-                radial-gradient(circle at 80% 20%, rgba(50, 255, 100, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 20% 80%, rgba(100, 50, 255, 0.4) 0%, transparent 50%);
-            filter: blur(40px);
-            animation: auroraMove 3s infinite alternate ease-in-out;
-            transform-origin: center;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            filter: blur(60px);
+            opacity: 0.6;
             mix-blend-mode: screen;
+            pointer-events: none;
+        }
+
+        .aurora-light::before,
+        .aurora-light::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg,
+                    transparent 0%,
+                    rgba(0, 229, 255, 0.2) 20%,
+                    rgba(85, 255, 85, 0.15) 40%,
+                    transparent 60%,
+                    rgba(0, 229, 255, 0.1) 80%,
+                    transparent 100%);
+            background-size: 200% 100%;
+            animation: auroraMove 15s linear infinite;
         }
 
         .aurora-light::after {
-            content: '';
+            background:
+                linear-gradient(90deg,
+                    transparent 10%,
+                    rgba(100, 50, 255, 0.1) 30%,
+                    transparent 50%,
+                    rgba(0, 229, 255, 0.15) 70%,
+                    transparent 90%);
+            background-size: 200% 100%;
+            animation: auroraMove 25s linear infinite reverse;
+            opacity: 0.7;
+        }
+
+        /* Grain for texture WITHOUT glitchy shimmer */
+        .aurora-bg::after {
+            content: "";
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(45deg, transparent 40%, rgba(0, 229, 255, 0.2) 50%, transparent 60%);
-            animation: shimmer 5s infinite linear;
-            opacity: 0.8;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            mix-blend-mode: overlay;
         }
 
         @keyframes auroraMove {
             0% {
-                transform: rotate(0deg) scale(1);
-                filter: hue-rotate(0deg);
+                background-position: 0% 50%;
+                transform: skewX(-10deg);
+            }
+
+            50% {
+                transform: skewX(10deg);
             }
 
             100% {
-                transform: rotate(10deg) scale(1.1);
-                filter: hue-rotate(30deg);
-            }
-        }
-
-        @keyframes shimmer {
-            0% {
-                transform: translateX(-50%) translateY(-50%) rotate(0deg);
-            }
-
-            100% {
-                transform: translateX(50%) translateY(50%) rotate(360deg);
+                background-position: 200% 50%;
+                transform: skewX(-10deg);
             }
         }
 
@@ -200,6 +224,7 @@
             margin: 0;
             background: linear-gradient(to bottom, #fff, #999);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -222,6 +247,7 @@
             backdrop-filter: blur(10px);
             border-radius: 12px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            margin-bottom: 30px;
         }
 
         .profile-img {
@@ -478,6 +504,80 @@
             line-height: 1.6;
             font-size: 1.75rem;
         }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            .section {
+                padding: 100px 20px 60px 20px;
+                min-height: 100dvh;
+            }
+
+            h1 {
+                font-size: 3.5rem;
+                letter-spacing: -2px;
+            }
+
+            h2 {
+                font-size: 2rem;
+                margin-bottom: 20px;
+            }
+
+            p {
+                padding: 25px 20px;
+                font-size: 1.1rem;
+                text-align: left;
+            }
+
+            .profile-img {
+                width: 180px;
+                height: 180px;
+            }
+
+            .section-image {
+                max-height: 40vh;
+            }
+
+            .gear-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .controls {
+                top: 15px;
+                right: 15px;
+            }
+
+            .icon-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 1rem;
+            }
+
+            .spatial-modal {
+                width: 95%;
+                padding: 25px 15px;
+            }
+
+            .modal-image-content {
+                width: 220px;
+                height: 220px;
+            }
+
+            #modal-text {
+                font-size: 1.2rem;
+            }
+
+            .nav-arrow {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            .spatial-nav {
+                bottom: 20px;
+                gap: 40px;
+            }
+        }
     </style>
 </head>
 
@@ -726,7 +826,7 @@
             scene.background = new THREE.Color(0x000000);
             scene.fog = new THREE.FogExp2(0x000000, 0.002);
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(window.innerWidth < 768 ? 75 : 60, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 0;
 
             // FIX: No transparency for Bloom stability
