@@ -53,31 +53,55 @@
 
     /* --- 2D MODE (Northern Lights Style) --- */
     #mode-2d {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         display: none;
         flex-direction: column;
-
-        /* Pure Black Base */
-        background-color: #000000;
-
-        /* The Moving Color Blobs */
-        background-image:
-            radial-gradient(at 10% 10%, rgba(0, 255, 136, 0.25) 0, transparent 50%),
-            radial-gradient(at 50% 0%, rgba(0, 229, 255, 0.2) 0, transparent 50%),
-            radial-gradient(at 90% 10%, rgba(120, 0, 255, 0.25) 0, transparent 50%),
-            radial-gradient(at 50% 90%, rgba(0, 20, 60, 0.8) 0, transparent 80%);
-
-        background-size: 180% 180%;
-        animation: auroraFlow 3s ease-in-out infinite alternate;
-
+        background: linear-gradient(to bottom, #020111, #000000);
         overflow-y: auto;
         z-index: 10;
-        position: relative;
-        /* Needed for the texture overlay */
+    }
+
+    .aurora-beam {
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        /* Northern Lights colors: Green, Purple, hints of Blue in a conic sweep */
+        background: conic-gradient(from 0deg at 50% 50%,
+                transparent 0deg,
+                rgba(0, 255, 136, 0.3) 50deg,
+                transparent 100deg,
+                rgba(120, 0, 255, 0.3) 150deg,
+                transparent 200deg,
+                rgba(0, 229, 255, 0.3) 250deg,
+                transparent 300deg,
+                rgba(0, 255, 136, 0.3) 350deg);
+        mix-blend-mode: screen;
+        animation: rotateAurora 40s linear infinite;
+        filter: blur(80px);
+        opacity: 0.7;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .aurora-beam:nth-child(2) {
+        animation-direction: reverse;
+        animation-duration: 55s;
+        background: conic-gradient(from 90deg at 45% 55%,
+                transparent 0deg,
+                rgba(140, 0, 255, 0.25) 60deg,
+                transparent 120deg,
+                rgba(0, 255, 165, 0.25) 180deg,
+                transparent 240deg,
+                rgba(50, 100, 255, 0.2) 300deg,
+                transparent 360deg);
+        opacity: 0.5;
+        mix-blend-mode: color-dodge;
     }
 
     /* Texture Overlay: Grain + Vertical Light Pillars */
@@ -89,7 +113,7 @@
         width: 100%;
         height: 100%;
         pointer-events: none;
-        z-index: 0;
+        z-index: 1;
         opacity: 0.5;
         /* Adjust texture intensity */
 
@@ -107,13 +131,13 @@
         background-size: 200px 200px, 100% 100%;
     }
 
-    @keyframes auroraFlow {
+    @keyframes rotateAurora {
         0% {
-            background-position: 0% 20%;
+            transform: rotate(0deg);
         }
 
         100% {
-            background-position: 100% 80%;
+            transform: rotate(360deg);
         }
     }
 
@@ -254,9 +278,10 @@
 
     @media (max-width: 768px) {
         .nav-card {
-            width: 90%;
+            width: 85%;
             max-width: 350px;
-            padding: 30px 20px;
+            padding: 20px 15px;
+            /* Reduced padding */
         }
 
         .nav-grid {
@@ -267,25 +292,36 @@
 
         .hero-container {
             justify-content: flex-start;
-            padding-top: 60px;
+            padding-top: 40px;
+            /* Reduced top padding */
+        }
+
+        .glitch-title {
+            font-size: clamp(2rem, 8vw, 3rem);
+            /* Smaller mobile title */
+            margin-bottom: 1.5rem;
         }
 
         .profile-pic-2d {
-            width: 180px;
-            height: 180px;
+            width: 150px;
+            /* Smaller profile pic */
+            height: 150px;
+            margin-bottom: 20px;
         }
 
         .controls-container {
             top: auto;
-            bottom: 30px;
-            right: 20px;
+            bottom: 20px;
+            right: 15px;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .icon-btn {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            /* Smaller buttons */
+            height: 40px;
+            font-size: 1rem;
         }
     }
 
@@ -486,11 +522,13 @@
 
     .social-row {
         display: flex;
-        gap: 25px;
+        gap: 20px;
         margin-top: 25px;
         margin-bottom: 10px;
         justify-content: center;
         align-items: center;
+        flex-wrap: wrap;
+        max-width: 90vw;
     }
 
     .social-icon {
@@ -505,6 +543,22 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .social-row {
+            gap: 12px !important;
+            max-width: 210px !important;
+            /* Force tighter wrap (4+3 layout) to clear side-buttons */
+            margin-top: 15px !important;
+        }
+
+        .social-icon {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 1.2rem !important;
+        }
     }
 
     .social-icon:hover {
@@ -695,7 +749,7 @@
 
     .close-iframe {
         position: absolute;
-        top: 25px;
+        top: 40px;
         left: 25px;
         /* and left as requested */
         width: 45px;
@@ -748,6 +802,55 @@
     a {
         color: #fff;
     }
+
+    @media (max-width: 768px) {
+        .nav-card {
+            width: 85%;
+            max-width: 350px;
+            padding: 20px 15px;
+            /* Reduced padding */
+        }
+
+        .nav-grid {
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .hero-container {
+            justify-content: flex-start;
+            padding-top: 40px;
+            /* Reduced top padding */
+        }
+
+        .glitch-title {
+            font-size: clamp(2rem, 8vw, 3rem);
+            /* Smaller mobile title */
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-pic-2d {
+            width: 150px;
+            /* Smaller profile pic */
+            height: 150px;
+            margin-bottom: 20px;
+        }
+
+        .controls-container {
+            top: auto;
+            bottom: 20px;
+            right: 15px;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            /* Smaller buttons */
+            height: 40px;
+            font-size: 1rem;
+        }
+    }
 </style>
 
 <body>
@@ -757,6 +860,8 @@
 
     <!-- 2D MODE CONTAINER -->
     <div id="mode-2d">
+        <div class="aurora-beam"></div>
+        <div class="aurora-beam"></div>
         <div class="hero-container">
             <!-- PROFILE PICTURE ADDED HERE -->
             <img src="./assets/photographer.jpg" alt="Profile" class="profile-pic-2d">
@@ -765,7 +870,7 @@
 
             <div class="nav-grid">
                 <!-- DARK MUSEUM PLACARD BUTTONS -->
-                <a href="#" class="nav-card" onclick="handleNav('./about.html', true); return false;">
+                <a href="#" class="nav-card" onclick="handleNav('about.html', true); return false;">
                     <div class="card-emoji">👤</div>
                     <h3>About</h3>
                     <span>Exhibit 01: Biography</span>
@@ -1255,6 +1360,7 @@
             }
         }
 
+
         window.startExperience = function () {
             state.hasExplored = true;
             els.welcome.classList.add('hidden');
@@ -1676,7 +1782,7 @@
             const gap = 220;
 
             // UPDATED BUTTONS
-            drawUIBtn("👤 About", x, y, btnW, btnH, () => handleNav('./about.html', true));
+            drawUIBtn("👤 About", x, y, btnW, btnH, () => handleNav('about.html', true));
             y += gap;
             drawUIBtn("🌌 Astronomy", x, y, btnW, btnH, () => handleNav('./portfolios/astronomy/index.html', true));
             y += gap;
