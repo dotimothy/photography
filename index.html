@@ -35,7 +35,6 @@
         box-sizing: border-box;
         -webkit-font-smoothing: antialiased;
         font-family: 'Roboto', sans-serif;
-        /* Enforce Roboto everywhere */
     }
 
     body {
@@ -44,11 +43,9 @@
         width: 100vw;
         height: 100vh;
         background-color: #000000;
-        /* Pure black for drama */
         overflow: hidden;
         color: var(--primary-color);
         touch-action: none;
-        /* Prevent scroll on 3D view */
     }
 
     /* --- 2D MODE (Northern Lights Style) --- */
@@ -71,7 +68,6 @@
         left: -50%;
         width: 200%;
         height: 200%;
-        /* Northern Lights colors: Green, Purple, hints of Blue in a conic sweep */
         background: conic-gradient(from 0deg at 50% 50%,
                 transparent 0deg,
                 rgba(0, 255, 136, 0.3) 50deg,
@@ -104,7 +100,6 @@
         mix-blend-mode: color-dodge;
     }
 
-    /* Texture Overlay: Grain + Vertical Light Pillars */
     #mode-2d::before {
         content: "";
         position: fixed;
@@ -115,19 +110,13 @@
         pointer-events: none;
         z-index: 1;
         opacity: 0.5;
-        /* Adjust texture intensity */
-
         background-image:
-            /* Layer 1: SVG Noise for "Grain" */
             url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E"),
-
-            /* Layer 2: Vertical Stripes for "Aurora Curtains" */
             repeating-linear-gradient(90deg,
                 transparent 0%,
                 rgba(255, 255, 255, 0.03) 1px,
                 transparent 2px,
                 transparent 15px);
-
         background-size: 200px 200px, 100% 100%;
     }
 
@@ -141,7 +130,6 @@
         }
     }
 
-    /* Scanline Effect */
     #mode-2d::after {
         content: "";
         position: fixed;
@@ -160,7 +148,6 @@
         display: flex;
     }
 
-    /* Important: Keeps text clickable above the texture */
     .hero-container {
         flex: 1;
         display: flex;
@@ -193,14 +180,12 @@
 
     .glitch-title {
         font-size: clamp(2.5rem, 10vw, 5rem);
-        /* Fluid typography */
         font-weight: 900;
         letter-spacing: -2px;
         color: white;
         margin-bottom: 2rem;
         position: relative;
         text-shadow: 0 0 20px var(--museum-theme);
-        /* Enhanced glow */
         animation: glitch-anim 5s infinite;
     }
 
@@ -250,20 +235,16 @@
         padding-bottom: 120px;
     }
 
-    /* Dark Museum Card Style */
     .nav-card {
         background: rgba(20, 20, 20, 0.8);
-        /* Dark background */
         backdrop-filter: blur(12px);
         width: 300px;
         padding: 40px 30px;
         text-decoration: none;
         color: #f0f0f0;
-        /* Light text */
         position: relative;
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-        /* Deep shadow for contrast */
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-left: 4px solid var(--museum-theme);
         display: flex;
@@ -281,7 +262,6 @@
             width: 85%;
             max-width: 350px;
             padding: 20px 15px;
-            /* Reduced padding */
         }
 
         .nav-grid {
@@ -293,33 +273,33 @@
         .hero-container {
             justify-content: flex-start;
             padding-top: 40px;
-            /* Reduced top padding */
         }
 
         .glitch-title {
             font-size: clamp(2rem, 8vw, 3rem);
-            /* Smaller mobile title */
             margin-bottom: 1.5rem;
         }
 
         .profile-pic-2d {
             width: 150px;
-            /* Smaller profile pic */
             height: 150px;
             margin-bottom: 20px;
         }
 
+        /* UPDATED: Removed bottom override for controls */
         .controls-container {
-            top: auto;
-            bottom: 20px;
+            /* DELETED: top: auto; */
+            /* DELETED: bottom: 20px; */
+
+            top: 20px;
             right: 15px;
+
             flex-direction: column;
             gap: 12px;
         }
 
         .icon-btn {
             width: 40px;
-            /* Smaller buttons */
             height: 40px;
             font-size: 1rem;
         }
@@ -427,7 +407,6 @@
         position: fixed;
         z-index: 3000;
         pointer-events: none;
-        /* Let clicks pass through to 3D */
         width: 100%;
         height: 100%;
         top: 0;
@@ -438,15 +417,15 @@
         pointer-events: auto;
     }
 
-    /* Top Right Controls Container */
+    /* Top Right Controls Container - UPDATED */
     .controls-container {
-        position: absolute;
+        position: fixed;
+        /* Changed from absolute to fixed */
         top: 30px;
         right: 30px;
         display: flex;
         gap: 15px;
         z-index: 3000;
-        /* Ensure on top of welcome screen */
     }
 
     /* 3D Mode Footer */
@@ -506,7 +485,6 @@
         box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
     }
 
-    /* FPS Counter */
     #fps-counter {
         position: fixed;
         bottom: 20px;
@@ -533,7 +511,6 @@
         align-items: center;
         z-index: 2000;
         background: rgba(0, 0, 0, 0.6);
-        /* Slightly darker for contrast */
         backdrop-filter: blur(10px);
         transition: opacity 1s ease-in-out, visibility 1s;
     }
@@ -620,7 +597,6 @@
 
     .social-icon:hover {
         color: var(--accent-color);
-        /* Turns Cyan on hover */
         transform: translateY(-5px) scale(1.2);
         text-shadow: 0 0 15px var(--accent-color);
     }
@@ -693,7 +669,7 @@
         opacity: 1;
     }
 
-    /* --- SETTINGS PANEL (Immersive) --- */
+    /* --- SETTINGS PANEL --- */
     .settings-overlay {
         position: fixed;
         top: 0;
@@ -772,7 +748,6 @@
         color: #aaa;
     }
 
-    /* Custom Toggle Switch */
     .toggle-switch {
         position: relative;
         width: 50px;
@@ -825,7 +800,6 @@
         position: absolute;
         top: 60px;
         left: 25px;
-        /* and left as requested */
         width: 45px;
         height: 45px;
         display: flex;
@@ -835,12 +809,10 @@
         border: 1px solid rgba(255, 255, 255, 0.3);
         color: white;
         border-radius: 50%;
-        /* Circular X button */
         cursor: pointer;
         font-size: 1.2rem;
         transition: 0.2s;
         z-index: 5000;
-        /* Higher priority */
         backdrop-filter: blur(10px);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     }
@@ -848,6 +820,114 @@
     .close-iframe:hover {
         background: rgba(255, 255, 255, 0.9);
         color: black;
+        transform: scale(1.1);
+    }
+
+    /* --- EPIC SPACE INTRO --- */
+    #space-intro {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 10000;
+        background: #000;
+        pointer-events: auto;
+        /* Ensures it captures all clicks */
+    }
+
+    #space-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* A blinding white flash for the transition */
+    #hyper-flash {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 10002;
+        transition: opacity 0.8s ease-out;
+    }
+
+    .intro-overlay {
+        position: relative;
+        z-index: 10001;
+        color: white;
+        text-align: center;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+    }
+
+    /* Cinematic Text Animation */
+    .warp-text {
+        font-family: 'Roboto', sans-serif;
+        font-weight: 900;
+        font-size: clamp(2rem, 5vw, 4rem);
+        letter-spacing: 20px;
+        text-transform: uppercase;
+        color: transparent;
+        -webkit-text-stroke: 1px rgba(0, 229, 255, 0.8);
+        /* Cyan outline */
+        opacity: 0;
+        filter: drop-shadow(0 0 10px #00e5ff);
+        animation: cinematicIn 4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    .warp-sub {
+        font-size: 1rem;
+        letter-spacing: 5px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 15px;
+        opacity: 0;
+        animation: fadeInSimple 1s 1s forwards;
+    }
+
+    @keyframes cinematicIn {
+        0% {
+            opacity: 0;
+            letter-spacing: 50px;
+            transform: scale(0.8) translateZ(-100px);
+            filter: blur(20px);
+        }
+
+        20% {
+            opacity: 1;
+            filter: blur(0);
+            color: white;
+            /* Fill in the text */
+        }
+
+        80% {
+            opacity: 1;
+            transform: scale(1.1);
+            color: white;
+        }
+
+        100% {
+            opacity: 0;
+            letter-spacing: 80px;
+            /* Text rips apart at warp speed */
+            transform: scale(2);
+            filter: blur(10px);
+        }
+    }
+
+    @keyframes fadeInSimple {
+        to {
+            opacity: 1;
+        }
     }
 
     iframe {
@@ -857,73 +937,12 @@
         height: 100%;
     }
 
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
     #btn-mute {
         color: #ff4444;
     }
 
     a {
         color: #fff;
-    }
-
-    @media (max-width: 768px) {
-        .nav-card {
-            width: 85%;
-            max-width: 350px;
-            padding: 20px 15px;
-            /* Reduced padding */
-        }
-
-        .nav-grid {
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .hero-container {
-            justify-content: flex-start;
-            padding-top: 40px;
-            /* Reduced top padding */
-        }
-
-        .glitch-title {
-            font-size: clamp(2rem, 8vw, 3rem);
-            /* Smaller mobile title */
-            margin-bottom: 1.5rem;
-        }
-
-        .profile-pic-2d {
-            width: 150px;
-            /* Smaller profile pic */
-            height: 150px;
-            margin-bottom: 20px;
-        }
-
-        .controls-container {
-            top: auto;
-            bottom: 20px;
-            right: 15px;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .icon-btn {
-            width: 40px;
-            /* Smaller buttons */
-            height: 40px;
-            font-size: 1rem;
-        }
     }
 </style>
 
@@ -937,13 +956,11 @@
         <div class="aurora-beam"></div>
         <div class="aurora-beam"></div>
         <div class="hero-container">
-            <!-- PROFILE PICTURE ADDED HERE -->
             <img src="./assets/photographer.jpg" alt="Profile" class="profile-pic-2d">
 
             <h1 class="glitch-title" data-text="TheDoShoots">TheDoShoots</h1>
 
             <div class="nav-grid">
-                <!-- DARK MUSEUM PLACARD BUTTONS -->
                 <a href="#" class="nav-card" onclick="handleNav('about.html', true); return false;">
                     <div class="card-emoji">👤</div>
                     <h3>About</h3>
@@ -977,7 +994,6 @@
                     <h3>Wildlife</h3>
                     <span>Exhibit 06: Animals</span>
                 </a>
-
             </div>
         </div>
     </div>
@@ -986,8 +1002,18 @@
     <div class="ui-layer">
         <div id="fps-counter">FPS: 60</div>
 
+        <!-- EPIC SPACE INTRO (MOVED HERE) -->
+        <div id="space-intro">
+            <canvas id="space-canvas"></canvas>
+            <div id="hyper-flash"></div>
+            <div class="intro-overlay">
+                <h2 class="warp-text">THE DO SHOOTS</h2>
+                <div class="warp-sub">SYSTEM INITIALIZING</div>
+            </div>
+        </div>
+
         <div class="controls-container">
-            <!-- HOME BUTTON -->
+            <!-- TOP CONTROLS -->
             <button class="icon-btn interactive-element" id="btn-home" title="Go to Home (2D)">
                 <i class="fas fa-home"></i>
             </button>
@@ -1188,6 +1214,7 @@
             loadPreferences();
             init3D();
             setupEventListeners();
+            initSpaceIntro(); // Kick off the intro
 
             // Wait for image load to redraw UI
             pfpImage.onload = () => {
@@ -2142,6 +2169,152 @@
                 osc.stop(t + 0.05);
             }
         };
+
+        function initSpaceIntro() {
+            const canvas = document.getElementById('space-canvas');
+            const intro = document.getElementById('space-intro');
+            const flash = document.getElementById('hyper-flash');
+            const ctx = canvas.getContext('2d');
+
+            let width, height, cx, cy;
+            let stars = [];
+            const numStars = 1500; // More stars for density
+
+            // Physics & Animation State
+            let speed = 0.1;
+            let targetSpeed = 80; // Much faster max speed
+            let starBaseSize = 0.5;
+            let phase = 'start'; // start, accel, warp, flash, done
+            let shakeStrength = 0;
+            let animateIntro = true;
+
+            // Initialize dimensions
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                cx = width / 2;
+                cy = height / 2;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Create Star Object
+            function createStar() {
+                return {
+                    x: (Math.random() - 0.5) * width * 2, // Spread wider than screen
+                    y: (Math.random() - 0.5) * height * 2,
+                    z: Math.random() * width,
+                    oz: 0, // Old Z for trail calculation
+                    color: Math.random() > 0.8 ? '#00e5ff' : '#ffffff' // 20% Cyan stars
+                };
+            }
+
+            // Populate array
+            for (let i = 0; i < numStars; i++) stars.push(createStar());
+
+            function update() {
+                if (!animateIntro) return;
+
+                // Clear with slight fade for trail effect? No, clean clear looks faster for warp.
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, width, height);
+
+                // --- PHASE LOGIC ---
+                if (phase === 'start') {
+                    speed += 0.05;
+                    if (speed > 2) phase = 'accel';
+                } else if (phase === 'accel') {
+                    speed *= 1.04; // Exponential acceleration
+                    shakeStrength += 0.05;
+                    if (speed >= targetSpeed) {
+                        speed = targetSpeed;
+                        phase = 'warp';
+                        setTimeout(() => { phase = 'flash'; }, 2000); // Hold warp for 2s
+                    }
+                } else if (phase === 'flash') {
+                    // Trigger the white out
+                    flash.style.opacity = '1';
+
+                    // Stop animation shortly after flash covers screen
+                    setTimeout(() => {
+                        intro.style.display = 'none'; // Hard remove
+                        animateIntro = false;
+                    }, 800);
+                }
+
+                // --- DRAWING ---
+
+                // 1. Camera Shake (Applied to context)
+                ctx.save();
+                if (shakeStrength > 0) {
+                    const dx = (Math.random() - 0.5) * shakeStrength;
+                    const dy = (Math.random() - 0.5) * shakeStrength;
+                    ctx.translate(dx, dy);
+                }
+
+                // 2. Central Glow (The Singularity)
+                // Gets brighter and bluer as we speed up
+                const glowOpacity = Math.min(speed / targetSpeed, 0.8);
+                const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, width * 0.4);
+                gradient.addColorStop(0, `rgba(200, 255, 255, ${glowOpacity})`);
+                gradient.addColorStop(0.1, `rgba(0, 229, 255, ${glowOpacity * 0.5})`);
+                gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                // 3. Render Stars
+                cx = width / 2;
+                cy = height / 2;
+
+                stars.sort((a, b) => b.z - a.z); // Draw distant stars first
+
+                for (let star of stars) {
+                    star.oz = star.z; // Save position for trail
+                    star.z -= speed;
+
+                    // Reset star if it passes camera
+                    if (star.z <= 0) {
+                        star.z = width;
+                        star.oz = width; // prevent long streak across screen on reset
+                        star.x = (Math.random() - 0.5) * width * 1.5;
+                        star.y = (Math.random() - 0.5) * height * 1.5;
+                    }
+
+                    // 3D Projection Math
+                    // x = x3d / z * focalLength
+                    const x = (star.x / star.z) * cx + cx;
+                    const y = (star.y / star.z) * cy + cy;
+
+                    // Previous frame position (for warp streaks)
+                    const ox = (star.x / star.oz) * cx + cx;
+                    const oy = (star.y / star.oz) * cy + cy;
+
+                    // Opacity based on distance (fog)
+                    const opacity = 1 - (star.z / width);
+
+                    if (x > 0 && x < width && y > 0 && y < height) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = star.color;
+
+                        // Line width scales with proximity
+                        ctx.lineWidth = Math.min(3, (1 - star.z / width) * 3);
+                        ctx.globalAlpha = opacity;
+
+                        ctx.moveTo(ox, oy);
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                    }
+                }
+
+                ctx.restore(); // Undo camera shake
+                requestAnimationFrame(update);
+            }
+
+            // Start
+            update();
+        }
     </script>
 </body>
 
