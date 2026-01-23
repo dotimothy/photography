@@ -29,10 +29,10 @@ build: install
 	$(VENV_PYTHON) $(SCRIPT) --watermark --full-clean --quality $(quality) --jobs $(jobs)
 
 fast: install
-	$(VENV_PYTHON) $(SCRIPT) --skip-repo --html-only --quality $(quality) --jobs $(jobs)
+	$(VENV_PYTHON) $(SCRIPT) --html-only --quality $(quality) --jobs $(jobs)
 
 web: install
-	$(VENV_PYTHON) $(SCRIPT) --skip-repo --html-only
+	$(VENV_PYTHON) $(SCRIPT) --html-only
 
 exif: install
 	$(VENV_PYTHON) $(SCRIPT) --exif
