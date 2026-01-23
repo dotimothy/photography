@@ -1,8 +1,9 @@
 # 📷 TheDoShoots Photography Portfolio 📷
-
 Welcome to my photography portfolio: **TheDoShoots**! Here is how you build my website.
 
 This project automates the creation of gallery pages based on a template repository and provides tools for managing image metadata.
+
+Live Site: https://thedoshoots.me
 
 ## ✨ Features
 

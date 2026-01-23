@@ -6,3 +6,4 @@ opencv-python
 exifread
 Pillow
 requests
+piexif

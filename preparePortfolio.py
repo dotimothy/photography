@@ -27,7 +27,8 @@ import sys
 import hashlib
 from datetime import datetime
 from multiprocessing import Pool, cpu_count, Value, current_process
-from PIL import Image  # Re-imported for EXIF I/O
+from PIL import Image, ImageOps  # Re-imported for EXIF I/O
+import piexif
 
 # --- Configuration ---
 GALLERY_REPO = 'https://github.com/dotimothy/gallery.git'
@@ -249,6 +250,26 @@ def process_image_worker(task):
     img = cv.imread(source_path)
     if img is None:
         return (gallery_name, name_no_ext, {"Error": "Corrupt Image"})
+
+    # 4.5 Handle EXIF Orientation (Fix for upside-down watermarks)
+    if exif_bytes:
+        try:
+            exif_dict = piexif.load(exif_bytes)
+            orientation = exif_dict.get("0th", {}).get(piexif.ImageIFD.Orientation, 1)
+            
+            if orientation == 3:
+                img = cv.rotate(img, cv.ROTATE_180)
+            elif orientation == 6:
+                img = cv.rotate(img, cv.ROTATE_90_CLOCKWISE)
+            elif orientation == 8:
+                img = cv.rotate(img, cv.ROTATE_90_COUNTERCLOCKWISE)
+            
+            # Reset orientation in EXIF so browser doesn't double-rotate
+            if orientation != 1:
+                exif_dict["0th"][piexif.ImageIFD.Orientation] = 1
+                exif_bytes = piexif.dump(exif_dict)
+        except Exception:
+            pass
 
     h, w, _ = img.shape
     metadata['Image Width'] = w
