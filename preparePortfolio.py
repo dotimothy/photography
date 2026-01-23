@@ -332,6 +332,7 @@ def main():
     parser.add_argument('--clean', action='store_true', help='Clean builds')
     parser.add_argument('--full-clean', action='store_true', help='Wipe everything')
     parser.add_argument('--force-download', action='store_true', help='Force verify downloads')
+    parser.add_argument('--html-only', action='store_true', help='Skip image processing, only update HTML/JS/CSS')
     parser.add_argument('-j', '--jobs', type=int, default=None, help='Threads')
     parser.add_argument('-q', '--quality', type=int, default=100, help='JPEG Quality')
     args = parser.parse_args()
@@ -365,7 +366,7 @@ def main():
         elif args.clean and os.path.exists(PORTFOLIOS_ROOT):
             print(" - [Fast Clean] Removing HTML/JSON/Thumbs (Keeping Fulls)")
             for g in os.listdir(PORTFOLIOS_ROOT):
-                for item in ['index.html', 'thumbs', 'metadata', 'js', 'css']:
+                for item in ['index.html', 'license.html', 'immersive.html', 'thumbs', 'metadata', 'js', 'css']:
                     p = os.path.join(PORTFOLIOS_ROOT, g, item)
                     if os.path.exists(p):
                         if os.path.isdir(p): shutil.rmtree(p)
@@ -444,84 +445,105 @@ def main():
     profiler.stop('Asset Download', count=len(download_tasks))
     print(f"{color.BOLD}*** Step 1 Completed in {time.time() - step1_start:.2f}s ***{color.END}")
 
-    # --- STEP 2: IMAGE PROCESSING ---
-    print(f"\n{color.BOLD}*** Step 2: Processing Images... ***{color.END}")
-    step2_start = time.time()
-    profiler.start('Image Processing')
-    
-    gallery_map = {k: [] for k in target_keys}
-    processing_tasks = []
-    
-    # Pre-load existing metadata
-    existing_metadata = {}
-    for g in target_keys:
-        meta_path = os.path.join(PORTFOLIOS_ROOT, g, 'metadata', 'metadata.json')
-        if os.path.exists(meta_path):
-            try:
-                with open(meta_path, 'r') as f:
-                    existing_metadata[g] = json.load(f)
-            except: pass
-
-    results_map = {k: {} for k in target_keys}
-    skipped_count = 0
-
-    for gallery, fname, cache_path in galleries_to_process:
-        if not os.path.exists(cache_path): continue
-
-        g_root = os.path.join(PORTFOLIOS_ROOT, gallery)
-        full_path = os.path.join(g_root, 'fulls', fname)
-        thumb_path = os.path.join(g_root, 'thumbs', fname)
+    # --- SHORTCUT: HTML ONLY ---
+    if args.html_only:
+        print(f"\n{color.BOLD}*** [HTML-ONLY MODE] Skipping Step 2 (Processing) ***{color.END}")
+        # We still need to populate results_map and gallery_map from existing metadata
+        results_map = {k: {} for k in target_keys}
+        gallery_map = {k: [] for k in target_keys}
         
-        os.makedirs(os.path.join(g_root, 'fulls'), exist_ok=True)
-        os.makedirs(os.path.join(g_root, 'thumbs'), exist_ok=True)
-        os.makedirs(os.path.join(g_root, 'metadata'), exist_ok=True)
-
-        name_no_ext = os.path.splitext(fname)[0]
-        gallery_map[gallery].append(fname)
+        for g in target_keys:
+            meta_path = os.path.join(PORTFOLIOS_ROOT, g, 'metadata', 'metadata.json')
+            if os.path.exists(meta_path):
+                print(f" - Loading metadata for {g}...")
+                try:
+                    with open(meta_path, 'r') as f:
+                        meta = json.load(f)
+                        results_map[g] = meta
+                        gallery_map[g] = meta.get('image_order', [])
+                except Exception as e:
+                    print(f" - Error loading {g} metadata: {e}")
         
-        # --- SMART CHECK ---
-        is_fully_cached = False
-        if (os.path.exists(full_path) and os.path.exists(thumb_path) and 
-            os.path.getmtime(full_path) > os.path.getmtime(cache_path)):
-            
-            if gallery in existing_metadata and name_no_ext in existing_metadata[gallery]:
-                meta = existing_metadata[gallery][name_no_ext]
-                # Reconstruct sorting key
-                if 'EXIF DateTimeOriginal' in meta:
-                    try:
-                        dt_str = str(meta['EXIF DateTimeOriginal'])
-                        meta['__dt'] = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").timestamp()
-                    except:
-                        meta['__dt'] = os.path.getmtime(cache_path)
-                else:
-                    meta['__dt'] = os.path.getmtime(cache_path)
-                    
-                results_map[gallery][name_no_ext] = meta
-                is_fully_cached = True
-                skipped_count += 1
-        
-        if not is_fully_cached:
-            task = (cache_path, full_path, thumb_path, args.quality, args.watermark, gallery)
-            processing_tasks.append(task)
-    
-    if skipped_count > 0:
-        print(f" - Skipped {skipped_count} up-to-date images.")
-    
-    if processing_tasks:
-        print(f" - Queued {len(processing_tasks)} images for processing...")
-        
-        worker_counter = Value('i', 0)
-        
-        with Pool(num_workers, initializer=init_worker, 
-                  initargs=(WATERMARK_PATH, worker_counter, cpu_count())) as pool:
-            for gallery_name, name_no_ext, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
-                                        total=len(processing_tasks), unit='img', desc="Processing"):
-                results_map[gallery_name][name_no_ext] = meta
+        # Jump directly to Step 3
     else:
-        print(" - All images are up to date.")
+        # --- STEP 2: IMAGE PROCESSING ---
+        print(f"\n{color.BOLD}*** Step 2: Processing Images... ***{color.END}")
+        step2_start = time.time()
+        profiler.start('Image Processing')
+        
+        gallery_map = {k: [] for k in target_keys}
+        processing_tasks = []
+        
+        # Pre-load existing metadata
+        existing_metadata = {}
+        for g in target_keys:
+            meta_path = os.path.join(PORTFOLIOS_ROOT, g, 'metadata', 'metadata.json')
+            if os.path.exists(meta_path):
+                try:
+                    with open(meta_path, 'r') as f:
+                        existing_metadata[g] = json.load(f)
+                except: pass
+
+        results_map = {k: {} for k in target_keys}
+        skipped_count = 0
+
+        for gallery, fname, cache_path in galleries_to_process:
+            if not os.path.exists(cache_path): continue
+
+            g_root = os.path.join(PORTFOLIOS_ROOT, gallery)
+            full_path = os.path.join(g_root, 'fulls', fname)
+            thumb_path = os.path.join(g_root, 'thumbs', fname)
             
-    profiler.stop('Image Processing', count=len(processing_tasks) + skipped_count)
-    print(f"{color.BOLD}*** Step 2 Completed in {time.time() - step2_start:.2f}s ***{color.END}")
+            os.makedirs(os.path.join(g_root, 'fulls'), exist_ok=True)
+            os.makedirs(os.path.join(g_root, 'thumbs'), exist_ok=True)
+            os.makedirs(os.path.join(g_root, 'metadata'), exist_ok=True)
+
+            name_no_ext = os.path.splitext(fname)[0]
+            gallery_map[gallery].append(fname)
+            
+            # --- SMART CHECK ---
+            is_fully_cached = False
+            if (os.path.exists(full_path) and os.path.exists(thumb_path) and 
+                os.path.getmtime(full_path) > os.path.getmtime(cache_path)):
+                
+                if gallery in existing_metadata and name_no_ext in existing_metadata[gallery]:
+                    meta = existing_metadata[gallery][name_no_ext]
+                    # Reconstruct sorting key
+                    if 'EXIF DateTimeOriginal' in meta:
+                        try:
+                            dt_str = str(meta['EXIF DateTimeOriginal'])
+                            meta['__dt'] = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").timestamp()
+                        except:
+                            meta['__dt'] = os.path.getmtime(cache_path)
+                    else:
+                        meta['__dt'] = os.path.getmtime(cache_path)
+                        
+                    results_map[gallery][name_no_ext] = meta
+                    is_fully_cached = True
+                    skipped_count += 1
+            
+            if not is_fully_cached:
+                task = (cache_path, full_path, thumb_path, args.quality, args.watermark, gallery)
+                processing_tasks.append(task)
+        
+        if skipped_count > 0:
+            print(f" - Skipped {skipped_count} up-to-date images.")
+        
+        if processing_tasks:
+            print(f" - Queued {len(processing_tasks)} images for processing...")
+            
+            worker_counter = Value('i', 0)
+            
+            with Pool(num_workers, initializer=init_worker, 
+                    initargs=(WATERMARK_PATH, worker_counter, cpu_count())) as pool:
+                for gallery_name, name_no_ext, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
+                                            total=len(processing_tasks), unit='img', desc="Processing"):
+                    results_map[gallery_name][name_no_ext] = meta
+        else:
+            print(" - All images are up to date.")
+                
+        profiler.stop('Image Processing', count=len(processing_tasks) + skipped_count)
+        print(f"{color.BOLD}*** Step 2 Completed in {time.time() - step2_start:.2f}s ***{color.END}")
 
     # --- STEP 3: SITE GENERATION ---
     print(f"\n{color.BOLD}*** Step 3: Generating Sites... ***{color.END}")
@@ -538,6 +560,12 @@ def main():
 
         # Metadata
         g_root = os.path.join(PORTFOLIOS_ROOT, gallery)
+        
+        # Sync local overrides into template
+        tmpl_src = './tmp/gallery'
+        if os.path.exists('license.html') and os.path.exists(tmpl_src):
+            shutil.copy2('license.html', os.path.join(tmpl_src, 'license.html'))
+
         gallery_meta = {}
         file_list = []
         
@@ -564,7 +592,7 @@ def main():
         # Inject Assets
         tmpl_src = './tmp/gallery'
         if os.path.exists(tmpl_src):
-            for asset in ['index.html', 'immersive.html', 'css', 'js', 'templates']:
+            for asset in ['index.html', 'immersive.html', 'license.html', 'css', 'js', 'templates']:
                 src = os.path.join(tmpl_src, asset)
                 dst = os.path.join(g_root, asset)
                 if os.path.exists(src):
@@ -596,7 +624,7 @@ def main():
     step4_start = time.time()
     profiler.start('Deployment Prep')
     
-    deploy_assets = ['index.html', 'about.html', 'assets', 'LICENSE']
+    deploy_assets = ['index.html', 'about.html', 'license.html', 'assets', 'LICENSE']
     for item in deploy_assets:
         src = item
         dst = os.path.join('./build', item)

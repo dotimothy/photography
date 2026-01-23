@@ -29,7 +29,10 @@ build: install
 	$(VENV_PYTHON) $(SCRIPT) --watermark --full-clean --quality $(quality) --jobs $(jobs)
 
 fast: install
-	$(VENV_PYTHON) $(SCRIPT) --skip-repo --quality $(quality) --jobs $(jobs)
+	$(VENV_PYTHON) $(SCRIPT) --skip-repo --html-only --quality $(quality) --jobs $(jobs)
+
+web: install
+	$(VENV_PYTHON) $(SCRIPT) --skip-repo --html-only
 
 exif: install
 	$(VENV_PYTHON) $(SCRIPT) --exif
@@ -50,6 +53,7 @@ help:
 	@echo ""
 	@echo "make install   - Create venv and install dependencies"
 	@echo "make build     - Run full build (auto-installs venv if missing)"
-	@echo "make fast      - Run build without watermarking or git updates"
+	@echo "make fast      - Run build skipping image processing and git updates"
+	@echo "make web       - Just update HTML/JS/CSS assets (Fastest)"
 	@echo "make clean     - Remove build directory"
 	@echo "make deepclean - Remove venv, logs folder, build dir, and cache"
