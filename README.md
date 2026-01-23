@@ -1,8 +1,9 @@
 # 📷 TheDoShoots Photography Portfolio 📷
-
 Welcome to my photography portfolio: **TheDoShoots**! Here is how you build my website.
 
 This project automates the creation of gallery pages based on a template repository and provides tools for managing image metadata.
+
+Live Site: https://thedoshoots.me
 
 ## ✨ Features
 
@@ -92,16 +93,18 @@ The portfolio site (`index.html`) includes a built-in settings panel (gear icon)
 
 ### Dual Licensing
 
-This repository uses a dual licensing structure to clearly define the terms for the source code versus the photographic content:
+This repository uses a dual licensing structure to clearly define the terms for the source code versus the photographic content. This repository contains two distinct categories of content, each governed by its own license:
 
 | Component | Purpose | License | Key Permissions Granted |
 | :--- | :--- | :--- | :--- |
-| **Source Code** (`.py`, `.html`, `.css`, etc.) | For the underlying automation and site structure. | **MIT License** | Users can freely use, modify, and distribute the code for any purpose, with attribution. |
-| **Photographic Content** (Images in `astronomy/fulls`, `wildlife/fulls`, etc.) | The original creative work (the photography). | **CC BY-NC 4.0** | Users can share and adapt the photos, but **must credit the author** and **cannot use them for commercial gain**.  |
+| **Photographic Content** (Images) | The original creative work (the photography). | **CC BY-NC-ND 4.0** | Users can share the photos with credit, but **cannot modify them** (No-Derivatives) and **cannot use them commercially**. |
+| **Source Code** (`.py`, `.html`, etc.) | The underlying automation and site structure. | **MIT License** | Users can freely use, modify, and distribute the code for any purpose, with attribution. |
 
 **Photographic Content License Details:**
 
-All photographs in this portfolio are the original work of **Timothy Do** and are licensed under the **Creative Commons Attribution-NonCommercial 4.0 International Public License (CC BY-NC 4.0)**.
+All photographs in this portfolio are the original work of **Timothy Do** and are licensed under the **Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License (CC BY-NC-ND 4.0)**.
+
+© 2026 Timothy Do. All Rights Reserved.
 
 See the `LICENSE` file in this repository for the full legal text.
 
