@@ -7,3 +7,5 @@ build
 assets/portfolio.csv
 *.DS_STORE*
 .venv/
+__pycache__
+*.pyc

@@ -3,142 +3,130 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="theme-color" content="#050505">
+    <meta name="description" content="Portfolio of Timothy Do - Photographer, Engineer, Explorer">
     <title>About | TheDoShoots</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,700,900&display=swap' rel='stylesheet'>
+
+    <!-- Preconnect to Google Fonts for faster handshake -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap' rel='stylesheet'>
+
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
 
     <style>
         :root {
             --accent-cyan: #00e5ff;
-            --glass-bg: rgba(20, 20, 20, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(20, 20, 20, 0.75);
+            /* Slightly more opaque for better mobile contrast */
+            --glass-border: rgba(255, 255, 255, 0.12);
             --bg-dark: #050505;
             --text-main: #f0f0f0;
-            --text-muted: #aaaaaa;
+            --text-muted: #b0b0b0;
+            --card-radius: 16px;
+            --safe-area-bottom: env(safe-area-inset-bottom);
         }
 
-        * {
+        /* Reset & Base */
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
             background-color: var(--bg-dark);
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 20px 16px calc(40px + var(--safe-area-bottom));
+            /* Safe area for iPhone home bar */
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
+            /* Remove orange tap box on Android */
         }
 
-        /* --- AURORA BACKGROUND (Optimized Northern Lights) --- */
-        .aurora-container {
+        /* --- OPTIMIZED BACKGROUND --- 
+           Moved away from heavy blur filters on moving divs.
+           Using a static gradient mesh + a lightweight transforming layer.
+        */
+        .bg-layer {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             z-index: -1;
-            overflow: hidden;
-            background: radial-gradient(circle at 50% -20%, #050a15 0%, #000 100%);
+            pointer-events: none;
         }
 
-        /* Simplified Static Starfield */
-        .aurora-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .bg-stars {
             background-image:
-                radial-gradient(1px 1px at 10% 20%, #fff, transparent),
-                radial-gradient(1.5px 1.5px at 25% 45%, #fff, transparent),
+                radial-gradient(1px 1px at 10% 10%, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 20% 40%, #ffffff80, transparent),
                 radial-gradient(1px 1px at 40% 70%, #fff, transparent),
-                radial-gradient(2px 2px at 60% 30%, #fff, transparent),
-                radial-gradient(1.5px 1.5px at 75% 65%, #fff, transparent),
-                radial-gradient(1px 1px at 90% 15%, #fff, transparent),
-                radial-gradient(2px 2px at 15% 85%, #fff, transparent),
-                radial-gradient(1px 1px at 85% 90%, #fff, transparent);
+                radial-gradient(1.5px 1.5px at 60% 30%, #ffffff80, transparent),
+                radial-gradient(1px 1px at 80% 80%, #fff, transparent);
             background-size: 300px 300px;
-            opacity: 0.15;
-            /* Animation removed for extreme performance */
+            opacity: 0.2;
         }
 
-        .aurora-beam {
-            position: absolute;
-            top: -25%;
-            left: -25%;
-            width: 150%;
-            height: 150%;
-            filter: blur(60px);
-            mix-blend-mode: screen;
+        .bg-aurora {
+            /* Hardware Accelerated Gradient */
+            background: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.15), transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(120, 0, 255, 0.1), transparent 50%);
             will-change: transform;
+            animation: breathe 10s ease-in-out infinite alternate;
         }
 
-        .beam-1 {
-            background: conic-gradient(from 0deg at 50% 50%,
-                    transparent 0deg,
-                    rgba(0, 255, 170, 0.35) 40deg,
-                    transparent 80deg,
-                    rgba(120, 0, 255, 0.25) 140deg,
-                    transparent 200deg,
-                    rgba(0, 229, 255, 0.25) 260deg,
-                    transparent 320deg);
-            animation: rotateAurora 50s linear infinite;
-            opacity: 0.8;
-        }
-
-        .beam-2 {
-            background: conic-gradient(from 180deg at 45% 55%,
-                    transparent 0deg,
-                    rgba(140, 0, 255, 0.3) 60deg,
-                    transparent 120deg,
-                    rgba(0, 255, 136, 0.25) 180deg,
-                    transparent 240deg,
-                    rgba(0, 150, 255, 0.2) 300deg,
-                    transparent 360deg);
-            animation: rotateAurora 70s linear infinite reverse;
-            opacity: 0.6;
-            mix-blend-mode: color-dodge;
-        }
-
-        @keyframes rotateAurora {
+        @keyframes breathe {
             0% {
-                transform: rotate(0deg);
+                transform: scale(1);
+                opacity: 0.8;
             }
 
             100% {
-                transform: rotate(360deg);
+                transform: scale(1.1);
+                opacity: 1;
             }
         }
 
-        /* --- GLOBAL LAYOUT --- */
+        /* --- UTILITIES --- */
         a {
             text-decoration: none;
             color: inherit;
-            transition: color 0.3s;
+            transition: opacity 0.2s;
+        }
+
+        a:active {
+            opacity: 0.6;
+        }
+
+        /* SVG Icon styling */
+        .icon {
+            width: 1.2em;
+            height: 1.2em;
+            fill: currentColor;
+            vertical-align: middle;
         }
 
         .container {
             width: 100%;
-            max-width: 1100px;
-            /* Slightly wider for the 3-col gear grid */
-            animation: fadeIn 0.8s ease-out;
-            position: relative;
-            z-index: 1;
+            max-width: 1000px;
+            animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        @keyframes fadeIn {
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(15px);
             }
 
             to {
@@ -149,157 +137,153 @@
 
         /* --- HEADER --- */
         header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
             text-align: center;
-            margin-bottom: 40px;
         }
 
         .profile-img {
-            width: 160px;
-            height: 160px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             border: 3px solid var(--accent-cyan);
             object-fit: cover;
-            margin-bottom: 20px;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
-            transition: transform 0.3s ease;
-        }
-
-        .profile-img:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 40px rgba(0, 229, 255, 0.4);
+            margin-bottom: 16px;
+            background-color: #222;
+            /* Placeholder color */
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
         }
 
         h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-size: 2.25rem;
             font-weight: 900;
             text-transform: uppercase;
-            margin: 0 0 10px 0;
-            background: linear-gradient(to bottom, #fff, #bbb);
+            margin: 0;
+            background: linear-gradient(180deg, #fff 0%, #a0a0a0 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -1px;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
             color: var(--accent-cyan);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 30px;
+            margin: 8px 0 24px 0;
             opacity: 0.9;
         }
 
-        /* --- SOCIAL ICONS --- */
+        /* --- TOUCH FRIENDLY SOCIALS --- */
         .social-row {
             display: flex;
-            gap: 15px;
+            gap: 16px;
             justify-content: center;
             flex-wrap: wrap;
-            margin-bottom: 40px;
         }
 
-        .social-icon {
+        .social-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            /* Minimum touch target size */
+            height: 48px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 1.4rem;
+            border: 1px solid var(--glass-border);
             color: #fff;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            backdrop-filter: blur(5px);
+            transition: transform 0.2s, background-color 0.2s;
+            /* Faster Backdrop blur for mobile */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
-        .social-icon:hover {
+        .social-btn svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .social-btn:active {
+            transform: scale(0.92);
             background: var(--accent-cyan);
             color: #000;
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 229, 255, 0.3);
-            border-color: var(--accent-cyan);
         }
 
-        /* --- GEAR SECTION (Moved Top) --- */
+        @media(hover: hover) {
+            .social-btn:hover {
+                transform: translateY(-3px);
+                border-color: var(--accent-cyan);
+                background: rgba(0, 229, 255, 0.1);
+            }
+        }
+
+        /* --- GEAR SECTION (Optimized Grid) --- */
         .gear-section {
-            margin-bottom: 40px;
-            /* Spacing before Bio Cards */
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 30px;
+            border-radius: var(--card-radius);
+            padding: 24px;
+            margin-bottom: 30px;
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
 
         .gear-title {
             text-align: center;
-            color: #fff;
-            font-size: 1.2rem;
+            font-size: 1rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 25px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 15px;
+            color: #fff;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .gear-grid {
             display: grid;
-            gap: 20px;
-            /* Default Mobile: 1 col */
-            grid-template-columns: 1fr;
-        }
-
-        @media (min-width: 900px) {
-            .gear-grid {
-                /* Desktop: 1x3 Grid */
-                grid-template-columns: repeat(3, 1fr);
-            }
+            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         }
 
         .gear-category {
             color: var(--accent-cyan);
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 8px;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
             font-weight: 700;
             text-align: center;
-            /* Center headers for cleaner look */
         }
 
         .gear-list {
             list-style: none;
             padding: 0;
             margin: 0;
-            color: var(--text-muted);
-            font-size: 0.95rem;
         }
 
         .gear-list li {
-            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
             background: rgba(255, 255, 255, 0.03);
-            padding: 8px 12px;
-            border-radius: 6px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
-        .gear-list li i {
-            color: #fff;
-            width: 20px;
-            text-align: center;
-        }
-
-
-        /* --- INFO GRID --- */
+        /* --- INFO CARDS --- */
         .info-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 30px;
+            gap: 24px;
         }
 
         @media (min-width: 768px) {
@@ -311,72 +295,53 @@
         .card {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            border-radius: var(--card-radius);
             overflow: hidden;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
             display: flex;
             flex-direction: column;
             cursor: pointer;
-            /* Interaction hint */
             position: relative;
+            /* Optimizes rendering performance */
+            content-visibility: auto;
+            contain-intrinsic-size: 400px;
+            transition: transform 0.2s ease, border-color 0.2s;
+            -webkit-tap-highlight-color: rgba(0, 229, 255, 0.2);
         }
 
-        .card:hover {
-            border-color: rgba(0, 229, 255, 0.5);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        .card:active {
+            transform: scale(0.98);
         }
 
-        /* Hover Overlay Hint */
-        .card::after {
-            content: "\f00e";
-            /* FontAwesome Search Icon */
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: white;
-            background: rgba(0, 229, 255, 0.8);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-
-        .card:hover::after {
-            opacity: 1;
+        .card-img-wrapper {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background-color: #1a1a1a;
+            overflow: hidden;
         }
 
         .card-img {
             width: 100%;
-            height: 250px;
+            height: 100%;
             object-fit: cover;
-            border-bottom: 1px solid var(--glass-border);
-            transition: transform 0.5s;
+            transition: opacity 0.3s;
+            opacity: 0;
+            /* Fade in on load */
         }
 
-        .card:hover .card-img {
-            transform: scale(1.03);
+        .card-img.loaded {
+            opacity: 1;
         }
 
         .card-content {
-            padding: 25px;
+            padding: 20px;
             flex-grow: 1;
         }
 
         .card h2 {
             color: var(--accent-cyan);
-            font-size: 1.5rem;
-            margin-top: 0;
-            margin-bottom: 15px;
+            font-size: 1.3rem;
+            margin: 0 0 10px 0;
             text-transform: uppercase;
             letter-spacing: 1px;
             display: flex;
@@ -384,19 +349,14 @@
             gap: 10px;
         }
 
-        .card h2 i {
-            font-size: 1.2rem;
-            opacity: 0.8;
-        }
-
         .card p {
-            line-height: 1.7;
+            line-height: 1.6;
             color: var(--text-muted);
             margin: 0;
-            font-size: 1.05rem;
+            font-size: 0.95rem;
         }
 
-        /* --- LIGHTBOX (Fullscreen Modal) --- */
+        /* --- LIGHTBOX (Mobile Optimized) --- */
         .lightbox {
             position: fixed;
             top: 0;
@@ -404,224 +364,327 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
-            /* Deep dark overlay */
-            z-index: 10000;
+            z-index: 2000;
             display: flex;
             flex-direction: column;
-            /* Stack image and caption */
             align-items: center;
             justify-content: center;
             opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-            backdrop-filter: blur(10px);
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             padding: 20px;
         }
 
         .lightbox.active {
             opacity: 1;
-            visibility: visible;
+            pointer-events: auto;
         }
 
         .lightbox-img {
-            max-width: 95vw;
-            max-height: 85vh;
-            border: 2px solid var(--glass-border);
+            max-width: 100%;
+            max-height: 70vh;
             border-radius: 8px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
             object-fit: contain;
         }
 
         .lightbox-caption {
             margin-top: 20px;
             color: var(--accent-cyan);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             text-align: center;
         }
 
         .lightbox-close {
             position: absolute;
             top: 20px;
-            right: 30px;
-            color: white;
-            font-size: 2.5rem;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
             cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .lightbox-close:hover {
-            color: var(--accent-cyan);
         }
 
         /* --- FOOTER --- */
         footer {
-            margin-top: 60px;
+            margin-top: 40px;
             text-align: center;
-            color: #555;
-            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+
+        footer a {
+            text-decoration: underline;
+            color: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
 
 <body>
 
-    <div class="aurora-container">
-        <div class="aurora-beam beam-1"></div>
-        <div class="aurora-beam beam-2"></div>
-    </div>
+    <!-- Lightweight Backgrounds -->
+    <div class="bg-layer bg-stars"></div>
+    <div class="bg-layer bg-aurora"></div>
 
     <div class="container">
 
         <header>
-            <img src="./assets/tim.jpg" alt="Timothy Do" class="profile-img">
+            <img src="./assets/tim.jpg" alt="Timothy Do" class="profile-img" width="140" height="140" loading="eager">
             <h1>TheDoShoots</h1>
             <div class="subtitle">Photographer • Engineer • Explorer</div>
 
-            <div class="social-row">
-                <a href="https://instagram.com/thedoshoots" target="_blank" class="social-icon" title="Instagram">
-                    <i class="fab fa-instagram"></i>
+            <nav class="social-row">
+                <!-- Inline SVGs for Maximum Performance (No external FontAwesome req) -->
+                <a href="https://instagram.com/thedoshoots" target="_blank" class="social-btn" aria-label="Instagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                        <path fill="currentColor"
+                            d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z" />
+                    </svg>
                 </a>
-                <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" class="social-icon"
-                    title="Flickr">
-                    <i class="fab fa-flickr"></i>
+                <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" class="social-btn"
+                    aria-label="Flickr">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                        <path fill="currentColor"
+                            d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM144.5 319c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5zm159 0c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5z" />
+                    </svg>
                 </a>
-                <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-icon" title="YouTube">
-                    <i class="fab fa-youtube"></i>
+                <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="YouTube">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                        <path fill="currentColor"
+                            d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z" />
+                    </svg>
                 </a>
-                <a href="https://tiktok.com/@TheDoShoots" target="_blank" class="social-icon" title="TikTok">
-                    <i class="fab fa-tiktok"></i>
+                <a href="https://tiktok.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="TikTok">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                        <path fill="currentColor"
+                            d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25V349.38A162.55 162.55 0 1 1 185 188.31V278.2a74.62 74.62 0 1 0 52.23 71.18V0l88 0a121.18 121.18 0 0 0 1.86 22.17h0A122.18 122.18 0 0 0 381 102.39a121.43 121.43 0 0 0 67 20.14z" />
+                    </svg>
                 </a>
-                <a href="https://vsco.co/thedoshoots" target="_blank" class="social-icon" title="VSCO">
-                    <svg viewBox="0 0 24 24" style="width: 20px; height: auto; fill: currentColor;">
+                <a href="https://vsco.co/thedoshoots" target="_blank" class="social-btn" aria-label="VSCO">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
                         <path
                             d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm11.52 12c0 .408-.023.792-.072 1.176l-2.04-.24c.024-.312.05-.624.05-.936 0-.288-.025-.6-.05-.888l2.04-.24c.072.384.072.744.072 1.128zM.479 12c0-.384.024-.769.049-1.152l2.04.24c-.024.312-.047.6-.047.912s.023.6.047.912l-2.04.24C.479 12.769.479 12.384.479 12zm20.472-3.096l1.921-.72c.264.72.433 1.464.552 2.232l-2.04.24c-.097-.6-.24-1.2-.433-1.752zM21 12c0 .6-.072 1.176-.167 1.752l-2.017-.455c.071-.409.119-.841.119-1.297s-.048-.912-.119-1.344l2.017-.457c.118.577.167 1.177.167 1.801zm-9 6.456C8.435 18.455 5.545 15.565 5.544 12 5.545 8.435 8.435 5.545 12 5.544c3.565.001 6.455 2.891 6.456 6.456.008 3.559-2.871 6.448-6.429 6.456H12zM12.216 21v-2.064c.885-.029 1.756-.224 2.568-.575l.888 1.872c-1.09.482-2.264.742-3.456.767zm-3.936-.791l.912-1.873c.792.359 1.656.575 2.568.6V21c-1.202-.023-2.386-.293-3.48-.791zM3 12c0-.624.072-1.224.192-1.824l2.016.456c-.098.45-.146.908-.144 1.368 0 .432.048.864.12 1.272l-2.016.455C3.051 13.159 2.994 12.58 3 12zm8.76-9v2.064c-.877.029-1.74.224-2.544.576l-.888-1.871C9.411 3.291 10.577 3.03 11.76 3zm3.935.792l-.911 1.872c-.809-.363-1.682-.559-2.568-.576V3.024c1.248 0 2.424.288 3.479.768zm5.088 4.656c-.231-.56-.513-1.098-.84-1.608l1.681-1.152c.407.648.768 1.32 1.056 2.04l-1.897.72zm-.07 1.296l-2.018.456c-.23-.85-.621-1.648-1.151-2.352l1.632-1.295c.72.959 1.248 2.015 1.537 3.191zm-3.457-2.256c-.572-.667-1.264-1.22-2.04-1.633l.912-1.871c1.056.549 1.993 1.299 2.76 2.208l-1.632 1.296zm-.6-3.744l.96-1.824c.672.384 1.295.816 1.896 1.32L18.145 4.8c-.461-.401-.959-.754-1.489-1.056zm-.408-.216c-.54-.266-1.102-.483-1.68-.648l.504-1.992c.744.216 1.464.48 2.159.84l-.983 1.8zm-2.16-.768c-.6-.144-1.2-.216-1.824-.239V.479c.793.024 1.584.12 2.328.289l-.504 1.992zm-2.28-.239c-.605.021-1.207.094-1.8.216L9.528.744c.72-.168 1.487-.265 2.28-.265v2.042zm-2.28.334c-.586.167-1.156.384-1.704.649l-.96-1.824c.691-.343 1.415-.616 2.16-.816l.504 1.991zm-2.112.865c-.529.294-1.027.64-1.488 1.032L4.56 3.216c.6-.504 1.224-.936 1.896-1.319l.96 1.823zm.48.264l.888 1.871c-.792.408-1.464.96-2.04 1.608L5.136 6.168c.775-.895 1.711-1.636 2.76-2.184zM4.848 6.552l1.608 1.295c-.53.705-.921 1.503-1.152 2.353l-2.016-.456c.312-1.2.84-2.28 1.56-3.192zM3.24 8.4l-1.92-.72c.287-.72.648-1.416 1.08-2.04l1.68 1.176c-.341.494-.623 1.025-.84 1.584zm-.168.455c-.192.577-.36 1.152-.432 1.776L.6 10.393c.12-.769.288-1.537.553-2.257l1.919.719zm-.456 4.513c.096.6.239 1.2.432 1.776l-1.92.72c-.271-.728-.456-1.485-.552-2.257l2.04-.239zm.624 2.208c.239.576.528 1.104.84 1.607L2.4 18.336c-.435-.629-.797-1.306-1.08-2.016l1.92-.744zm.024-1.392l2.017-.456c.216.864.624 1.681 1.128 2.376L4.8 17.4c-.725-.957-1.247-2.051-1.536-3.216zm3.432 2.28c.577.672 1.272 1.248 2.064 1.656l-.912 1.872c-1.063-.557-2.009-1.315-2.784-2.232l1.632-1.296zm.72 3.815l-.96 1.825c-.674-.376-1.31-.819-1.896-1.321l1.368-1.535c.456.407.936.744 1.488 1.031zm.408.217c.528.264 1.104.48 1.705.647l-.504 1.992c-.747-.196-1.471-.469-2.16-.815l.959-1.824zm2.16.768c.576.12 1.176.193 1.8.217v2.039c-.774-.026-1.544-.114-2.305-.264l.505-1.992zm2.28.216c.605-.021 1.207-.094 1.801-.217l.479 1.992c-.749.168-1.513.264-2.28.287V21.48zm2.257-.336c.586-.165 1.155-.382 1.703-.647l.96 1.824c-.688.35-1.412.623-2.159.815l-.504-1.992zm2.086-.865c.528-.287 1.032-.647 1.488-1.031l1.369 1.535c-.588.502-1.223.945-1.896 1.321l-.961-1.825zm-.479-.263l-.888-1.871c.788-.414 1.489-.977 2.064-1.656l1.606 1.296c-.778.91-1.722 1.668-2.782 2.231zm3.071-2.592l-1.607-1.296c.532-.708.916-1.517 1.128-2.376l2.017.456c-.311 1.157-.831 2.248-1.538 3.216zM20.76 15.6l1.92.721c-.288.72-.648 1.392-1.079 2.04l-1.682-1.177c.337-.504.624-1.032.841-1.584zm.168-.455c.192-.553.336-1.152.433-1.752l2.039.239c-.11.761-.294 1.508-.551 2.232l-1.921-.719zm.456-9.841l-1.681 1.152c-.358-.49-.76-.947-1.199-1.368l1.368-1.536c.552.552 1.056 1.128 1.512 1.752zM4.2 3.528l1.368 1.536c-.456.408-.84.864-1.2 1.368l-1.68-1.176c.431-.636.94-1.216 1.512-1.728zM2.664 18.744l1.68-1.152c.36.48.769.937 1.2 1.369l-1.368 1.535c-.548-.545-1.054-1.131-1.512-1.752zm17.16 1.729l-1.368-1.537c.432-.407.841-.863 1.199-1.344l1.682 1.176c-.457.6-.961 1.175-1.513 1.705z" />
                     </svg>
                 </a>
-                <a href="https://alphauniverse.com/member/#/dotimothy" target="_blank" class="social-icon"
-                    title="Sony Alpha">
-                    <svg viewBox="0 0 232 166"
-                        style="width: 22px; height: auto; fill: currentColor; display: block; margin: auto;">
+                <a href="https://alphauniverse.com/member/#/dotimothy" target="_blank" class="social-btn"
+                    aria-label="Sony Alpha">
+                    <svg viewBox="0 0 232 166" fill="currentColor">
                         <path
                             d="m219 142.7c-27 2-33-11.4-38.5-27-4-11-8-25-10-32 12.5-19 27-42 48.5-76h-40.3c-7 11-14 22.6-21 33.7-2-5.6-4.7-11.6-8-16.7-10.4-15-25-25-46.7-23.7-28.7 1.8-50.5 15.6-68 33-16 16.1-31.7 39.6-33.5 66.2-2.4 35.6 23.6 56 53 58.3 23.3 1.8 40.8-4.4 55.5-12.1 10-5.2 31-23 37.5-30.8 4.7 21.8 17 42.8 44.3 42.8 17 0 27.7-9.3 33.5-16.5-2 .2-4.3.4-6.8.5zM88.6 129.5c-6.3 4.5-14.4 9.4-22.8 10.7-21 3.3-30.4-13.1-28.9-35 1.1-17 7.9-32.8 15.8-46.6 8.1-14 17.6-26.5 28.4-34 3.9-2.7 9.7-5.9 17.7-6.5 19.4-1.6 26.5 19.4 31.4 37 2.3 8.2 3.8 16.6 4.6 21-5.5 8.1-22.7 36.3-46.3 53.4z" />
                     </svg>
                 </a>
-                <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" class="social-icon" title="Contact">
-                    <i class="fas fa-envelope"></i>
+                <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" class="social-btn" aria-label="Email">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path fill="currentColor"
+                            d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z" />
+                    </svg>
                 </a>
-            </div>
+            </nav>
         </header>
 
-        <!-- GEAR BAG (MOVED TOP) -->
+        <!-- GEAR BAG -->
         <section class="gear-section">
             <div class="gear-title">Gear Bag</div>
             <div class="gear-grid">
                 <div class="gear-item">
                     <div class="gear-category">Primary Shooter</div>
                     <ul class="gear-list">
-                        <li><i class="fas fa-camera"></i> Sony Alpha A7 IV</li>
-                        <li><i class="fas fa-circle-notch"></i> Sony FE 28-70mm</li>
+                        <li>
+                            <svg class="icon" viewBox="0 0 512 512">
+                                <path
+                                    d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
+                            </svg>
+                            Sony Alpha A7 IV
+                        </li>
+                        <li>
+                            <svg class="icon" viewBox="0 0 512 512">
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 202L256 287.3 143 202V136l113 85.3L369 136v66z" />
+                            </svg>
+                            Sony FE 28-70mm
+                        </li>
                     </ul>
                 </div>
                 <div class="gear-item">
                     <div class="gear-category">Secondary Shooter</div>
                     <ul class="gear-list">
-                        <li><i class="fas fa-camera-retro"></i> Canon EOS Rebel T5</li>
-                        <li><i class="fas fa-binoculars"></i> Canon EF 75-300mm</li>
+                        <li>
+                            <svg class="icon" viewBox="0 0 512 512">
+                                <path
+                                    d="M221.5 51.7C216.6 39.8 204.9 32 192 32h-28c-6.4 0-12.5 1.9-17.7 5.4L97.5 73.1C72 90.1 48 119.2 48 152c0 23.3 11 43.8 26.6 59.4L62.7 348.8c-1.8 19.3 13.4 35.2 32.8 35.2h46.1c16.3 0 30.6-11.2 34.2-27.1L193.6 279c1.9-8.5-3.6-17-12.1-18.9c-8.5-1.9-17 3.6-18.9 12.1l-16.4 71.8c-.4 1.8-2 3-3.8 3H96.3c-1.6 0-2.8-1.2-2.7-2.7l12-138.8C104.2 201.7 101 196.2 101 190.4c0-11.3 9.1-20.4 20.4-20.4H192c11.3 0 20.4-9.1 20.4-20.4V80c0-8.8 7.2-16 16-16h22.8l21.3 51.2L288 128H221.5zM320 128h-6.7l15.5 37.3c2.7 6.4 8.9 10.7 15.9 10.7h96.7c17.1 0 31.9 8.2 40.7 22.8c-4.4 7.9-13.6 13.3-24.1 13.3H320v140.6l17.8 77.8c1.6 7.1 7.9 12.2 15.2 12.2h46.1c19.3 0 34.6-15.9 32.8-35.2L419.9 220.6c11.4-8.8 18.1-22.9 18.1-38.6c0-44.2-35.8-80-80-80h-38z" />
+                            </svg>
+                            Canon EOS Rebel T5
+                        </li>
+                        <li>
+                            <svg class="icon" viewBox="0 0 512 512">
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
+                            </svg>
+                            Canon EF 75-300mm
+                        </li>
                     </ul>
                 </div>
                 <div class="gear-item">
                     <div class="gear-category">Mobile</div>
                     <ul class="gear-list">
-                        <li><i class="fas fa-mobile-alt"></i> Samsung S24 Ultra</li>
-                        <li><i class="fas fa-mobile-alt"></i> Pixel 9 Pro</li>
+                        <li>
+                            <svg class="icon" viewBox="0 0 384 512">
+                                <path
+                                    d="M80 0C44.7 0 16 28.7 16 64V448c0 35.3 28.7 64 64 64H304c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64H80zM192 400a48 48 0 1 0 0 96 48 48 0 1 0 0-96z" />
+                            </svg>
+                            Samsung S24 Ultra
+                        </li>
+                        <li>
+                            <svg class="icon" viewBox="0 0 384 512">
+                                <path
+                                    d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64z" />
+                            </svg>
+                            Pixel 9 Pro
+                        </li>
                     </ul>
                 </div>
             </div>
         </section>
 
-        <!-- MODAL CARDS (MOVED BOTTOM) -->
+        <!-- INFO GRID -->
         <main class="info-grid">
             <div class="card" onclick="openLightbox('./assets/photographer.jpg', 'Journey')">
-                <img src="./assets/photographer.jpg" alt="Journey" class="card-img"
-                    onerror="this.parentElement.style.display='none'">
+                <div class="card-img-wrapper">
+                    <img data-src="./assets/photographer.jpg" alt="Journey" class="card-img" decoding="async"
+                        loading="lazy">
+                </div>
                 <div class="card-content">
-                    <h2><i class="fas fa-compass"></i> Journey</h2>
-                    <p>
-                        My passion began years ago, watching my father capture family memories on his vintage Canon T2i.
+                    <h2>
+                        <svg class="icon" viewBox="0 0 512 512">
+                            <path
+                                d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm50.7-186.9L256 416 205.3 325.1 114.4 274.3 205.3 223.5 256 132.7l50.7 90.8 90.8 50.7-90.8 50.7z" />
+                        </svg>
+                        Journey
+                    </h2>
+                    <p>My passion began years ago, watching my father capture family memories on his vintage Canon T2i.
                         What started as a hobby evolved into a relentless pursuit to paint thousands of words with the
-                        pictures I take.
-                        From a dark scenic space to the vast wilderness, photography became my language for showcasing
-                        the ever-changing beauty of the world.
-                    </p>
+                        pictures I take.</p>
                 </div>
             </div>
 
             <div class="card" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
-                <img src="./assets/starshalo.jpg" alt="Photographer" class="card-img"
-                    onerror="this.parentElement.style.display='none'">
+                <div class="card-img-wrapper">
+                    <img data-src="./assets/starshalo.jpg" alt="Photographer" class="card-img" decoding="async"
+                        loading="lazy">
+                </div>
                 <div class="card-content">
-                    <h2><i class="fas fa-star"></i> Photographer</h2>
-                    <p>
-                        My lens is drawn to the vast scenes around the earth. In the darkness of the night,
-                        I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep colors
-                        of the Orion Nebula far away from artificial light pollution.
-                        By day, I traverse National and State Parks to honor the creations of Mother Nature through
-                        landscape photography.
-                    </p>
+                    <h2>
+                        <svg class="icon" viewBox="0 0 576 512">
+                            <path
+                                d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" />
+                        </svg>
+                        Photographer
+                    </h2>
+                    <p>I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep colors
+                        of the Orion Nebula. By day, I traverse National Parks to honor nature through landscape
+                        photography.</p>
                 </div>
             </div>
 
             <div class="card" onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
-                <img src="https://timothydo.me/images/TheDoProSolo.jpg" alt="Engineer" class="card-img"
-                    onerror="this.parentElement.style.display='none'">
+                <div class="card-img-wrapper">
+                    <img data-src="https://timothydo.me/images/TheDoProSolo.jpg" alt="Engineer" class="card-img"
+                        decoding="async" loading="lazy">
+                </div>
                 <div class="card-content">
-                    <h2><i class="fas fa-microchip"></i> Engineer</h2>
-                    <p>
-                        With a Master's degree in Electrical and Computer Engineering from UCLA, I bring technical
-                        precision to the art of capturing a picture.
-                        Understanding image acquisition, sensor mechanics, and signal processing allows me to push the
-                        boundaries of what a camera can capture, blending technology with creativity.
-                    </p>
+                    <h2>
+                        <svg class="icon" viewBox="0 0 512 512">
+                            <path
+                                d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm88 64v64H64V96h88zm56 0h88v64H208V96zm240 0v64H360V96h88zM64 224h88v64H64V224zm232 0v64H208V224h88zm64 0h88v64H360V224zM152 352v64H64V352h88zm56 0h88v64H208V352zm240 0v64H360V352h88z" />
+                        </svg>
+                        Engineer
+                    </h2>
+                    <p>With a Master's degree in Electrical and Computer Engineering from UCLA, I bring technical
+                        precision to art. Understanding image acquisition and signal processing allows me to push the
+                        boundaries of what a camera can capture.</p>
                 </div>
             </div>
 
             <div class="card" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
-                <img src="./assets/zion.jpg" alt="Explorer" class="card-img"
-                    onerror="this.parentElement.style.display='none'">
+                <div class="card-img-wrapper">
+                    <img data-src="./assets/zion.jpg" alt="Explorer" class="card-img" decoding="async" loading="lazy">
+                </div>
                 <div class="card-content">
-                    <h2><i class="fas fa-mountain"></i> Explorer</h2>
-                    <p>
-                        From the depths of the cosmos to the raw display of national parks, I capture the most distinct
-                        parts of a specific place.
-                        As an Eagle Scout with the photography merit badge, nature is my second home.
-                        This portfolio is my window into a collection of moments where the universe stood still just
-                        long enough for the shutter to click.
-                    </p>
+                    <h2>
+                        <svg class="icon" viewBox="0 0 512 512">
+                            <path
+                                d="M192 32c17.7 0 32 14.3 32 32V316c0 14.6-9.6 27.5-23.5 31.2C63.6 385.5 1.5 329.6 0 328c-1.1-1.1-17.7-18.4 12.5-47.5 19.4-18.7 28.3-27.1 36.1-34.5l9.4-8.9c19.3-18.2 41.9-46.7 41.9-82.6V64c0-17.7 14.3-32 32-32h60.1zm84.4 290.7l21.3 49.6c11.3 26.2 46.6 26.2 57.9 0l22.6-52.6c3.4-7.8 11-12.8 19.5-12.8s16.1 5 19.5 12.8l22.6 52.6c11.3 26.2 46.6 26.2 57.9 0l21.3-49.6c3.4-7.9 11.1-12.9 19.7-12.9H512V32c0-17.7-14.3-32-32-32H388c-17.7 0-32 14.3-32 32v157c-26.4 12.5-47.7 32.1-59.5 57.2l-20.1 42.6V32z" />
+                        </svg>
+                        Explorer
+                    </h2>
+                    <p>As an Eagle Scout with the photography merit badge, nature is my second home. This portfolio is
+                        my window into a collection of moments where the universe stood still just long enough for the
+                        shutter to click.</p>
                 </div>
             </div>
         </main>
 
-        <footer
-            style="margin-top: 80px; text-align: center; color: rgba(255,255,255,0.2); font-size: 0.85rem; padding-bottom: 40px; letter-spacing: 1px;">
-            © <a href="https://timothydo.me/photography" target="_blank"
-                style="color: inherit; text-decoration: underline;">TheDoShoots</a> 2026. By Timothy Do.
-            <a href="#" onclick="window.parent.postMessage({action: 'openLicense'}, '*'); return false;"
-                style="color: inherit; text-decoration: underline;">All Rights Reserved</a>.
-            <a href="https://github.com/dotimothy/photography" target="_blank"
-                style="color: inherit; text-decoration: underline;">GitHub</a>.
+        <footer>
+            © <a href="./index.html">TheDoShoots</a> 2026.
+            <a href="./license.html">All Rights Reserved</a>.
         </footer>
     </div>
 
-    <!-- FULLSCREEN LIGHTBOX -->
-    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-        <div class="lightbox-close">&times;</div>
-        <img src="" alt="Full View" class="lightbox-img" id="lightbox-img" onclick="event.stopPropagation()">
+    <!-- LIGHTBOX -->
+    <div class="lightbox" id="lightbox">
+        <div class="lightbox-close" onclick="closeLightbox()">&times;</div>
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Full View"
+            class="lightbox-img" id="lightbox-img">
         <div class="lightbox-caption" id="lightbox-caption"></div>
     </div>
 
     <script>
+        // --- 1. Lazy Loading Observer ---
+        // Handles fading in images only when they are near the viewport
+        document.addEventListener("DOMContentLoaded", function () {
+            const lazyImages = [].slice.call(document.querySelectorAll("img[data-src]"));
+
+            if ("IntersectionObserver" in window) {
+                let lazyImageObserver = new IntersectionObserver(function (entries, observer) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            let lazyImage = entry.target;
+                            lazyImage.src = lazyImage.dataset.src;
+
+                            // Once image loads, add class for fade-in effect
+                            lazyImage.onload = () => lazyImage.classList.add("loaded");
+
+                            // If cached, onload might not fire, check complete
+                            if (lazyImage.complete) lazyImage.classList.add("loaded");
+
+                            lazyImageObserver.unobserve(lazyImage);
+                        }
+                    });
+                });
+
+                lazyImages.forEach(function (lazyImage) {
+                    lazyImageObserver.observe(lazyImage);
+                });
+            } else {
+                // Fallback for very old browsers
+                lazyImages.forEach(function (lazyImage) {
+                    lazyImage.src = lazyImage.dataset.src;
+                    lazyImage.classList.add("loaded");
+                });
+            }
+        });
+
+        // --- 2. Lightbox Logic ---
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightbox-img');
         const lightboxCaption = document.getElementById('lightbox-caption');
@@ -630,17 +693,20 @@
             lightboxImg.src = src;
             lightboxCaption.innerText = caption;
             lightbox.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Prevent scrolling
+            // Prevent background scrolling
+            document.body.style.overflow = 'hidden';
         }
 
         function closeLightbox() {
             lightbox.classList.remove('active');
             document.body.style.overflow = '';
+            // Clear source after transition to prevent ghosting on next open
+            setTimeout(() => { lightboxImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; }, 300);
         }
 
-        // Close on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeLightbox();
+        // Close on background click
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
         });
     </script>
 
