@@ -788,12 +788,20 @@
         z-index: 4000;
         display: flex;
         flex-direction: column;
-        transform: translateY(100%);
+
+        /* Hardware Acceleration Hints */
+        transform: translateY(100%) translateZ(0);
+        will-change: transform;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        perspective: 1000px;
+
         transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
     }
 
     .iframe-container.active {
-        transform: translateY(0);
+        /* Use translate3d to ensure GPU usage */
+        transform: translateY(0) translateZ(0);
     }
 
     .close-iframe {
@@ -1042,7 +1050,7 @@
         <!-- WELCOME SCREEN -->
         <div id="welcome-screen" class="interactive-element">
             <div class="welcome-text">
-                <img src="./assets/photographer.jpg" alt="Photographer Profile" class="welcome-pfp">
+                <img src="./assets/tim.jpg" alt="Photographer Profile" class="welcome-pfp">
                 <h1>TheDoShoots</h1>
                 <p style="color: #888; letter-spacing: 2px; margin-top: 10px;">By <a href="https://timothydo.me/"
                         target="_blank">Timothy Do</a>
@@ -1093,8 +1101,8 @@
         </div>
 
         <div class="ui-footer" id="ui-footer">
-            © <a href="https://timothydo.me/photography" target="_blank"
-                style="color: inherit; text-decoration: underline;">TheDoShoots</a> 2026. By Timothy Do.
+            © <a href="./index.html" target="_blank" style="color: inherit; text-decoration: underline;">TheDoShoots</a>
+            2026. By Timothy Do.
             <a href="#" onclick="handleNav('license.html', true); return false;"
                 style="color: inherit; text-decoration: underline;">All Rights Reserved</a>.
             <a href="https://github.com/dotimothy/photography" target="_blank"
@@ -2009,30 +2017,22 @@
             }
         }
 
-        // --- UPDATED CORE NAVIGATION LOGIC ---
+        // --- UPDATED NAVIGATION LOGIC ---
         window.handleNav = function (url, isInternal) {
             const params = new URLSearchParams();
 
+            // ... (Keep your existing params logic here) ...
             // Mode
             params.set('mode', state.is3D ? '3d' : '2d');
-
-            // Performance & Debug
             if (state.dataSaver) params.set('datasaver', '1');
             if (state.debugMode) params.set('debug', '1');
-
-            // Gallery Experiences
             if (state.slideshow) {
                 params.set('slideshow', '');
                 params.set('interval', state.slideshowInterval);
             }
-            if (state.viewerFullscreen) {
-                params.set('fullscreen', '');
-            }
-
-            // Deep Link Image
-            if (state.deepLinkImg.trim() !== '') {
-                params.set('img', state.deepLinkImg.trim());
-            }
+            if (state.viewerFullscreen) params.set('fullscreen', '');
+            if (state.deepLinkImg.trim() !== '') params.set('img', state.deepLinkImg.trim());
+            // ... (End existing params logic) ...
 
             const separator = url.includes('?') ? '&' : '?';
             const finalUrl = `${url}${separator}${params.toString()}`;
@@ -2040,21 +2040,53 @@
             if (state.directLinks || !isInternal) {
                 window.open(finalUrl, '_blank');
             } else {
+                // 1. Load the Iframe
                 els.iframe.src = finalUrl;
+
+                // 2. Slide it up
                 els.iframeOverlay.classList.add('active');
+
+                // 3. Pause Animation Logic Immediately
                 state.isPaused = true;
-                state.isAnimating = false; // Pause 3D/2D animations
+                state.isAnimating = false;
+
+                // 4. CRITICAL: After transition finishes (500ms), hide the 3D container
+                // This stops the browser from trying to composite the WebGL behind the iframe
+                setTimeout(() => {
+                    if (els.iframeOverlay.classList.contains('active')) {
+                        els.mode3d.style.visibility = 'hidden';
+                        // Also hide 2D container if active to save paint cycles
+                        els.mode2d.style.visibility = 'hidden';
+                    }
+                }, 550);
             }
         };
 
         window.closeiFrame = function () {
+            // 1. Make background visible again BEFORE sliding down
+            // This prevents seeing a black void when the iframe moves
+            els.mode3d.style.visibility = 'visible';
+            els.mode2d.style.visibility = 'visible';
+
+            // 2. Force a micro-repaint to ensure the canvas is ready
+            if (state.is3D) {
+                renderer.render(scene, camera);
+            }
+
+            // 3. Slide down
             els.iframeOverlay.classList.remove('active');
             sfx.click();
+
+            // 4. Cleanup after transition
             setTimeout(() => {
                 els.iframe.src = "about:blank";
                 state.isPaused = false;
-                state.isAnimating = true; // Resume animations
-                animate(); // Restart animation loop
+
+                // Resume Rendering
+                if (state.is3D) {
+                    state.isAnimating = true;
+                    animate();
+                }
             }, 500);
         };
 
