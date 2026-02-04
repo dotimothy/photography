@@ -37,6 +37,12 @@ jobs:
       - name: Build TheDoShoots Photography Portfolio
         run: make build
 
+      - name: Display & Expose Build Logs
+        if: always()
+        run: |
+          cat logs/build.log
+          cp logs/build.log build/build.log
+
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:

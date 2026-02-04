@@ -37,7 +37,7 @@ def download_worker(task):
     
     # Return immediately if already cached
     if os.path.exists(cache_path):
-        return 1
+        return (True, cache_path)
 
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     
@@ -65,14 +65,14 @@ def download_worker(task):
             with open(cache_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=32768):
                     if chunk: f.write(chunk)
-            print(f"Downloaded: {cache_path}")
-            return 1
+            # print(f"Downloaded: {cache_path}")
+            return (True, cache_path)
         else:
-            print(f"Failed to download {file_id}: Status {response.status_code}")
-            return 0
+            # print(f"Failed to download {file_id}: Status {response.status_code}")
+            return (False, cache_path)
     except Exception as e:
-        print(f"Download Error {cache_path}: {e}")
-        return 0
+        # print(f"Download Error {cache_path}: {e}")
+        return (False, cache_path)
 
 def main():
     parser = argparse.ArgumentParser(description='Standalone Downloader Module')

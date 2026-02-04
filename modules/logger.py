@@ -13,8 +13,14 @@ class DualLogger(object):
     def __init__(self, log_dir='logs'):
         self.terminal = sys.stdout
         os.makedirs(log_dir, exist_ok=True)
-        log_name = os.path.join(log_dir, f"build_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log")
+        log_name = os.path.join(log_dir, "build.log")
         self.log_file = open(log_name, "a", encoding='utf-8')
+        
+        # Add session separator
+        session_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.log_file.write(f"\n{'='*80}\n")
+        self.log_file.write(f"NEW BUILD SESSION STARTED AT {session_time}\n")
+        self.log_file.write(f"{'='*80}\n\n")
 
     def write(self, message):
         self.terminal.write(message)
@@ -63,3 +69,21 @@ class Profiler:
         print(f"{'-'*75}")
         print(f"{'Total Duration':<25} | {total_time:.2f} s     | 100.0 %    |")
         print(f"{'-'*75}")
+
+class VerboseLogger:
+    """Logs granular actions to a specific file, bypassing stdout."""
+    def __init__(self, log_dir='logs'):
+        os.makedirs(log_dir, exist_ok=True)
+        # Unified log file
+        self.path = os.path.join(log_dir, "build.log")
+        self.file = open(self.path, "a", encoding='utf-8')
+        # print(f" - Detailed logs will be written to: {self.path}")
+
+    def log(self, category, message):
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        line = f"[{timestamp}] [{category:<10}] {message}\n"
+        self.file.write(line)
+        self.file.flush()
+    
+    def close(self):
+        self.file.close()

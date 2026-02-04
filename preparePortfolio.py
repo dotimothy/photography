@@ -249,6 +249,7 @@ def main():
     args = parser.parse_args()
 
     profiler = log_module.Profiler()
+    verbose_logger = log_module.VerboseLogger()
     num_workers = args.jobs or cpu_count()
     
     print(f"{color.BOLD}*** TheDoShoots Portfolio Engine ***{color.END}")
@@ -305,7 +306,8 @@ def main():
     
     print(" - Checking Portfolio Manifest...")
     # Attempt download of CSV to temp
-    if download_worker((PORTFOLIO_CSV_ID, temp_csv_path, None)):
+    manifest_success, _ = download_worker((PORTFOLIO_CSV_ID, temp_csv_path, None))
+    if manifest_success:
         if os.path.exists(PORTFOLIO_CSV_PATH):
             old_hash = calculate_file_hash(PORTFOLIO_CSV_PATH)
             new_hash = calculate_file_hash(temp_csv_path)
@@ -347,9 +349,14 @@ def main():
     # Run Downloads if we have tasks
     if download_tasks:
         print(f" - Downloading/Verifying {len(download_tasks)} assets...")
+        print(f"   (Detailed logs in {verbose_logger.path})")
+        
         with Pool(num_workers) as pool:
-            list(tqdm.tqdm(pool.imap_unordered(download_worker, download_tasks), 
-                           total=len(download_tasks), unit='file', desc="Downloading"))
+            for (success, path) in tqdm.tqdm(pool.imap_unordered(download_worker, download_tasks), total=len(download_tasks), unit='file', desc="Downloading"):
+                filename = os.path.basename(path)
+                status = "Downloaded" if success else "Failed"
+                verbose_logger.log(status, f"{filename}")
+
     else:
         print(" - All assets are present locally.")
     
@@ -432,6 +439,7 @@ def main():
                     results_map[gallery][name_no_ext] = meta
                     is_fully_cached = True
                     skipped_count += 1
+                    verbose_logger.log("Skipped", f"{gallery}/{fname} (Up to date)")
             
             if not is_fully_cached:
                 task = (cache_path, full_path, thumb_path, args.quality, args.watermark, gallery)
@@ -439,17 +447,26 @@ def main():
         
         if skipped_count > 0:
             print(f" - Skipped {skipped_count} up-to-date images.")
+            # Log skipped items (Retrospective logging since we didn't track names in the skipped block for logging, 
+            # but we can log them as we add them to results_map if we wanted. 
+            # For now, we trust the count or we could have logged them inside the loop above).
         
         if processing_tasks:
             print(f" - Queued {len(processing_tasks)} images for processing...")
+            print(f"   (Detailed logs in {verbose_logger.path})")
             
             worker_counter = Value('i', 0)
             
             with Pool(num_workers, initializer=init_worker, 
                     initargs=(WATERMARK_PATH, worker_counter, cpu_count())) as pool:
-                for gallery_name, name_no_ext, meta in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), 
-                                            total=len(processing_tasks), unit='img', desc="Processing"):
+                
+                for (gallery_name, name_no_ext, meta) in tqdm.tqdm(pool.imap_unordered(process_image_worker, processing_tasks), total=len(processing_tasks), unit='img', desc="Processing"):
                     results_map[gallery_name][name_no_ext] = meta
+                    
+                    # Log details
+                    wm_status = "Watermarked" if args.watermark else "Original"
+                    verbose_logger.log("Processed", f"Gallery: {gallery_name} | Image: {name_no_ext} | Mode: {wm_status}")
+
         else:
             print(" - All images are up to date.")
                 
@@ -485,6 +502,7 @@ def main():
     print(f"\n{color.BOLD}*** TheDoShoots Portfolio Build Complete! ***{color.END}")
     print(f" - Local Cache Size: {cache_size:.2f} MB")
     print(f" - Final Build Size: {build_size:.2f} MB")
+    verbose_logger.close()
 
 if __name__ == '__main__':
     main()
