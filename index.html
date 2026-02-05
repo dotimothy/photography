@@ -1,8 +1,10 @@
 <!doctype html>
 <html lang="en">
 
+<!-- Author: Timothy Do -->
+
 <head>
-    <title>TheDoShoots by Timothy Do</title>
+    <title>TheDoShoots</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="icon"
@@ -286,16 +288,41 @@
             margin-bottom: 20px;
         }
 
-        /* UPDATED: Removed bottom override for controls */
+        /* UPDATED: Collapsible Mobile Menu */
         .controls-container {
-            /* DELETED: top: auto; */
-            /* DELETED: bottom: 20px; */
-
             top: 20px;
-            right: 15px;
-
+            right: 10px;
+            /* Shifted closer to edge */
+            left: auto;
+            transform: none;
             flex-direction: column;
-            gap: 12px;
+            align-items: flex-end;
+            width: auto;
+        }
+
+        #btn-controls-toggle {
+            display: flex;
+            /* Show toggle on mobile */
+            z-index: 3002;
+        }
+
+        .controls-group {
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-10px);
+            position: absolute;
+            top: 60px;
+            /* Below the toggle */
+            right: 0;
+            align-items: flex-end;
+        }
+
+        .controls-container.expanded .controls-group {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
         }
 
         .icon-btn {
@@ -420,12 +447,27 @@
     /* Top Right Controls Container - UPDATED */
     .controls-container {
         position: fixed;
-        /* Changed from absolute to fixed */
         top: 30px;
-        right: 30px;
+        right: 10px;
+        /* Shifted closer to edge */
         display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        /* Align to right */
         gap: 15px;
         z-index: 3000;
+    }
+
+    .controls-group {
+        display: flex;
+        gap: 15px;
+        transition: all 0.3s ease;
+    }
+
+    @media (min-width: 769px) {
+        #btn-controls-toggle {
+            display: none;
+        }
     }
 
     /* 3D Mode Footer */
@@ -499,6 +541,7 @@
     }
 
     /* --- WELCOME SCREEN --- */
+    /* --- WELCOME SCREEN --- */
     #welcome-screen {
         position: fixed;
         top: 0;
@@ -527,12 +570,60 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        max-width: 90vw;
+        padding: 5px;
+        /* Compacted */
+        z-index: 2;
+    }
+
+    /* Watermark Style - Replaces PFP */
+    .welcome-watermark {
+        max-width: 800px;
+        width: 85vw;
+        /* Much bigger and responsive */
+        height: auto;
+        opacity: 0.9;
+        margin-bottom: 10px;
+        /* Compacted */
+        pointer-events: none;
+        /* Not clickable */
+        user-select: none;
+
+        /* Pixel wipe effect using mask */
+        -webkit-mask-image: linear-gradient(to right, black 50%, transparent 50%);
+        mask-image: linear-gradient(to right, black 50%, transparent 50%);
+        -webkit-mask-size: 200% 100%;
+        mask-size: 200% 100%;
+        -webkit-mask-position: 100% 0;
+        mask-position: 100% 0;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+    }
+
+    /* Animation class for the reveal */
+    .welcome-watermark.revealing {
+        /* Exaggerated Ease-In-Out */
+        animation: pixelWipe 2.5s cubic-bezier(0.85, 0, 0.15, 1) forwards;
+    }
+
+    @keyframes pixelWipe {
+        0% {
+            -webkit-mask-position: 100% 0;
+            mask-position: 100% 0;
+        }
+
+        100% {
+            -webkit-mask-position: 0% 0;
+            mask-position: 0% 0;
+        }
     }
 
     .social-row {
         display: flex;
-        gap: 20px;
-        margin-top: 15px;
+        gap: 15px;
+        /* Compacted */
+        margin-top: 10px;
+        /* Compacted */
         margin-bottom: 5px;
         justify-content: center;
         align-items: center;
@@ -1021,40 +1112,44 @@
             </div>
         </div>
 
-        <div class="controls-container">
-            <!-- TOP CONTROLS -->
-            <button class="icon-btn interactive-element" id="btn-home" title="Go to Home (2D)">
-                <i class="fas fa-home"></i>
+        <div class="controls-container" id="controls-container">
+            <!-- TOGGLE BUTTON (Mobile/Compact) -->
+            <button class="icon-btn interactive-element" id="btn-controls-toggle" title="Menu">
+                <i class="fas fa-bars"></i>
             </button>
 
-            <button class="icon-btn interactive-element" id="btn-mute" title="Mute Audio">
-                <i class="fas fa-volume-mute"></i>
-            </button>
+            <!-- CONTROLS GROUP -->
+            <div class="controls-group">
+                <button class="icon-btn interactive-element" id="btn-home" title="Go to Home (2D)">
+                    <i class="fas fa-home"></i>
+                </button>
 
-            <!-- QUICK MODE TOGGLE -->
-            <button class="icon-btn interactive-element" id="btn-quick-toggle" title="Toggle 2D/3D Mode">
-                <i class="fas fa-cube"></i>
-            </button>
+                <button class="icon-btn interactive-element" id="btn-mute" title="Mute Audio">
+                    <i class="fas fa-volume-mute"></i>
+                </button>
 
-            <!-- SETTINGS TRIGGER -->
-            <button class="icon-btn interactive-element" id="btn-open-settings" title="Settings">
-                <i class="fas fa-sliders-h"></i>
-            </button>
+                <!-- QUICK MODE TOGGLE -->
+                <button class="icon-btn interactive-element" id="btn-quick-toggle" title="Toggle 2D/3D Mode">
+                    <i class="fas fa-cube"></i>
+                </button>
 
-            <!-- FULLSCREEN TOGGLE -->
-            <button class="icon-btn interactive-element" id="btn-fullscreen" title="Toggle Fullscreen">
-                <i class="fas fa-expand"></i>
-            </button>
+                <!-- SETTINGS TRIGGER -->
+                <button class="icon-btn interactive-element" id="btn-open-settings" title="Settings">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+
+                <!-- FULLSCREEN TOGGLE -->
+                <button class="icon-btn interactive-element" id="btn-fullscreen" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
         </div>
 
         <!-- WELCOME SCREEN -->
         <div id="welcome-screen" class="interactive-element">
             <div class="welcome-text">
-                <img src="./assets/tim.jpg" alt="Photographer Profile" class="welcome-pfp">
-                <h1>TheDoShoots</h1>
-                <p style="color: #888; letter-spacing: 2px; margin-top: 10px;">By <a href="https://timothydo.me/"
-                        target="_blank">Timothy Do</a>
-                </p>
+                <img src="./assets/watermark.png" alt="TheDoShoots Watermark" class="welcome-watermark"
+                    id="welcome-watermark">
 
                 <div class="social-row">
                     <a href="https://instagram.com/thedoshoots" target="_blank" title="Instagram" class="social-icon">
@@ -1102,7 +1197,8 @@
 
         <div class="ui-footer" id="ui-footer">
             © <a href="./index.html" target="_blank" style="color: inherit; text-decoration: underline;">TheDoShoots</a>
-            2026. By Timothy Do.
+            2026. By <a href="https://timothydo.me/" target="_blank"
+                style="color: inherit; text-decoration: underline;">Timothy Do</a>.
             <a href="#" onclick="handleNav('license.html', true); return false;"
                 style="color: inherit; text-decoration: underline;">All Rights Reserved</a>.
             <a href="https://github.com/dotimothy/photography" target="_blank"
@@ -1233,10 +1329,7 @@
             setupEventListeners();
             initSpaceIntro(); // Kick off the intro
 
-            // Wait for image load to redraw UI
-            pfpImage.onload = () => {
-                if (uiCtx) updateUI();
-            };
+
 
             // Also ensure fonts are ready
             document.fonts.ready.then(() => {
@@ -1317,6 +1410,36 @@
             // Close Iframe Logic
             document.getElementById('close-iframe').addEventListener('click', () => {
                 closeiFrame();
+            });
+
+            // Controls Toggle Logic
+            const controlsContainer = document.getElementById('controls-container');
+            const btnControlsToggle = document.getElementById('btn-controls-toggle');
+
+            btnControlsToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent canvas click
+                sfx.click();
+                controlsContainer.classList.toggle('expanded');
+
+                // Toggle icon
+                const icon = btnControlsToggle.querySelector('i');
+                if (controlsContainer.classList.contains('expanded')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+
+            // Close controls when clicking outside
+            document.addEventListener('click', (e) => {
+                if (controlsContainer.classList.contains('expanded') && !controlsContainer.contains(e.target)) {
+                    controlsContainer.classList.remove('expanded');
+                    const icon = btnControlsToggle.querySelector('i');
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
             });
 
             // Raycaster Interaction
@@ -2296,6 +2419,12 @@
                             setTimeout(() => {
                                 if (flash.parentNode) flash.remove();
                             }, 2000);
+
+                            // 5. Trigger Watermark Reveal (Now that intro is done)
+                            const watermark = document.getElementById('welcome-watermark');
+                            if (watermark) {
+                                watermark.classList.add('revealing');
+                            }
 
                         }, 800); // Matches CSS transition time for flash-in
                     }
