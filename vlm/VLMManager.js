@@ -43,6 +43,7 @@ class VLMManager {
         this._nextId      = 0;
         this._callbacks   = new Map();   // requestId → { onStart, onToken, onDone, onError }
         this._listeners   = {};          // event name → [handler, ...]
+        this._systemPrompt = null;       // prepended as a system message in every API conversation
     }
 
     /** Always returns the page-level singleton. */
@@ -130,6 +131,89 @@ class VLMManager {
         this._emit('ready', { device: 'api' });
     }
 
+    /**
+     * Switch to Ollama mode.  Uses Ollama's OpenAI-compatible /v1 endpoint.
+     * Terminates any running local worker; fires 'ready' immediately.
+     *
+     * @param {string} endpoint  Ollama server base URL, e.g. 'http://localhost:11434'
+     * @param {string} model     Model name, e.g. 'llava' or 'llava:13b'
+     */
+    setOllamaMode(endpoint, model) {
+        const base = (endpoint || 'http://localhost:11434').replace(/\/$/, '').replace(/\/v1$/, '');
+        this.setApiMode(`${base}/v1`, '', model || 'gemma3');
+    }
+
+    /**
+     * Fetch the list of all locally available models from an Ollama server.
+     * Returns an array of objects: { name, families }.
+     *
+     * @param {string} endpoint  Ollama server base URL, e.g. 'http://localhost:11434'
+     * @returns {Promise<Array<{name: string, families: string[]}>>}
+     */
+    static async listOllamaModels(endpoint = 'http://localhost:11434') {
+        const base = (endpoint || 'http://localhost:11434').replace(/\/$/, '').replace(/\/v1$/, '');
+        const res = await fetch(`${base}/api/tags`);
+        if (!res.ok) throw new Error(`Ollama ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        return (data.models ?? []).map(m => ({
+            name:     m.name,
+            families: m.details?.families ?? [],
+        }));
+    }
+
+    /**
+     * Load a model into Ollama's GPU memory.
+     * Sending an empty prompt with a keep_alive duration preloads the model.
+     *
+     * @param {string}         endpoint   Ollama server base URL
+     * @param {string}         model      Model name, e.g. 'llava' or 'llava:13b'
+     * @param {string|number}  keepAlive  Duration string ('5m', '1h') or seconds.
+     *                                    Defaults to '5m'.
+     * @returns {Promise<void>}
+     */
+    static async loadOllamaModel(endpoint = 'http://localhost:11434', model, keepAlive = '5m') {
+        const base = (endpoint || 'http://localhost:11434').replace(/\/$/, '').replace(/\/v1$/, '');
+        const res = await fetch(`${base}/api/generate`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ model, keep_alive: keepAlive }),
+        });
+        if (!res.ok) throw new Error(`Ollama ${res.status}: ${res.statusText}`);
+        // Drain the streaming NDJSON response so the connection closes cleanly
+        const reader = res.body.getReader();
+        while (true) { const { done } = await reader.read(); if (done) break; }
+    }
+
+    /**
+     * Immediately unload a model from Ollama's GPU memory.
+     * Equivalent to loadOllamaModel with keep_alive = 0.
+     *
+     * @param {string} endpoint  Ollama server base URL
+     * @param {string} model     Model name to unload
+     * @returns {Promise<void>}
+     */
+    static async unloadOllamaModel(endpoint = 'http://localhost:11434', model) {
+        return VLMManager.loadOllamaModel(endpoint, model, 0);
+    }
+
+    /**
+     * Return the list of models currently loaded in Ollama's memory (/api/ps).
+     *
+     * @param {string} endpoint  Ollama server base URL
+     * @returns {Promise<Array<{name: string, size_vram: number, expires_at: string}>>}
+     */
+    static async getOllamaRunningModels(endpoint = 'http://localhost:11434') {
+        const base = (endpoint || 'http://localhost:11434').replace(/\/$/, '').replace(/\/v1$/, '');
+        const res = await fetch(`${base}/api/ps`);
+        if (!res.ok) throw new Error(`Ollama ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        return (data.models ?? []).map(m => ({
+            name:       m.name,
+            size_vram:  m.size_vram,
+            expires_at: m.expires_at,
+        }));
+    }
+
     // ─── Query API ─────────────────────────────────────────────────────────
 
     /**
@@ -156,6 +240,16 @@ class VLMManager {
     }
 
     // ─── Event Bus ─────────────────────────────────────────────────────────
+
+    /**
+     * Set a system-level instruction that is prepended to every API/Ollama
+     * conversation.  Pass null to clear.  Returns `this` for chaining.
+     * @param {string|null} prompt
+     */
+    setSystemPrompt(prompt) {
+        this._systemPrompt = prompt ?? null;
+        return this;
+    }
 
     /**
      * Subscribe to a global event: 'ready' | 'progress' | 'restart' | 'error'
@@ -218,6 +312,12 @@ class VLMManager {
         // turn (either from history or the current prompt).  Subsequent turns
         // are plain text so the context window stays small.
         const messages = [];
+
+        // Prepend system prompt if configured
+        if (this._systemPrompt) {
+            messages.push({ role: 'system', content: this._systemPrompt });
+        }
+
         let imageInserted = false;
 
         for (const turn of chatHistory ?? []) {
@@ -260,7 +360,7 @@ class VLMManager {
                     model,
                     messages,
                     stream:     true,
-                    max_tokens: 500,
+                    max_tokens: 2048,
                 }),
             });
 

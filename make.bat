@@ -68,6 +68,7 @@ if /i "%target%"=="all"       goto :all
 if /i "%target%"=="build"     goto :build
 if /i "%target%"=="install"   goto :install
 if /i "%target%"=="fast"      goto :fast
+if /i "%target%"=="web"       goto :web
 if /i "%target%"=="exif"      goto :exif
 if /i "%target%"=="clean"     goto :clean
 if /i "%target%"=="deepclean" goto :deepclean
@@ -102,7 +103,12 @@ goto :eof
 
 :fast
 call :install
-"%VENV_PYTHON%" %SCRIPT% --skip-repo --quality %quality% --jobs %jobs%
+"%VENV_PYTHON%" %SCRIPT% --html-only --quality %quality% --jobs %jobs%
+goto :eof
+
+:web
+call :install
+"%VENV_PYTHON%" %SCRIPT% --html-only
 goto :eof
 
 :exif
@@ -134,7 +140,8 @@ echo.
 echo Targets:
 echo   install   - Create venv and install dependencies
 echo   build     - Run full build (Default)
-echo   fast      - Run build without watermarking or git updates
+echo   fast      - Run build skipping image processing and git updates
+echo   web       - Just update HTML/JS/CSS assets (Fastest)
 echo   clean     - Remove build directory
 echo   deepclean - Remove venv, logs folder, build dir, and cache
 goto :eof
