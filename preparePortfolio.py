@@ -488,7 +488,7 @@ def main():
     step4_start = time.time()
     profiler.start('Deployment Prep')
     
-    deploy_assets = ['index.html', 'about.html', 'license.html', 'assets', 'LICENSE']
+    deploy_assets = ['index.html', 'about.html', 'license.html', 'assets', 'vlm', 'LICENSE']
     build_module.prepare_deployment(deploy_assets)
             
     profiler.stop('Deployment Prep')
