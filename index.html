@@ -786,12 +786,29 @@
     .settings-modal {
         background: #111;
         border: 1px solid #333;
-        width: 400px;
-        padding: 30px;
+        width: min(760px, 92vw);
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 22px 26px;
         border-radius: 4px;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         transform: translateY(20px);
         transition: 0.3s;
+    }
+
+    .settings-body {
+        display: flex;
+        gap: 36px;
+        align-items: flex-start;
+    }
+
+    .settings-col {
+        flex: 1;
+        min-width: 0;
+    }
+
+    @media (max-width: 599px) {
+        .settings-body { flex-direction: column; gap: 0; }
     }
 
     .settings-overlay.visible .settings-modal {
@@ -802,9 +819,9 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
+        margin-bottom: 18px;
         border-bottom: 1px solid #333;
-        padding-bottom: 15px;
+        padding-bottom: 12px;
     }
 
     .settings-header h2 {
@@ -831,7 +848,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
     }
 
     .setting-label {
@@ -873,10 +890,11 @@
         letter-spacing: 1.8px;
         text-transform: uppercase;
         color: var(--accent-color);
-        margin: 22px 0 12px;
-        padding-bottom: 6px;
+        margin: 14px 0 8px;
+        padding-bottom: 5px;
         border-bottom: 1px solid rgba(0, 229, 255, 0.18);
     }
+    .setting-category:first-child { margin-top: 0; }
 
     .setting-select {
         background: #1a1a1a;
@@ -1259,6 +1277,8 @@
                 <button class="close-settings" id="btn-close-settings">&times;</button>
             </div>
 
+            <div class="settings-body">
+            <div class="settings-col">
             <div class="setting-category">General & Performance</div>
             <div class="setting-row">
                 <span class="setting-label">3D Immersive Mode (?mode=2d)</span>
@@ -1304,13 +1324,15 @@
                 </div>
             </div>
 
-            <div class="setting-row" style="margin-top: 20px;">
+            <div class="setting-row">
                 <span class="setting-label">Direct Links (No iFrame)</span>
                 <div class="toggle-switch" id="toggle-direct">
                     <div class="toggle-knob"></div>
                 </div>
             </div>
 
+            </div><!-- /.settings-col (left) -->
+            <div class="settings-col">
             <div class="setting-category">TheDoInspector (AI Vision)</div>
             <div class="setting-row">
                 <span class="setting-label">Enable TheDoInspector</span>
@@ -1324,6 +1346,7 @@
                 <select class="setting-select" id="select-vlm-backend">
                     <option value="local">Local (SmolVLM — runs in browser)</option>
                     <option value="api">OpenAI-compatible API</option>
+                    <option value="ollama">Ollama (local server)</option>
                 </select>
             </div>
             <!-- Local model settings -->
@@ -1335,6 +1358,7 @@
                         <option value="HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM 500M — Better (~500 MB)</option>
                         <option value="HuggingFaceTB/SmolVLM2-256M-Instruct">SmolVLM2 256M — Fast v2 (~300 MB)</option>
                         <option value="HuggingFaceTB/SmolVLM2-500M-Instruct">SmolVLM2 500M — Better v2 (~500 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM2-2.2B-Instruct">SmolVLM2 2.2B — Best (~2.2 GB)</option>
                     </select>
                 </div>
                 <div class="setting-row" id="vlm-model-note" style="display:none;">
@@ -1362,6 +1386,38 @@
                     <span class="setting-note">Key is stored only in your browser's localStorage.</span>
                 </div>
             </div>
+            <!-- Ollama settings (shown when backend = ollama) -->
+            <div id="vlm-ollama-settings" style="display:none">
+                <div class="setting-row">
+                    <span class="setting-label">Endpoint</span>
+                    <input type="text" class="setting-input" id="vlm-ollama-endpoint"
+                           placeholder="http://localhost:11434">
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Model</span>
+                    <input type="text" class="setting-input" id="vlm-ollama-model"
+                           placeholder="gemma3">
+                </div>
+                <div class="setting-row">
+                    <button id="vlm-ollama-fetch-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Fetch Models</button>
+                </div>
+                <div class="setting-row" id="vlm-ollama-model-row" style="display:none">
+                    <span class="setting-label">Select</span>
+                    <select class="setting-select" id="vlm-ollama-model-select"></select>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-note" id="vlm-ollama-note">Requires Ollama running locally with a vision model (e.g. llava, bakllava).</span>
+                </div>
+                <!-- Running models / load-unload -->
+                <div class="setting-row" style="gap:6px;flex-wrap:wrap">
+                    <button id="vlm-ollama-ps-btn"     style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;flex:1">Active Models</button>
+                    <button id="vlm-ollama-load-btn"   style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;flex:1">Load</button>
+                    <button id="vlm-ollama-unload-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;flex:1">Unload</button>
+                </div>
+                <div id="vlm-ollama-running-list" style="display:none;padding:4px 0;font-size:11px;color:#78909c"></div>
+            </div>
+            </div><!-- /.settings-col (right) -->
+            </div><!-- /.settings-body -->
         </div>
     </div>
     <!-- IFRAME OVERLAY FOR EXHIBITS -->
@@ -1389,39 +1445,47 @@
             isPaused: false,
             muted: true,
             isFullscreen: false,
-            vlmEnabled:      true,
-            vlmModel:        'HuggingFaceTB/SmolVLM-256M-Instruct',
-            vlmType:         'local',
-            vlmApiEndpoint:  'https://api.openai.com/v1',
-            vlmApiKey:       '',
-            vlmApiModel:     'gpt-4o',
+            vlmEnabled:       true,
+            vlmModel:         'HuggingFaceTB/SmolVLM-256M-Instruct',
+            vlmType:          'local',
+            vlmApiEndpoint:   'https://api.openai.com/v1',
+            vlmApiKey:        '',
+            vlmApiModel:      'gpt-4o',
+            vlmOllamaEndpoint: 'http://localhost:11434',
+            vlmOllamaModel:   'gemma3',
         };
 
         // Shared VLM settings object — read by GalleryVLMOverlay.js (same page context)
         window.VLM_SETTINGS = {
-            enabled:     state.vlmEnabled,
-            model:       state.vlmModel,
-            type:        state.vlmType,
-            apiEndpoint: state.vlmApiEndpoint,
-            apiKey:      state.vlmApiKey,
-            apiModel:    state.vlmApiModel,
+            enabled:        state.vlmEnabled,
+            model:          state.vlmModel,
+            type:           state.vlmType,
+            apiEndpoint:    state.vlmApiEndpoint,
+            apiKey:         state.vlmApiKey,
+            apiModel:       state.vlmApiModel,
+            ollamaEndpoint: state.vlmOllamaEndpoint,
+            ollamaModel:    state.vlmOllamaModel,
         };
 
         function syncVLMSettings() {
-            window.VLM_SETTINGS.enabled     = state.vlmEnabled;
-            window.VLM_SETTINGS.model       = state.vlmModel;
-            window.VLM_SETTINGS.type        = state.vlmType;
-            window.VLM_SETTINGS.apiEndpoint = state.vlmApiEndpoint;
-            window.VLM_SETTINGS.apiKey      = state.vlmApiKey;
-            window.VLM_SETTINGS.apiModel    = state.vlmApiModel;
+            window.VLM_SETTINGS.enabled        = state.vlmEnabled;
+            window.VLM_SETTINGS.model          = state.vlmModel;
+            window.VLM_SETTINGS.type           = state.vlmType;
+            window.VLM_SETTINGS.apiEndpoint    = state.vlmApiEndpoint;
+            window.VLM_SETTINGS.apiKey         = state.vlmApiKey;
+            window.VLM_SETTINGS.apiModel       = state.vlmApiModel;
+            window.VLM_SETTINGS.ollamaEndpoint = state.vlmOllamaEndpoint;
+            window.VLM_SETTINGS.ollamaModel    = state.vlmOllamaModel;
             window.dispatchEvent(new CustomEvent('vlmsettingschanged', {
                 detail: {
-                    enabled:     state.vlmEnabled,
-                    model:       state.vlmModel,
-                    type:        state.vlmType,
-                    apiEndpoint: state.vlmApiEndpoint,
-                    apiKey:      state.vlmApiKey,
-                    apiModel:    state.vlmApiModel,
+                    enabled:        state.vlmEnabled,
+                    model:          state.vlmModel,
+                    type:           state.vlmType,
+                    apiEndpoint:    state.vlmApiEndpoint,
+                    apiKey:         state.vlmApiKey,
+                    apiModel:       state.vlmApiModel,
+                    ollamaEndpoint: state.vlmOllamaEndpoint,
+                    ollamaModel:    state.vlmOllamaModel,
                 }
             }));
         }
@@ -1516,29 +1580,39 @@
             if (savedVlmApiKey) state.vlmApiKey = savedVlmApiKey;
             const savedVlmApiModel = localStorage.getItem('vlmApiModel');
             if (savedVlmApiModel) state.vlmApiModel = savedVlmApiModel;
+            const savedVlmOllamaEndpoint = localStorage.getItem('vlmOllamaEndpoint');
+            if (savedVlmOllamaEndpoint) state.vlmOllamaEndpoint = savedVlmOllamaEndpoint;
+            const savedVlmOllamaModel = localStorage.getItem('vlmOllamaModel');
+            if (savedVlmOllamaModel) state.vlmOllamaModel = savedVlmOllamaModel;
             window.VLM_SETTINGS = {
-                enabled:     state.vlmEnabled,
-                model:       state.vlmModel,
-                type:        state.vlmType,
-                apiEndpoint: state.vlmApiEndpoint,
-                apiKey:      state.vlmApiKey,
-                apiModel:    state.vlmApiModel,
+                enabled:        state.vlmEnabled,
+                model:          state.vlmModel,
+                type:           state.vlmType,
+                apiEndpoint:    state.vlmApiEndpoint,
+                apiKey:         state.vlmApiKey,
+                apiModel:       state.vlmApiModel,
+                ollamaEndpoint: state.vlmOllamaEndpoint,
+                ollamaModel:    state.vlmOllamaModel,
             };
 
             // Sync UI Toggles
             updateToggleUI(els.toggles.mode3d, state.is3D);
             updateToggleUI(els.toggles.saver, state.dataSaver);
             updateToggleUI(document.getElementById('toggle-vlm'), state.vlmEnabled);
-            document.getElementById('select-vlm-model').value      = state.vlmModel;
-            document.getElementById('select-vlm-backend').value    = state.vlmType;
-            document.getElementById('vlm-api-endpoint').value      = state.vlmApiEndpoint;
-            document.getElementById('vlm-api-model').value         = state.vlmApiModel;
-            document.getElementById('vlm-api-key').value           = state.vlmApiKey;
-            const _vlmOn  = state.vlmEnabled;
-            const _vlmApi = state.vlmType === 'api';
-            document.getElementById('vlm-backend-row').style.display      = _vlmOn ? '' : 'none';
-            document.getElementById('vlm-local-settings').style.display   = (_vlmOn && !_vlmApi) ? '' : 'none';
-            document.getElementById('vlm-api-settings').style.display     = (_vlmOn && _vlmApi)  ? '' : 'none';
+            document.getElementById('select-vlm-model').value       = state.vlmModel;
+            document.getElementById('select-vlm-backend').value     = state.vlmType;
+            document.getElementById('vlm-api-endpoint').value       = state.vlmApiEndpoint;
+            document.getElementById('vlm-api-model').value          = state.vlmApiModel;
+            document.getElementById('vlm-api-key').value            = state.vlmApiKey;
+            document.getElementById('vlm-ollama-endpoint').value    = state.vlmOllamaEndpoint;
+            document.getElementById('vlm-ollama-model').value       = state.vlmOllamaModel;
+            const _vlmOn     = state.vlmEnabled;
+            const _vlmApi    = state.vlmType === 'api';
+            const _vlmOllama = state.vlmType === 'ollama';
+            document.getElementById('vlm-backend-row').style.display       = _vlmOn ? '' : 'none';
+            document.getElementById('vlm-local-settings').style.display    = (_vlmOn && !_vlmApi && !_vlmOllama) ? '' : 'none';
+            document.getElementById('vlm-api-settings').style.display      = (_vlmOn && _vlmApi)    ? '' : 'none';
+            document.getElementById('vlm-ollama-settings').style.display   = (_vlmOn && _vlmOllama) ? '' : 'none';
         }
 
         function setupEventListeners() {
@@ -1701,21 +1775,25 @@
             setupToggle(document.getElementById('toggle-vlm'), (val) => {
                 state.vlmEnabled = val;
                 localStorage.setItem('vlmEnabled', val);
-                const isApi = state.vlmType === 'api';
-                document.getElementById('vlm-backend-row').style.display    = val ? '' : 'none';
-                document.getElementById('vlm-local-settings').style.display = (val && !isApi) ? '' : 'none';
-                document.getElementById('vlm-api-settings').style.display   = (val && isApi)  ? '' : 'none';
+                const isApi    = state.vlmType === 'api';
+                const isOllama = state.vlmType === 'ollama';
+                document.getElementById('vlm-backend-row').style.display       = val ? '' : 'none';
+                document.getElementById('vlm-local-settings').style.display    = (val && !isApi && !isOllama) ? '' : 'none';
+                document.getElementById('vlm-api-settings').style.display      = (val && isApi)    ? '' : 'none';
+                document.getElementById('vlm-ollama-settings').style.display   = (val && isOllama) ? '' : 'none';
                 document.getElementById('vlm-model-note').style.display = 'none';
                 syncVLMSettings();
             });
 
-            // VLM Backend Selector (local vs api)
+            // VLM Backend Selector (local vs api vs ollama)
             document.getElementById('select-vlm-backend').addEventListener('change', (e) => {
                 state.vlmType = e.target.value;
                 localStorage.setItem('vlmType', state.vlmType);
-                const isApi = state.vlmType === 'api';
-                document.getElementById('vlm-local-settings').style.display = isApi ? 'none' : '';
-                document.getElementById('vlm-api-settings').style.display   = isApi ? '' : 'none';
+                const isApi    = state.vlmType === 'api';
+                const isOllama = state.vlmType === 'ollama';
+                document.getElementById('vlm-local-settings').style.display    = (!isApi && !isOllama) ? '' : 'none';
+                document.getElementById('vlm-api-settings').style.display      = isApi    ? '' : 'none';
+                document.getElementById('vlm-ollama-settings').style.display   = isOllama ? '' : 'none';
                 document.getElementById('vlm-model-note').style.display = 'none';
                 syncVLMSettings();
             });
@@ -1746,6 +1824,149 @@
                 state.vlmApiKey = e.target.value;
                 localStorage.setItem('vlmApiKey', state.vlmApiKey);
                 syncVLMSettings();
+            });
+
+            // Ollama fields
+            document.getElementById('vlm-ollama-endpoint').addEventListener('change', (e) => {
+                state.vlmOllamaEndpoint = e.target.value;
+                localStorage.setItem('vlmOllamaEndpoint', state.vlmOllamaEndpoint);
+                // Reset model list when endpoint changes
+                document.getElementById('vlm-ollama-model-row').style.display = 'none';
+                document.getElementById('vlm-ollama-note').textContent = 'Requires Ollama running locally with a vision model (e.g. llava, bakllava).';
+                syncVLMSettings();
+            });
+            document.getElementById('vlm-ollama-model').addEventListener('change', (e) => {
+                state.vlmOllamaModel = e.target.value;
+                localStorage.setItem('vlmOllamaModel', state.vlmOllamaModel);
+                syncVLMSettings();
+            });
+            document.getElementById('vlm-ollama-fetch-btn').addEventListener('click', async () => {
+                const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
+                    .replace(/\/$/, '').replace(/\/v1$/, '');
+                const btn  = document.getElementById('vlm-ollama-fetch-btn');
+                const note = document.getElementById('vlm-ollama-note');
+                btn.textContent = 'Fetching…';
+                btn.disabled = true;
+                try {
+                    const res = await fetch(`${endpoint}/api/tags`);
+                    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+                    const data = await res.json();
+                    // Show all installed models; highlight vision-capable ones
+                    const allModels = (data.models ?? []).map(m => m.name);
+                    const visionNames = new Set(
+                        (data.models ?? [])
+                            .filter(m => {
+                                const fam  = m.details?.families ?? [];
+                                const name = (m.name ?? '').toLowerCase();
+                                return fam.includes('clip') || fam.includes('vision') ||
+                                    name.includes('llava') || name.includes('bakllava') ||
+                                    name.includes('vision') || name.includes('minicpm') ||
+                                    name.includes('gemma3') || name.includes('moondream');
+                            })
+                            .map(m => m.name)
+                    );
+                    const sel = document.getElementById('vlm-ollama-model-select');
+                    const row = document.getElementById('vlm-ollama-model-row');
+                    if (allModels.length > 0) {
+                        sel.innerHTML = allModels.map(m => {
+                            const label = visionNames.has(m) ? `${m} ✦` : m;
+                            return `<option value="${m}">${label}</option>`;
+                        }).join('');
+                        if (allModels.includes(state.vlmOllamaModel)) sel.value = state.vlmOllamaModel;
+                        row.style.display = '';
+                        const vCount = visionNames.size;
+                        note.textContent = `Found ${allModels.length} model${allModels.length !== 1 ? 's' : ''} (✦ = vision-capable, ${vCount} detected).`;
+                    } else {
+                        row.style.display = 'none';
+                        note.textContent = 'No models found. Try: ollama pull llava';
+                    }
+                } catch (err) {
+                    note.textContent = `Connection failed: ${err.message}`;
+                } finally {
+                    btn.textContent = 'Fetch Models';
+                    btn.disabled = false;
+                }
+            });
+            document.getElementById('vlm-ollama-model-select').addEventListener('change', (e) => {
+                const val = e.target.value;
+                document.getElementById('vlm-ollama-model').value = val;
+                state.vlmOllamaModel = val;
+                localStorage.setItem('vlmOllamaModel', state.vlmOllamaModel);
+                syncVLMSettings();
+            });
+
+            // Ollama — Active Models (ps)
+            document.getElementById('vlm-ollama-ps-btn').addEventListener('click', async () => {
+                const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
+                    .replace(/\/$/, '').replace(/\/v1$/, '');
+                const btn  = document.getElementById('vlm-ollama-ps-btn');
+                const list = document.getElementById('vlm-ollama-running-list');
+                btn.textContent = 'Checking…';
+                btn.disabled = true;
+                try {
+                    const { VLMManager } = await import('./vlm/VLMManager.js');
+                    const running = await VLMManager.getOllamaRunningModels(endpoint);
+                    list.style.display = '';
+                    if (running.length === 0) {
+                        list.innerHTML = '<em style="color:#546e7a">No models currently loaded in memory.</em>';
+                    } else {
+                        list.innerHTML = running.map(m => {
+                            const vram = m.size_vram ? ` · ${(m.size_vram / 1e9).toFixed(1)} GB VRAM` : '';
+                            const exp  = m.expires_at ? ` · expires ${new Date(m.expires_at).toLocaleTimeString()}` : '';
+                            return `<div style="padding:2px 0">▶ <strong style="color:#e0f7fa">${m.name}</strong>${vram}${exp}</div>`;
+                        }).join('');
+                    }
+                } catch (err) {
+                    list.style.display = '';
+                    list.innerHTML = `<span style="color:#ef5350">Error: ${err.message}</span>`;
+                } finally {
+                    btn.textContent = 'Active Models';
+                    btn.disabled = false;
+                }
+            });
+
+            // Ollama — Load Model
+            document.getElementById('vlm-ollama-load-btn').addEventListener('click', async () => {
+                const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
+                    .replace(/\/$/, '').replace(/\/v1$/, '');
+                const model = document.getElementById('vlm-ollama-model').value.trim();
+                const note  = document.getElementById('vlm-ollama-note');
+                const btn   = document.getElementById('vlm-ollama-load-btn');
+                if (!model) { note.textContent = 'Enter a model name first.'; return; }
+                btn.textContent = 'Loading…';
+                btn.disabled = true;
+                try {
+                    const { VLMManager } = await import('./vlm/VLMManager.js');
+                    await VLMManager.loadOllamaModel(endpoint, model);
+                    note.textContent = `✓ "${model}" loaded into memory.`;
+                } catch (err) {
+                    note.textContent = `Load failed: ${err.message}`;
+                } finally {
+                    btn.textContent = 'Load';
+                    btn.disabled = false;
+                }
+            });
+
+            // Ollama — Unload Model
+            document.getElementById('vlm-ollama-unload-btn').addEventListener('click', async () => {
+                const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
+                    .replace(/\/$/, '').replace(/\/v1$/, '');
+                const model = document.getElementById('vlm-ollama-model').value.trim();
+                const note  = document.getElementById('vlm-ollama-note');
+                const btn   = document.getElementById('vlm-ollama-unload-btn');
+                if (!model) { note.textContent = 'Enter a model name first.'; return; }
+                btn.textContent = 'Unloading…';
+                btn.disabled = true;
+                try {
+                    const { VLMManager } = await import('./vlm/VLMManager.js');
+                    await VLMManager.unloadOllamaModel(endpoint, model);
+                    note.textContent = `✓ "${model}" unloaded from memory.`;
+                } catch (err) {
+                    note.textContent = `Unload failed: ${err.message}`;
+                } finally {
+                    btn.textContent = 'Unload';
+                    btn.disabled = false;
+                }
             });
 
             // Message Listener for iFrame actions
