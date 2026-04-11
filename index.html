@@ -6,7 +6,7 @@
 <head>
     <title>TheDoShoots</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
 
@@ -868,6 +868,51 @@
         transform: translateX(26px);
     }
 
+    .setting-category {
+        font-size: 0.72rem;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+        color: var(--accent-color);
+        margin: 22px 0 12px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.18);
+    }
+
+    .setting-select {
+        background: #1a1a1a;
+        color: #ddd;
+        border: 1px solid #444;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 0.82rem;
+        font-family: inherit;
+        cursor: pointer;
+        max-width: 200px;
+    }
+    .setting-select:focus { outline: none; border-color: var(--accent-color); }
+    .setting-select option { background: #1a1a1a; }
+
+    .setting-input {
+        background: #1a1a1a;
+        color: #ddd;
+        border: 1px solid #444;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 0.82rem;
+        font-family: inherit;
+        width: 200px;
+        min-width: 0;
+    }
+    .setting-input:focus { outline: none; border-color: var(--accent-color); }
+    .setting-input::placeholder { color: #555; }
+
+    .setting-note {
+        font-size: 0.78rem;
+        color: #ffa726;
+        font-style: italic;
+        line-height: 1.4;
+    }
+
     /* --- IFRAME OVERLAY --- */
     .iframe-container {
         position: fixed;
@@ -1265,6 +1310,58 @@
                     <div class="toggle-knob"></div>
                 </div>
             </div>
+
+            <div class="setting-category">TheDoInspector (AI Vision)</div>
+            <div class="setting-row">
+                <span class="setting-label">Enable TheDoInspector</span>
+                <div class="toggle-switch active" id="toggle-vlm">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+            <!-- Backend selector (shown when enabled) -->
+            <div class="setting-row" id="vlm-backend-row">
+                <span class="setting-label">Backend</span>
+                <select class="setting-select" id="select-vlm-backend">
+                    <option value="local">Local (SmolVLM — runs in browser)</option>
+                    <option value="api">OpenAI-compatible API</option>
+                </select>
+            </div>
+            <!-- Local model settings -->
+            <div id="vlm-local-settings">
+                <div class="setting-row">
+                    <span class="setting-label">Model</span>
+                    <select class="setting-select" id="select-vlm-model">
+                        <option value="HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM 256M — Fast (~300 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM 500M — Better (~500 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM2-256M-Instruct">SmolVLM2 256M — Fast v2 (~300 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM2-500M-Instruct">SmolVLM2 500M — Better v2 (~500 MB)</option>
+                    </select>
+                </div>
+                <div class="setting-row" id="vlm-model-note" style="display:none;">
+                    <span class="setting-note">⚠ Model change takes effect immediately — current chat will reset.</span>
+                </div>
+            </div>
+            <!-- API settings (shown when backend = api) -->
+            <div id="vlm-api-settings" style="display:none">
+                <div class="setting-row">
+                    <span class="setting-label">Endpoint</span>
+                    <input type="text" class="setting-input" id="vlm-api-endpoint"
+                           placeholder="https://api.openai.com/v1">
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Model</span>
+                    <input type="text" class="setting-input" id="vlm-api-model"
+                           placeholder="gpt-4o">
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">API Key</span>
+                    <input type="password" class="setting-input" id="vlm-api-key"
+                           placeholder="sk-… (leave blank for local servers)">
+                </div>
+                <div class="setting-row">
+                    <span class="setting-note">Key is stored only in your browser's localStorage.</span>
+                </div>
+            </div>
         </div>
     </div>
     <!-- IFRAME OVERLAY FOR EXHIBITS -->
@@ -1285,14 +1382,49 @@
             dataSaver: false,
             slideshow: false,
             viewerFullscreen: false,
-            debugMode: false, // Added
-            slideshowInterval: 3000, // Added
-            deepLinkImg: '', // Added
+            debugMode: false,
+            slideshowInterval: 3000,
+            deepLinkImg: '',
             isAnimating: true,
             isPaused: false,
             muted: true,
-            isFullscreen: false
+            isFullscreen: false,
+            vlmEnabled:      true,
+            vlmModel:        'HuggingFaceTB/SmolVLM-256M-Instruct',
+            vlmType:         'local',
+            vlmApiEndpoint:  'https://api.openai.com/v1',
+            vlmApiKey:       '',
+            vlmApiModel:     'gpt-4o',
         };
+
+        // Shared VLM settings object — read by GalleryVLMOverlay.js (same page context)
+        window.VLM_SETTINGS = {
+            enabled:     state.vlmEnabled,
+            model:       state.vlmModel,
+            type:        state.vlmType,
+            apiEndpoint: state.vlmApiEndpoint,
+            apiKey:      state.vlmApiKey,
+            apiModel:    state.vlmApiModel,
+        };
+
+        function syncVLMSettings() {
+            window.VLM_SETTINGS.enabled     = state.vlmEnabled;
+            window.VLM_SETTINGS.model       = state.vlmModel;
+            window.VLM_SETTINGS.type        = state.vlmType;
+            window.VLM_SETTINGS.apiEndpoint = state.vlmApiEndpoint;
+            window.VLM_SETTINGS.apiKey      = state.vlmApiKey;
+            window.VLM_SETTINGS.apiModel    = state.vlmApiModel;
+            window.dispatchEvent(new CustomEvent('vlmsettingschanged', {
+                detail: {
+                    enabled:     state.vlmEnabled,
+                    model:       state.vlmModel,
+                    type:        state.vlmType,
+                    apiEndpoint: state.vlmApiEndpoint,
+                    apiKey:      state.vlmApiKey,
+                    apiModel:    state.vlmApiModel,
+                }
+            }));
+        }
 
         // --- DOM ELEMENTS ---
         const els = {
@@ -1371,9 +1503,42 @@
                 state.dataSaver = savedSaver === 'true';
             }
 
+            // Saved VLM settings
+            const savedVlmEnabled = localStorage.getItem('vlmEnabled');
+            if (savedVlmEnabled !== null) state.vlmEnabled = savedVlmEnabled !== 'false';
+            const savedVlmModel = localStorage.getItem('vlmModel');
+            if (savedVlmModel) state.vlmModel = savedVlmModel;
+            const savedVlmType = localStorage.getItem('vlmType');
+            if (savedVlmType) state.vlmType = savedVlmType;
+            const savedVlmApiEndpoint = localStorage.getItem('vlmApiEndpoint');
+            if (savedVlmApiEndpoint) state.vlmApiEndpoint = savedVlmApiEndpoint;
+            const savedVlmApiKey = localStorage.getItem('vlmApiKey');
+            if (savedVlmApiKey) state.vlmApiKey = savedVlmApiKey;
+            const savedVlmApiModel = localStorage.getItem('vlmApiModel');
+            if (savedVlmApiModel) state.vlmApiModel = savedVlmApiModel;
+            window.VLM_SETTINGS = {
+                enabled:     state.vlmEnabled,
+                model:       state.vlmModel,
+                type:        state.vlmType,
+                apiEndpoint: state.vlmApiEndpoint,
+                apiKey:      state.vlmApiKey,
+                apiModel:    state.vlmApiModel,
+            };
+
             // Sync UI Toggles
             updateToggleUI(els.toggles.mode3d, state.is3D);
             updateToggleUI(els.toggles.saver, state.dataSaver);
+            updateToggleUI(document.getElementById('toggle-vlm'), state.vlmEnabled);
+            document.getElementById('select-vlm-model').value      = state.vlmModel;
+            document.getElementById('select-vlm-backend').value    = state.vlmType;
+            document.getElementById('vlm-api-endpoint').value      = state.vlmApiEndpoint;
+            document.getElementById('vlm-api-model').value         = state.vlmApiModel;
+            document.getElementById('vlm-api-key').value           = state.vlmApiKey;
+            const _vlmOn  = state.vlmEnabled;
+            const _vlmApi = state.vlmType === 'api';
+            document.getElementById('vlm-backend-row').style.display      = _vlmOn ? '' : 'none';
+            document.getElementById('vlm-local-settings').style.display   = (_vlmOn && !_vlmApi) ? '' : 'none';
+            document.getElementById('vlm-api-settings').style.display     = (_vlmOn && _vlmApi)  ? '' : 'none';
         }
 
         function setupEventListeners() {
@@ -1530,6 +1695,57 @@
             // Interval Input
             document.getElementById('input-interval').addEventListener('change', (e) => {
                 state.slideshowInterval = e.target.value;
+            });
+
+            // VLM Enable Toggle
+            setupToggle(document.getElementById('toggle-vlm'), (val) => {
+                state.vlmEnabled = val;
+                localStorage.setItem('vlmEnabled', val);
+                const isApi = state.vlmType === 'api';
+                document.getElementById('vlm-backend-row').style.display    = val ? '' : 'none';
+                document.getElementById('vlm-local-settings').style.display = (val && !isApi) ? '' : 'none';
+                document.getElementById('vlm-api-settings').style.display   = (val && isApi)  ? '' : 'none';
+                document.getElementById('vlm-model-note').style.display = 'none';
+                syncVLMSettings();
+            });
+
+            // VLM Backend Selector (local vs api)
+            document.getElementById('select-vlm-backend').addEventListener('change', (e) => {
+                state.vlmType = e.target.value;
+                localStorage.setItem('vlmType', state.vlmType);
+                const isApi = state.vlmType === 'api';
+                document.getElementById('vlm-local-settings').style.display = isApi ? 'none' : '';
+                document.getElementById('vlm-api-settings').style.display   = isApi ? '' : 'none';
+                document.getElementById('vlm-model-note').style.display = 'none';
+                syncVLMSettings();
+            });
+
+            // VLM Local Model Selector
+            document.getElementById('select-vlm-model').addEventListener('change', (e) => {
+                const newModel = e.target.value;
+                const workerRunning = !!(window.VLM_SETTINGS._workerStarted);
+                state.vlmModel = newModel;
+                localStorage.setItem('vlmModel', newModel);
+                const note = document.getElementById('vlm-model-note');
+                note.style.display = workerRunning ? '' : 'none';
+                syncVLMSettings();
+            });
+
+            // VLM API fields — each fires syncVLMSettings on change
+            document.getElementById('vlm-api-endpoint').addEventListener('change', (e) => {
+                state.vlmApiEndpoint = e.target.value;
+                localStorage.setItem('vlmApiEndpoint', state.vlmApiEndpoint);
+                syncVLMSettings();
+            });
+            document.getElementById('vlm-api-model').addEventListener('change', (e) => {
+                state.vlmApiModel = e.target.value;
+                localStorage.setItem('vlmApiModel', state.vlmApiModel);
+                syncVLMSettings();
+            });
+            document.getElementById('vlm-api-key').addEventListener('change', (e) => {
+                state.vlmApiKey = e.target.value;
+                localStorage.setItem('vlmApiKey', state.vlmApiKey);
+                syncVLMSettings();
             });
 
             // Message Listener for iFrame actions
@@ -2502,6 +2718,7 @@
             update();
         }
     </script>
+    <script type="module" src="vlm/GalleryVLMOverlay.js"></script>
 </body>
 
 </html>
