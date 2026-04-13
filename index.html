@@ -6,7 +6,7 @@
 <head>
     <title>TheDoShoots</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
 
@@ -64,42 +64,29 @@
         z-index: 10;
     }
 
-    .aurora-beam {
+    .aurora-layer {
         position: fixed;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: conic-gradient(from 0deg at 50% 50%,
-                transparent 0deg,
-                rgba(0, 255, 136, 0.3) 50deg,
-                transparent 100deg,
-                rgba(120, 0, 255, 0.3) 150deg,
-                transparent 200deg,
-                rgba(0, 229, 255, 0.3) 250deg,
-                transparent 300deg,
-                rgba(0, 255, 136, 0.3) 350deg);
-        mix-blend-mode: screen;
-        animation: rotateAurora 40s linear infinite;
-        filter: blur(80px);
-        opacity: 0.7;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
         pointer-events: none;
         z-index: 0;
+        will-change: transform;
     }
-
-    .aurora-beam:nth-child(2) {
-        animation-direction: reverse;
-        animation-duration: 55s;
-        background: conic-gradient(from 90deg at 45% 55%,
-                transparent 0deg,
-                rgba(140, 0, 255, 0.25) 60deg,
-                transparent 120deg,
-                rgba(0, 255, 165, 0.25) 180deg,
-                transparent 240deg,
-                rgba(50, 100, 255, 0.2) 300deg,
-                transparent 360deg);
-        opacity: 0.5;
-        mix-blend-mode: color-dodge;
+    .aurora-layer-1 {
+        background:
+            radial-gradient(ellipse at 30% 20%, rgba(0, 229, 255, 0.18), transparent 55%),
+            radial-gradient(ellipse at 70% 70%, rgba(120, 0, 255, 0.12), transparent 50%);
+        animation: auroraBreath 12s ease-in-out infinite alternate;
+    }
+    .aurora-layer-2 {
+        background:
+            radial-gradient(ellipse at 65% 10%, rgba(0, 255, 136, 0.12), transparent 50%),
+            radial-gradient(ellipse at 20% 80%, rgba(50, 100, 255, 0.10), transparent 45%);
+        animation: auroraBreath 18s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes auroraBreath {
+        from { transform: scale(1);    opacity: 0.75; }
+        to   { transform: scale(1.08); opacity: 1; }
     }
 
     #mode-2d::before {
@@ -120,16 +107,6 @@
                 transparent 2px,
                 transparent 15px);
         background-size: 200px 200px, 100% 100%;
-    }
-
-    @keyframes rotateAurora {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
     }
 
     #mode-2d::after {
@@ -251,12 +228,24 @@
         border-left: 4px solid var(--museum-theme);
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
+        align-items: center;
+        text-align: center;
         border-radius: 4px;
         overflow: hidden;
         animation: fadeInUp 1s ease-out backwards;
         flex-shrink: 0;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .nav-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(160deg, rgba(5,5,5,0.82) 0%, rgba(5,5,5,0.60) 100%);
+        z-index: 0;
+        border-radius: inherit;
+        pointer-events: none;
     }
 
     @media (max-width: 768px) {
@@ -361,7 +350,7 @@
     }
 
     .nav-card:hover {
-        transform: translateY(-15px);
+        transform: translateY(-6px);
         background: rgba(30, 30, 30, 0.95);
         box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
         border-color: rgba(255, 255, 255, 0.2);
@@ -371,7 +360,6 @@
         margin: 15px 0 5px 0;
         font-size: 1.8rem;
         font-weight: 900;
-        letter-spacing: 1px;
         color: white;
     }
 
@@ -379,7 +367,7 @@
         font-size: 0.85rem;
         color: #888;
         font-weight: 400;
-        font-family: monospace;
+        font-family: 'Courier New', Courier, monospace;
         letter-spacing: 1px;
     }
 
@@ -476,7 +464,7 @@
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        color: rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.45);
         font-size: 0.85rem;
         letter-spacing: 1px;
         pointer-events: auto;
@@ -528,6 +516,7 @@
     }
 
     #fps-counter {
+        display: none !important;
         position: fixed;
         bottom: 20px;
         right: 20px;
@@ -655,8 +644,8 @@
         }
 
         .social-icon {
-            width: 32px !important;
-            height: 32px !important;
+            width: 44px !important;
+            height: 44px !important;
             font-size: 1rem !important;
         }
 
@@ -752,12 +741,19 @@
     }
 
     .secondary-btn {
-        border-color: rgba(255, 255, 255, 0.15);
-        opacity: 0.8;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        color: rgba(255, 255, 255, 0.55) !important;
+        font-size: 0.95rem;
+        padding: 11px 44px;
+        letter-spacing: 3px;
+        opacity: 1;
     }
 
     .secondary-btn:hover {
-        opacity: 1;
+        background: transparent !important;
+        color: rgba(255, 255, 255, 0.88) !important;
+        border-color: rgba(255, 255, 255, 0.45) !important;
+        box-shadow: none !important;
     }
 
     /* --- SETTINGS PANEL --- */
@@ -960,8 +956,8 @@
 
     .close-iframe {
         position: absolute;
-        top: 60px;
-        left: 25px;
+        top: 20px;
+        left: 20px;
         width: 45px;
         height: 45px;
         display: flex;
@@ -1100,11 +1096,27 @@
     }
 
     #btn-mute {
-        color: #ff4444;
+        color: rgba(255, 255, 255, 0.7);
     }
 
     a {
         color: #fff;
+    }
+
+    #btn-skip-intro:hover {
+        border-color: rgba(255,255,255,0.8);
+        color: #fff;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #space-intro          { display: none !important; }
+        .aurora-layer         { animation: none !important; }
+        .glitch-title         { animation: none !important; }
+        .warp-text            { animation: none !important; opacity: 1 !important;
+                                letter-spacing: 20px !important; }
+        .warp-sub             { animation: none !important; opacity: 1 !important; }
+        .nav-card             { animation: none !important; }
+        .profile-pic-2d       { animation: none !important; }
     }
 </style>
 
@@ -1115,46 +1127,64 @@
 
     <!-- 2D MODE CONTAINER -->
     <div id="mode-2d">
-        <div class="aurora-beam"></div>
-        <div class="aurora-beam"></div>
+        <div class="aurora-layer aurora-layer-1"></div>
+        <div class="aurora-layer aurora-layer-2"></div>
         <div class="hero-container">
             <img src="./assets/photographer.jpg" alt="Profile" class="profile-pic-2d">
 
             <h1 class="glitch-title" data-text="TheDoShoots">TheDoShoots</h1>
 
             <div class="nav-grid">
-                <a href="#" class="nav-card" onclick="handleNav('about.html', true); return false;">
-                    <div class="card-emoji">👤</div>
-                    <h3>About</h3>
-                    <span>Exhibit 01: Biography</span>
+                <a href="#" class="nav-card" onclick="handleNav('about.html', true); return false;"
+                    style="background-image: url('./assets/photographer.jpg');">
+                    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
+                        <div class="card-emoji">👤</div>
+                        <h3>About</h3>
+                        <span>Exhibit 01: Biography</span>
+                    </div>
                 </a>
                 <a href="#" class="nav-card"
-                    onclick="handleNav('./portfolios/astronomy/index.html', true); return false;">
-                    <div class="card-emoji">🌌</div>
-                    <h3>Astronomy</h3>
-                    <span>Exhibit 02: Deep Space</span>
+                    onclick="handleNav('./portfolios/astronomy/index.html', true); return false;"
+                    style="background-image: url('./portfolios/astronomy/fulls/20240518_014956.jpg');">
+                    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
+                        <div class="card-emoji">🌌</div>
+                        <h3>Astronomy</h3>
+                        <span>Exhibit 02: Deep Space</span>
+                    </div>
                 </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;">
-                    <div class="card-emoji">🍱</div>
-                    <h3>Food</h3>
-                    <span>Exhibit 03: Delicious</span>
-                </a>
-                <a href="#" class="nav-card"
-                    onclick="handleNav('./portfolios/landscape/index.html', true); return false;">
-                    <div class="card-emoji">🏞️</div>
-                    <h3>Landscape</h3>
-                    <span>Exhibit 04: Breathtaking</span>
-                </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/planes/index.html', true); return false;">
-                    <div class="card-emoji">✈️</div>
-                    <h3>Planes</h3>
-                    <span>Exhibit 05: Flying</span>
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;"
+                    style="background-image: url('./portfolios/food/fulls/_MG_1412.jpg');">
+                    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
+                        <div class="card-emoji">🍱</div>
+                        <h3>Food</h3>
+                        <span>Exhibit 03: Delicious</span>
+                    </div>
                 </a>
                 <a href="#" class="nav-card"
-                    onclick="handleNav('./portfolios/wildlife/index.html', true); return false;">
-                    <div class="card-emoji">🐿️</div>
-                    <h3>Wildlife</h3>
-                    <span>Exhibit 06: Animals</span>
+                    onclick="handleNav('./portfolios/landscape/index.html', true); return false;"
+                    style="background-image: url('./portfolios/landscape/fulls/_MG_0074.jpg');">
+                    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
+                        <div class="card-emoji">🏞️</div>
+                        <h3>Landscape</h3>
+                        <span>Exhibit 04: Breathtaking</span>
+                    </div>
+                </a>
+                <a href="#" class="nav-card" onclick="handleNav('./portfolios/planes/index.html', true); return false;"
+                    style="background-image: url('./portfolios/planes/fulls/_MG_1442.jpg');">
+                    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
+                        <div class="card-emoji">✈️</div>
+                        <h3>Planes</h3>
+                        <span>Exhibit 05: Flying</span>
+                    </div>
+                </a>
+                <a href="#" class="nav-card"
+                    onclick="handleNav('./portfolios/wildlife/index.html', true); return false;"
+                    style="background-image: url('./portfolios/wildlife/fulls/_MG_0001.jpg');">
+                    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
+                        <div class="card-emoji">🐿️</div>
+                        <h3>Wildlife</h3>
+                        <span>Exhibit 06: Animals</span>
+                    </div>
                 </a>
             </div>
         </div>
@@ -1173,6 +1203,15 @@
                 <h2 class="warp-text">THE DO SHOOTS</h2>
                 <div class="warp-sub">SYSTEM INITIALIZING</div>
             </div>
+            <button id="btn-skip-intro"
+                onclick="document.getElementById('space-intro').style.display='none'; var w=document.getElementById('welcome-watermark'); if(w) w.classList.add('revealing');"
+                style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+                       background:transparent;border:1px solid rgba(255,255,255,0.35);
+                       color:rgba(255,255,255,0.6);padding:10px 36px;font-family:inherit;
+                       font-size:0.8rem;letter-spacing:3px;text-transform:uppercase;
+                       cursor:pointer;z-index:10003;transition:border-color 0.2s,color 0.2s;">
+                Skip
+            </button>
         </div>
 
         <div class="controls-container" id="controls-container">
@@ -1340,13 +1379,19 @@
                     <div class="toggle-knob"></div>
                 </div>
             </div>
+            <!-- Advanced / AI Backend (collapsible) -->
+            <div class="setting-category" style="cursor:pointer;user-select:none;"
+                 onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
+                ▸ Advanced / AI Backend
+            </div>
+            <div id="settings-advanced" style="display:none;">
             <!-- Backend selector (shown when enabled) -->
             <div class="setting-row" id="vlm-backend-row">
                 <span class="setting-label">Backend</span>
                 <select class="setting-select" id="select-vlm-backend">
-                    <option value="local">Local (SmolVLM — runs in browser)</option>
+                    <option value="local">Local (via WebGPU)</option>
                     <option value="api">OpenAI-compatible API</option>
-                    <option value="ollama">Ollama (local server)</option>
+                    <option value="ollama">Ollama API</option>
                 </select>
             </div>
             <!-- Local model settings -->
@@ -1354,11 +1399,11 @@
                 <div class="setting-row">
                     <span class="setting-label">Model</span>
                     <select class="setting-select" id="select-vlm-model">
-                        <option value="HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM 256M — Fast (~300 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM 500M — Better (~500 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM2-256M-Instruct">SmolVLM2 256M — Fast v2 (~300 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM2-500M-Instruct">SmolVLM2 500M — Better v2 (~500 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM2-2.2B-Instruct">SmolVLM2 2.2B — Best (~2.2 GB)</option>
+                        <option value="onnx-community/FastVLM-0.5B-ONNX" selected>Apple FastVLM 0.5B (~500 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM 256M (~300 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM 500M (~500 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM2-256M-Instruct">SmolVLM2 256M (~300 MB)</option>
+                        <option value="HuggingFaceTB/SmolVLM2-500M-Instruct">SmolVLM2 500M (~500 MB)</option>
                     </select>
                 </div>
                 <div class="setting-row" id="vlm-model-note" style="display:none;">
@@ -1416,6 +1461,7 @@
                 </div>
                 <div id="vlm-ollama-running-list" style="display:none;padding:4px 0;font-size:11px;color:#78909c"></div>
             </div>
+            </div><!-- /#settings-advanced -->
             </div><!-- /.settings-col (right) -->
             </div><!-- /.settings-body -->
         </div>
@@ -1425,7 +1471,7 @@
         <button class="close-iframe" id="close-iframe" title="Close Preview">
             <i class="fas fa-times"></i>
         </button>
-        <iframe src="" id="exhibit-iframe"></iframe>
+        <iframe src="" id="exhibit-iframe" allowfullscreen></iframe>
     </div>
 
     <script>
@@ -1446,7 +1492,7 @@
             muted: true,
             isFullscreen: false,
             vlmEnabled:       true,
-            vlmModel:         'HuggingFaceTB/SmolVLM-256M-Instruct',
+            vlmModel:         'onnx-community/FastVLM-0.5B-ONNX',
             vlmType:          'local',
             vlmApiEndpoint:   'https://api.openai.com/v1',
             vlmApiKey:        '',
@@ -2939,7 +2985,7 @@
             update();
         }
     </script>
-    <script type="module" src="vlm/GalleryVLMOverlay.js"></script>
+    <script type="module" src="vlm/GalleryVLMOverlay.js?v=11"></script>
 </body>
 
 </html>
