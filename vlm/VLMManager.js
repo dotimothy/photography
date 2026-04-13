@@ -14,7 +14,7 @@
  *   mgr.on('ready', () => console.log('Model ready'));
  *
  *   // Local mode
- *   mgr.init('HuggingFaceTB/SmolVLM-256M-Instruct');
+ *   mgr.init('onnx-community/FastVLM-0.5B-ONNX');
  *
  *   // API mode — signals ready immediately, no download
  *   mgr.setApiMode('https://api.openai.com/v1', 'sk-...', 'gpt-4o');
@@ -61,14 +61,14 @@ class VLMManager {
      * Safe to call multiple times — only the first call has any effect.
      * @param {string} [modelId]  HuggingFace model ID
      */
-    init(modelId = 'HuggingFaceTB/SmolVLM-256M-Instruct') {
+    init(modelId = 'onnx-community/FastVLM-0.5B-ONNX') {
         if (this._worker) return;
         this._mode    = 'local';
         this._loading = true;
         this._modelId = modelId;
 
         this._worker = new Worker(
-            new URL('./vlmWorker.js', import.meta.url),
+            new URL('./vlmWorker.js?v=11', import.meta.url),
             { type: 'module' },
         );
 
@@ -87,7 +87,7 @@ class VLMManager {
      * reset its loading indicators.
      * @param {string} modelId
      */
-    restart(modelId = 'HuggingFaceTB/SmolVLM-256M-Instruct') {
+    restart(modelId = 'onnx-community/FastVLM-0.5B-ONNX') {
         if (this._worker) {
             this._worker.terminate();
             this._worker = null;

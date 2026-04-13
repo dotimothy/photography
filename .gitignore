@@ -9,3 +9,4 @@ assets/portfolio.csv
 .venv/
 __pycache__
 *.pyc
+portfolios/

@@ -1,9 +1,13 @@
 /**
- * vlmWorker.js — SmolVLM-256M-Instruct Web Worker
+ * vlmWorker.js — Multi-Model VLM Web Worker
  *
  * Runs entirely off the main thread. Handles model loading (WebGPU → WASM
  * fallback) and sequential inference with streaming token output.
  * Requests are queued so concurrent gallery interactions never race on the GPU.
+ *
+ * Supported model families:
+ *   - SmolVLM / SmolVLM2 (HuggingFaceTB)  → AutoModelForVision2Seq
+ *   - Apple FastVLM      (onnx-community)  → AutoModelForImageTextToText
  *
  * Progress events carry granular metrics so the UI can show:
  *   - Per-file and cumulative MB downloaded
@@ -22,6 +26,7 @@
 import {
     AutoProcessor,
     AutoModelForVision2Seq,
+    AutoModelForImageTextToText,
     RawImage,
     TextStreamer,
     env,
@@ -42,13 +47,17 @@ if (typeof SharedArrayBuffer !== 'undefined' &&
     env.backends.onnx.wasm.numThreads = Math.max(1, navigator.hardwareConcurrency - 1);
 }
 
-const DEFAULT_MODEL_ID = 'HuggingFaceTB/SmolVLM-256M-Instruct';
+const DEFAULT_MODEL_ID = 'onnx-community/FastVLM-0.5B-ONNX';
 
 let processor      = null;
 let model          = null;
 let _device        = 'wasm';   // remembered for stats
+let _modelId       = DEFAULT_MODEL_ID;  // remembered for inference routing
 let isProcessing   = false;
 let _warmupPromise = null;     // resolves when background warmup finishes
+
+/** True when the loaded model is Apple FastVLM (different processor/message API). */
+function isFastVLM() { return /FastVLM/i.test(_modelId); }
 const queue        = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -126,7 +135,12 @@ async function _loadForDevice(modelId, device) {
     let   doneBytes       = 0;
     let   compileSignaled = false;
 
-    model = await AutoModelForVision2Seq.from_pretrained(modelId, {
+    // FastVLM uses a different auto-class than the SmolVLM family
+    const ModelClass = /FastVLM/i.test(modelId)
+        ? AutoModelForImageTextToText
+        : AutoModelForVision2Seq;
+
+    model = await ModelClass.from_pretrained(modelId, {
         dtype,
         device,
         progress_callback: (p) => {
@@ -183,6 +197,8 @@ async function _loadForDevice(modelId, device) {
 }
 
 async function initModel(modelId = DEFAULT_MODEL_ID) {
+    _modelId = modelId;
+
     // Validate WebGPU by requesting an adapter — falls back to 'wasm' if the
     // adapter is unavailable or the request times out (common on iOS Safari).
     _device = await detectDevice();
@@ -232,11 +248,20 @@ async function initModel(modelId = DEFAULT_MODEL_ID) {
     _warmupPromise = (async () => {
         try {
             const dummyImg = new RawImage(new Uint8ClampedArray(32 * 32 * 3).fill(200), 32, 32, 3);
-            const warmText = processor.apply_chat_template(
-                [{ role: 'user', content: [{ type: 'image' }, { type: 'text', text: '.' }] }],
-                { tokenize: false, add_generation_prompt: true },
-            );
-            const warmInputs = await processor(warmText, [dummyImg], { return_tensors: 'pt' });
+            let warmInputs;
+            if (isFastVLM()) {
+                const warmText = processor.apply_chat_template(
+                    [{ role: 'user', content: '<image>.' }],
+                    { add_generation_prompt: true },
+                );
+                warmInputs = await processor(dummyImg, warmText, { add_special_tokens: false });
+            } else {
+                const warmText = processor.apply_chat_template(
+                    [{ role: 'user', content: [{ type: 'image' }, { type: 'text', text: '.' }] }],
+                    { tokenize: false, add_generation_prompt: true },
+                );
+                warmInputs = await processor(warmText, [dummyImg], { return_tensors: 'pt' });
+            }
             await model.generate({ ...warmInputs, max_new_tokens: 1, do_sample: false });
         } catch (_) { /* warmup failure is non-fatal */ }
     })().finally(() => { _warmupPromise = null; });
@@ -244,6 +269,9 @@ async function initModel(modelId = DEFAULT_MODEL_ID) {
 
 // ─── Inference ────────────────────────────────────────────────────────────────
 
+/**
+ * SmolVLM-style messages: image is a content-block object `{ type: 'image' }`.
+ */
 function buildMessages(history, prompt) {
     const messages = [];
     let imageInserted = false;
@@ -272,6 +300,32 @@ function buildMessages(history, prompt) {
     return messages;
 }
 
+/**
+ * FastVLM-style messages: image is the inline string token `<image>` prepended
+ * to the first user turn's content string.
+ */
+function buildFastVLMMessages(history, prompt) {
+    const messages = [];
+    let imageInserted = false;
+
+    for (const turn of history) {
+        if (turn.role === 'user' && !imageInserted) {
+            messages.push({ role: 'user', content: `<image>${turn.content}` });
+            imageInserted = true;
+        } else {
+            messages.push({ role: turn.role, content: turn.content });
+        }
+    }
+
+    if (!imageInserted) {
+        messages.push({ role: 'user', content: `<image>${prompt}` });
+    } else {
+        messages.push({ role: 'user', content: prompt });
+    }
+
+    return messages;
+}
+
 async function runInference(request) {
     const { id, imageSrc, prompt, chatHistory } = request;
     isProcessing = true;
@@ -283,12 +337,22 @@ async function runInference(request) {
         // model — avoids concurrent model.generate calls on the same instance.
         if (_warmupPromise) await _warmupPromise;
 
-        const image    = await RawImage.fromURL(imageSrc);
-        const messages = buildMessages(chatHistory ?? [], prompt);
-        const text     = processor.apply_chat_template(messages, {
-            tokenize: false, add_generation_prompt: true,
-        });
-        const inputs = await processor(text, [image], { return_tensors: 'pt' });
+        const image = await RawImage.fromURL(imageSrc);
+        let inputs;
+
+        if (isFastVLM()) {
+            // FastVLM: inline <image> token in string content; processor takes (image, text)
+            const messages = buildFastVLMMessages(chatHistory ?? [], prompt);
+            const text = processor.apply_chat_template(messages, { add_generation_prompt: true });
+            inputs = await processor(image, text, { add_special_tokens: false });
+        } else {
+            // SmolVLM / SmolVLM2: content-block objects; processor takes (text, [images])
+            const messages = buildMessages(chatHistory ?? [], prompt);
+            const text = processor.apply_chat_template(messages, {
+                tokenize: false, add_generation_prompt: true,
+            });
+            inputs = await processor(text, [image], { return_tensors: 'pt' });
+        }
 
         let fullText   = '';
         let tokenCount = 0;
@@ -311,7 +375,7 @@ async function runInference(request) {
             },
         });
 
-        await model.generate({ ...inputs, max_new_tokens: 200, do_sample: false, streamer });
+        await model.generate({ ...inputs, max_new_tokens: 768, do_sample: false, streamer });
 
         const elapsed = startMs ? (performance.now() - startMs) / 1000 : 0;
         const avgTps  = elapsed > 0 ? parseFloat((tokenCount / elapsed).toFixed(1)) : null;

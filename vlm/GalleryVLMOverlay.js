@@ -21,7 +21,7 @@
  *   <script type="module" src="vlm/GalleryVLMOverlay.js"></script>
  */
 
-import { VLMManager } from './VLMManager.js';
+import { VLMManager } from './VLMManager.js?v=11';
 
 // ─── Markdown + LaTeX rendering (loaded lazily from CDN) ─────────────────────
 
@@ -30,64 +30,129 @@ let _katexReady        = false;
 let _markedLoadPromise = null;
 let _katexLoadPromise  = null;
 
-// ─── EXIF extraction (loaded lazily from CDN) ─────────────────────────────────
+// ─── EXIF extraction from portfolio metadata.json ────────────────────────────
 
-let _exifrLoadPromise = null;
+/** Cache: portfolio base URL → Promise<Object|null> */
+const _metadataCache = new Map();
 
-function _loadExifr() {
-    if (_exifrLoadPromise) return _exifrLoadPromise;
-    _exifrLoadPromise = new Promise(resolve => {
-        if (typeof exifr !== 'undefined') { resolve(); return; }
-        const s = document.createElement('script');
-        s.src     = 'https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js';
-        s.onload  = () => resolve();
-        s.onerror = () => resolve();   // graceful fallback — no EXIF
-        document.head.appendChild(s);
-    });
-    return _exifrLoadPromise;
+/** Fetch (and cache) the metadata.json for a portfolio base URL. */
+function _fetchPortfolioMeta(base) {
+    if (_metadataCache.has(base)) return _metadataCache.get(base);
+    const p = fetch(`${base}/metadata/metadata.json`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null);
+    _metadataCache.set(base, p);
+    return p;
 }
 
 /**
- * Parse EXIF from a URL and return a human-readable metadata string,
- * or null if no useful data is found.
- * @param {string} src
- * @returns {Promise<string|null>}
+ * Parse a rational-string (e.g. "27/5", "9/5", "30") to a number.
+ * Returns null if unparseable.
+ */
+function _parseFraction(str) {
+    if (str == null) return null;
+    const s = String(str).trim();
+    const slash = s.indexOf('/');
+    if (slash === -1) { const n = parseFloat(s); return isNaN(n) ? null : n; }
+    const num = parseFloat(s.slice(0, slash));
+    const den = parseFloat(s.slice(slash + 1));
+    return (isNaN(num) || isNaN(den) || den === 0) ? null : num / den;
+}
+
+/**
+ * Parse a GPS DMS array string like "[36, 48, 346/25]" to decimal degrees.
+ * Returns null if unparseable.
+ */
+function _parseDMS(str) {
+    if (!str) return null;
+    const parts = str.replace(/[\[\]]/g, '').split(',').map(s => _parseFraction(s.trim()));
+    if (parts.length < 3 || parts.some(p => p == null)) return null;
+    return parts[0] + parts[1] / 60 + parts[2] / 3600;
+}
+
+/**
+ * Look up pre-computed metadata for an image URL.
+ * Returns { text: string, gps: {lat,lon}|null } or null if no data found.
+ * GPS coordinates are signed decimals (S/W negative) ready for map URLs.
+ * Reads from portfolios/<name>/metadata/metadata.json — no image fetch needed.
+ * @param {string} src  Absolute URL of the image (fulls/ or thumbs/ path)
+ * @returns {Promise<{text:string, gps:{lat:number,lon:number}|null}|null>}
  */
 async function _extractExif(src) {
-    await _loadExifr();
-    if (typeof exifr === 'undefined') return null;
+    if (!src || src.startsWith('data:')) return null;
     try {
-        const data = await exifr.parse(src, {
-            pick: [
-                'Make', 'Model', 'LensModel',
-                'FocalLength', 'FocalLengthIn35mmFormat',
-                'FNumber', 'ExposureTime', 'ISO',
-                'ExposureMode', 'ExposureProgram',
-                'MeteringMode', 'WhiteBalance', 'Flash',
-                'DateTimeOriginal', 'OffsetTimeOriginal',
-            ],
-        });
-        if (!data) return null;
+        const url       = new URL(src);
+        const parts     = url.pathname.split('/');
+        const segIdx    = parts.findIndex(p => p === 'fulls' || p === 'thumbs');
+        if (segIdx === -1) return null;
+
+        const base      = url.origin + parts.slice(0, segIdx).join('/');
+        const stem      = (parts[segIdx + 1] ?? '').replace(/\.[^.]+$/, '');
+        if (!stem) return null;
+
+        const meta = await _fetchPortfolioMeta(base);
+        const d    = meta?.[stem];
+        if (!d) return null;
 
         const lines = [];
-        const cam = [data.Make, data.Model].filter(Boolean).join(' ');
-        if (cam)                         lines.push(`Camera: ${cam}`);
-        if (data.LensModel)              lines.push(`Lens: ${data.LensModel}`);
-        if (data.FocalLength != null)    lines.push(`Focal length: ${data.FocalLength}mm${data.FocalLengthIn35mmFormat ? ` (${data.FocalLengthIn35mmFormat}mm equiv.)` : ''}`);
-        if (data.FNumber != null)        lines.push(`Aperture: f/${data.FNumber}`);
-        if (data.ExposureTime != null) {
-            const et = data.ExposureTime;
-            lines.push(`Shutter speed: ${et < 1 ? `1/${Math.round(1 / et)}` : et}s`);
-        }
-        if (data.ISO != null)            lines.push(`ISO: ${data.ISO}`);
-        if (data.ExposureMode != null)   lines.push(`Exposure mode: ${data.ExposureMode}`);
-        if (data.ExposureProgram != null) lines.push(`Exposure program: ${data.ExposureProgram}`);
-        if (data.MeteringMode != null)   lines.push(`Metering: ${data.MeteringMode}`);
-        if (data.WhiteBalance != null)   lines.push(`White balance: ${data.WhiteBalance}`);
-        if (data.Flash != null)          lines.push(`Flash: ${data.Flash}`);
-        if (data.DateTimeOriginal)       lines.push(`Date: ${data.DateTimeOriginal}`);
 
-        return lines.length ? lines.join(', ') : null;
+        const cam = [d['Image Make'], d['Image Model']].filter(Boolean).join(' ');
+        if (cam) lines.push(`Camera: ${cam}`);
+
+        const lens = d['EXIF LensModel'];
+        if (lens) lines.push(`Lens: ${lens}`);
+
+        const fl   = _parseFraction(d['EXIF FocalLength']);
+        const fl35 = d['EXIF FocalLengthIn35mmFilm'];
+        if (fl != null) {
+            lines.push(`Focal length: ${parseFloat(fl.toFixed(1))}mm${fl35 ? ` (${fl35}mm equiv.)` : ''}`);
+        }
+
+        const fn = _parseFraction(d['EXIF FNumber']);
+        if (fn != null) lines.push(`Aperture: f/${parseFloat(fn.toFixed(1))}`);
+
+        const et = _parseFraction(d['EXIF ExposureTime']);
+        if (et != null) lines.push(`Shutter speed: ${et < 1 ? `1/${Math.round(1 / et)}` : et}s`);
+
+        const iso = d['EXIF ISOSpeedRatings'];
+        if (iso != null) lines.push(`ISO: ${iso}`);
+
+        const expMode = d['EXIF ExposureMode'];
+        if (expMode) lines.push(`Exposure mode: ${expMode}`);
+
+        const expProg = d['EXIF ExposureProgram'];
+        if (expProg) lines.push(`Exposure program: ${expProg}`);
+
+        const metering = d['EXIF MeteringMode'];
+        if (metering) lines.push(`Metering: ${metering}`);
+
+        const wb = d['EXIF WhiteBalance'];
+        if (wb) lines.push(`White balance: ${wb}`);
+
+        const flash = d['EXIF Flash'];
+        if (flash) lines.push(`Flash: ${flash}`);
+
+        const date = d['EXIF DateTimeOriginal'];
+        if (date) lines.push(`Date: ${date}`);
+
+        // GPS — stored separately so the caller can render iframes or links
+        let gps = null;
+        const lat    = _parseDMS(d['GPS GPSLatitude']);
+        const latRef = d['GPS GPSLatitudeRef'];
+        const lon    = _parseDMS(d['GPS GPSLongitude']);
+        const lonRef = d['GPS GPSLongitudeRef'];
+        if (lat != null && lon != null) {
+            const alt    = _parseFraction(d['GPS GPSAltitude']);
+            const altRef = d['GPS GPSAltitudeRef'];
+            const latDec = latRef === 'S' ? -lat : lat;
+            const lonDec = lonRef === 'W' ? -lon : lon;
+            let locLine  = `Location: ${lat.toFixed(6)}° ${latRef ?? ''}, ${lon.toFixed(6)}° ${lonRef ?? ''}`.trim();
+            if (alt != null) locLine += ` · ${alt.toFixed(0)}m${altRef === '1' ? ' below sea level' : ' alt.'}`;
+            lines.push(locLine);
+            gps = { lat: latDec, lon: lonDec };
+        }
+
+        return lines.length ? { text: lines.join('\n'), gps } : null;
     } catch (_) {
         return null;
     }
@@ -204,7 +269,7 @@ function injectCSS() {
 /* ── VLM Toggle Button ────────────────────────────────────────── */
 .vlm-toggle-btn {
     position: fixed;
-    bottom: 80px;
+    bottom: 20px;
     right: 20px;
     width: 46px;
     height: 46px;
@@ -238,7 +303,7 @@ function injectCSS() {
 /* ── VLM Panel ────────────────────────────────────────────────── */
 .vlm-panel {
     position: fixed;
-    bottom: 138px;
+    bottom: 0;
     right: 20px;
     width: 340px;
     max-height: 530px;
@@ -246,18 +311,19 @@ function injectCSS() {
     flex-direction: column;
     background: rgba(10, 10, 18, 0.96);
     border: 1px solid rgba(79, 195, 247, 0.2);
-    border-radius: 13px;
+    border-radius: 13px 13px 0 0;
     z-index: 4500;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(79,195,247,0.07);
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(79,195,247,0.07);
     overflow: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: scale(0.95) translateY(8px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(20px);
+    transition: opacity 0.22s ease, transform 0.22s ease, width 0.25s ease,
+                max-height 0.25s ease;
     font-family: 'Roboto', system-ui, sans-serif;
-    font-size: 13px;
+    font-size: var(--vlm-font-sz, 13px);
     color: #cfd8dc;
     will-change: transform, opacity;
     touch-action: auto;
@@ -265,8 +331,45 @@ function injectCSS() {
 .vlm-panel.vlm-open {
     opacity: 1;
     pointer-events: auto;
-    transform: scale(1) translateY(0);
+    transform: translateY(0);
 }
+/* ── Resize handle (top-left corner, drags to resize width + height) ── */
+.vlm-resize-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    cursor: nw-resize;
+    z-index: 2;
+    border-top-left-radius: 13px;
+    opacity: 0.35;
+    transition: opacity 0.15s;
+}
+.vlm-resize-handle:hover { opacity: 0.85; }
+/* Kill all transitions while dragging so the panel tracks the cursor exactly */
+.vlm-panel.vlm-resizing { transition: none !important; }
+.vlm-panel.vlm-resizing * { transition: none !important; }
+.vlm-resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 10px;
+    height: 10px;
+    background-image:
+        radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
+        radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
+        radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
+        radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
+        radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
+        radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px);
+    background-size: 4px 4px;
+    background-position: 0 0, 4px 0, 0 4px, 8px 0, 4px 4px, 0 8px;
+    background-repeat: no-repeat;
+}
+/* Hide resize handle when panel is in its own fullscreen mode */
+.vlm-panel.vlm-fullscreen .vlm-resize-handle { display: none; }
 
 /* ── Header ──────────────────────────────────────────────────── */
 .vlm-header {
@@ -325,6 +428,11 @@ function injectCSS() {
 .vlm-close-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
 .vlm-fs-btn, .vlm-gear-btn { font-size: 14px; padding: 0 5px; border-color: transparent; display: flex; align-items: center; }
 .vlm-fs-btn:hover, .vlm-gear-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.vlm-font-btns { display: flex; gap: 2px; flex-shrink: 0; }
+.vlm-font-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: #78909c; cursor: pointer; border-radius: 4px; padding: 1px 5px; line-height: 1.4; transition: color 0.15s, border-color 0.15s; }
+.vlm-font-btn:hover { color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
+.vlm-font-btn-sm { font-size: 9px; }
+.vlm-font-btn-lg { font-size: 13px; }
 
 /* ── Progress bar ─────────────────────────────────────────────── */
 .vlm-progress-bar { height: 2px; background: transparent; flex-shrink: 0; }
@@ -336,47 +444,118 @@ function injectCSS() {
     border-radius: 1px;
 }
 
-/* ── Image context strip ─────────────────────────────────────── */
-.vlm-image-strip {
-    display: flex;
+/* ── Current photo label + EXIF drawer ───────────────────────── */
+.vlm-current-photo {
+    display: none;
     align-items: center;
-    gap: 9px;
-    padding: 8px 12px;
+    gap: 6px;
+    padding: 3px 8px 3px 12px;
+    font-size: 10.5px;
+    color: #546e7a;
+    background: rgba(0,0,0,0.18);
     border-bottom: 1px solid rgba(255,255,255,0.05);
     flex-shrink: 0;
-    min-height: 54px;
+    min-width: 0;
 }
-.vlm-image-strip.vlm-no-image {
-    color: #37474f;
-    font-size: 11.5px;
-    font-style: italic;
-}
-.vlm-thumb {
-    width: 58px;
-    height: 42px;
-    object-fit: cover;
-    border-radius: 4px;
-    border: 1px solid rgba(255,255,255,0.1);
-    flex-shrink: 0;
-    background: #111;
-}
-.vlm-image-meta {
+.vlm-current-photo.vlm-has-photo { display: flex; }
+.vlm-photo-name {
     flex: 1;
     overflow: hidden;
-}
-.vlm-image-name {
-    color: #e0f7fa;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
-.vlm-image-hint {
+.vlm-exif-toggle {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
     color: #546e7a;
-    font-size: 10.5px;
-    margin-top: 2px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 9.5px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
 }
+.vlm-exif-toggle:hover { color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
+.vlm-exif-toggle.vlm-exif-open { color: #4fc3f7; border-color: rgba(79,195,247,0.35); }
+.vlm-exif-bypass-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #546e7a;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 9.5px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.vlm-direct-links-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #546e7a;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 9.5px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.vlm-direct-links-btn:hover { color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
+.vlm-direct-links-btn.vlm-dl-on {
+    color: #4fc3f7;
+    border-color: rgba(79,195,247,0.35);
+    background: rgba(79,195,247,0.08);
+}
+.vlm-map-embeds {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+.vlm-map-embeds iframe {
+    width: 100%;
+    border: none;
+    border-radius: 6px;
+    display: block;
+}
+.vlm-map-embeds .vlm-embed-label {
+    font-size: 9.5px;
+    color: #546e7a;
+    margin-bottom: 2px;
+}
+.vlm-exif-bypass-btn:hover { color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
+.vlm-exif-bypass-btn.vlm-bypass-on {
+    color: #4fc3f7;
+    border-color: rgba(79,195,247,0.35);
+    background: rgba(79,195,247,0.08);
+}
+.vlm-exif-drawer {
+    display: none;
+    padding: 6px 12px 8px;
+    background: rgba(0,0,0,0.22);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    flex-shrink: 0;
+}
+.vlm-exif-drawer.vlm-exif-open { display: block; }
+.vlm-exif-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+}
+.vlm-exif-table td {
+    padding: 1px 0;
+    vertical-align: top;
+    line-height: 1.5;
+}
+.vlm-exif-table td:first-child {
+    color: #455a64;
+    width: 44%;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+.vlm-exif-table td:last-child { color: #90a4ae; }
 
 /* ── Messages ────────────────────────────────────────────────── */
 .vlm-messages {
@@ -398,7 +577,7 @@ function injectCSS() {
 }
 .vlm-empty {
     color: #37474f;
-    font-size: 12px;
+    font-size: 1em;
     text-align: center;
     padding: 16px 0;
     font-style: italic;
@@ -406,7 +585,7 @@ function injectCSS() {
 }
 .vlm-msg {
     max-width: 93%;
-    font-size: 12px;
+    font-size: 1em;
     line-height: 1.55;
     padding: 6px 10px;
     border-radius: 8px;
@@ -469,7 +648,7 @@ function injectCSS() {
     border-radius: 7px;
     padding: 5px 11px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 1em;
     font-family: inherit;
     white-space: nowrap;
     transition: background 0.18s;
@@ -503,6 +682,45 @@ function injectCSS() {
         width: 52px;
         height: 52px;
     }
+}
+
+/* ── Download progress track (inside stage 2) ────────────────── */
+.vlm-dl-track {
+    display: none;
+    margin-top: 5px;
+}
+.vlm-dl-track.vlm-dl-active { display: block; }
+.vlm-dl-bar-bg {
+    position: relative;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.vlm-dl-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #0288d1, #4fc3f7);
+    border-radius: 3px;
+    transition: width 0.35s ease;
+}
+.vlm-dl-totals {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 3px;
+    font-size: 10px;
+    color: #546e7a;
+}
+.vlm-dl-totals .vlm-dl-mb  { color: #78909c; }
+.vlm-dl-totals .vlm-dl-pct { color: #4fc3f7; font-weight: 500; }
+.vlm-dl-file {
+    margin-top: 2px;
+    font-size: 9.5px;
+    color: #37474f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ── Loading Stage Panel ──────────────────────────────────────── */
@@ -560,25 +778,16 @@ function injectCSS() {
     font-style: italic;
 }
 
-/* ── Fullscreen panel ─────────────────────────────────────────── */
+/* ── Expanded (full-width bottom bar) ─────────────────────────── */
 .vlm-panel.vlm-fullscreen {
-    top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
     width: 100% !important;
-    height: 100vh;
-    max-height: 100vh !important;
+    max-height: 45vh !important;
     border-radius: 0 !important;
 }
 .vlm-panel.vlm-fullscreen.vlm-open { transform: none !important; }
-@media (max-width: 600px) {
-    .vlm-panel.vlm-fullscreen {
-        max-height: 100vh !important;
-        padding-bottom: 0 !important;
-        border-radius: 0 !important;
-    }
-}
 
 /* ── Per-message generation stats bar ────────────────────────── */
 .vlm-msg-text { display: block; white-space: pre-wrap; word-break: break-word; }
@@ -630,6 +839,31 @@ function injectCSS() {
     document.head.appendChild(style);
 }
 
+// ─── System Prompts ───────────────────────────────────────────────────────────
+
+const _GALLERY_SYSTEM_PROMPT =
+    'You are an AI assistant embedded in a photography portfolio. ' +
+    'A photograph is provided with every message. ' +
+    'Answer questions directly and precisely — lead with the specific answer, then add supporting detail only if it adds value. ' +
+    'Answer any question relating to the image: subjects, scene, composition, lighting, color, mood, technique, and storytelling. ' +
+    'IMPORTANT — camera settings rule: do NOT mention, guess, or estimate any technical camera parameter (camera make/model, lens, focal length, aperture, shutter speed, ISO, exposure) ' +
+    'unless the user explicitly asks about camera settings or gear. ' +
+    'You cannot read EXIF from pixels — any guess will be wrong. If the user asks about settings, a separate system will answer from verified EXIF data. ' +
+    'Only refuse if the request has absolutely no connection to the image (e.g. unrelated coding, math). ' +
+    'In that case respond only with: "I can only answer questions about this photograph." ' +
+    'Use markdown formatting (bold, lists, headings) to structure responses clearly.';
+
+const _ABOUT_SYSTEM_PROMPT =
+    'You are TheDoInspector, an AI assistant for the photography portfolio of Timothy Do (TheDoShoots). ' +
+    'You help visitors learn about the photographer and his work. ' +
+    'Timothy Do is an astrophotographer and landscape photographer based in California. ' +
+    'He graduated with a Master\'s degree in Electrical and Computer Engineering from UCLA, now works in Computer Vision and Image Processing, and is an Eagle Scout with a photography merit badge. ' +
+    'Primary camera: Sony Alpha A7 IV with Sony FE 28-70mm; secondary: Canon EOS Rebel T5 with Canon EF 75-300mm; mobile: Samsung S24 Ultra and Pixel 9 Pro. ' +
+    'He is known for astrophotography (Milky Way, Orion Nebula) and National Parks landscape photography. ' +
+    'When shown an image, describe what you see and connect it to the photographer\'s story where relevant. ' +
+    'Answer any question about Timothy\'s background, gear, specialties, philosophy, or the images shown. ' +
+    'Use markdown formatting (bold, lists) to structure your responses clearly.';
+
 // ─── GalleryVLMOverlay Class ─────────────────────────────────────────────────
 
 let _overlayCounter = 0;
@@ -645,7 +879,8 @@ class GalleryVLMOverlay {
         this._id               = `vlm-${++_overlayCounter}`;
         this._imageSrc         = null;
         this._imageName        = null;
-        this._imageExif        = null;   // EXIF string for the current image, or null
+        this._imageExif        = null;   // EXIF text string for the current image, or null
+        this._imageGps         = null;   // { lat, lon } signed decimals, or null
         this._imageExifPromise = null;   // resolves when EXIF extraction finishes
         this._history          = [];    // [{role, content}, ...]
         this._streaming        = false;
@@ -656,23 +891,12 @@ class GalleryVLMOverlay {
         this._iframeObservers  = [];    // per-gallery observers (reset on each switch)
         this._pendingThumbSrc  = null;
         this._pendingThumbName = null;
-
-        // Apply photography-focused system prompt for API / Ollama modes
-        manager.setSystemPrompt(
-            'You are an AI assistant embedded in a photography portfolio. ' +
-            'A photograph is provided with every message. ' +
-            'Answer questions directly and precisely — lead with the specific answer to what was asked, then add supporting detail only if it adds value. ' +
-            'Do not pad responses with generic observations unrelated to the question. ' +
-            'Answer any question that relates to the image, including identifying subjects (animals, plants, people, objects, landmarks), ' +
-            'describing what is happening, explaining context visible in the scene, ' +
-            'and photographic analysis such as composition, lighting, color, technique, and mood. ' +
-            'When image metadata is provided in the format [Image metadata — ...], treat it as ground truth for all technical details (camera, lens, focal length, aperture, shutter speed, ISO, etc.). ' +
-            'When answering any question about camera settings or how a photo was taken, always state the camera make and model exactly as it appears in the metadata. ' +
-            'Never guess, infer, or visually estimate the camera or any technical setting — if metadata is absent, say the information is not available. ' +
-            'Only refuse if the request has no connection to the image whatsoever (e.g. unrelated coding help, math problems, general knowledge unrelated to the scene). ' +
-            'In that case respond only with: "I can only answer questions about this photograph." ' +
-            'Use markdown formatting (bold, lists, headings) to structure your responses clearly.'
-        );
+        this._pageContext       = null;  // about-page bio injected into first local-model message
+        this._dlMaxPct         = 0;     // monotonic download progress (never decreases)
+        this._exifBypass       = localStorage.getItem('vlm-exif-bypass') !== 'off'; // default on
+        this._directLinks      = localStorage.getItem('vlm-direct-links') === 'on'; // default off (embeds)
+        // Default system prompt for API / Ollama modes (gallery context)
+        manager.setSystemPrompt(_GALLERY_SYSTEM_PROMPT);
 
         this._buildUI();
         this._bindManagerEvents();
@@ -699,11 +923,22 @@ class GalleryVLMOverlay {
         this._panel.setAttribute('role', 'dialog');
         this._panel.setAttribute('aria-label', 'TheDoInspector');
         this._panel.innerHTML = `
+<div class="vlm-resize-handle" aria-hidden="true"></div>
 <div class="vlm-header">
     <span class="vlm-header-title">TheDoInspector</span>
     <span class="vlm-status-dot vlm-dot-loading" id="${this._id}-dot"></span>
     <span class="vlm-status-label"  id="${this._id}-status">Loading model…</span>
     <button class="vlm-new-btn"   id="${this._id}-new"   title="Start new conversation">New</button>
+    <div class="vlm-font-btns" title="Adjust font size">
+        <button class="vlm-font-btn vlm-font-btn-sm" id="${this._id}-font-dn" aria-label="Decrease font size">A−</button>
+        <button class="vlm-font-btn vlm-font-btn-lg" id="${this._id}-font-up" aria-label="Increase font size">A+</button>
+    </div>
+    <button class="vlm-exif-bypass-btn vlm-bypass-on" id="${this._id}-bypass"
+            title="EXIF auto-answer ON — camera/settings questions answered directly from metadata. Click to let the VLM answer instead."
+            aria-label="Toggle EXIF auto-answer">EXIF auto</button>
+    <button class="vlm-direct-links-btn${this._directLinks ? ' vlm-dl-on' : ''}" id="${this._id}-dlbtn"
+            title="${this._directLinks ? 'Direct links ON — maps shown as links. Click to show as embeds.' : 'Direct links OFF — maps shown as embeds. Click to use plain links.'}"
+            aria-label="Toggle map embeds">Direct links</button>
     <button class="vlm-gear-btn"  id="${this._id}-gear"  title="VLM Settings" aria-label="Open VLM settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="vlm-fs-btn"    id="${this._id}-fs"    title="Expand to full screen" aria-label="Toggle fullscreen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
     <button class="vlm-close-btn" id="${this._id}-close" title="Close panel" aria-label="Close">×</button>
@@ -711,6 +946,11 @@ class GalleryVLMOverlay {
 <div class="vlm-progress-bar">
     <div class="vlm-progress-fill" id="${this._id}-prog"></div>
 </div>
+<div class="vlm-current-photo" id="${this._id}-imgname">
+    <span class="vlm-photo-name" id="${this._id}-photoname"></span>
+    <button class="vlm-exif-toggle" id="${this._id}-exif-toggle" style="display:none">EXIF</button>
+</div>
+<div class="vlm-exif-drawer" id="${this._id}-exif-drawer"></div>
 
 <!-- Loading stage panel — visible until model is ready -->
 <div class="vlm-loading-section" id="${this._id}-loading">
@@ -726,6 +966,16 @@ class GalleryVLMOverlay {
         <div class="vlm-stage-body">
             <div class="vlm-stage-name" id="${this._id}-s2n">Model weights</div>
             <div class="vlm-stage-detail" id="${this._id}-s2d">Waiting…</div>
+            <div class="vlm-dl-track" id="${this._id}-dltrack">
+                <div class="vlm-dl-bar-bg">
+                    <div class="vlm-dl-bar-fill" id="${this._id}-dlbar"></div>
+                </div>
+                <div class="vlm-dl-totals">
+                    <span class="vlm-dl-mb"  id="${this._id}-dlmb"></span>
+                    <span class="vlm-dl-pct" id="${this._id}-dlpct"></span>
+                </div>
+                <div class="vlm-dl-file" id="${this._id}-dlfile"></div>
+            </div>
         </div>
     </div>
     <div class="vlm-stage-row" id="${this._id}-s3">
@@ -738,9 +988,6 @@ class GalleryVLMOverlay {
     <div class="vlm-stage-hint">First load downloads ~300 MB. Runtime ops compile in the background — first query may take a moment longer.</div>
 </div>
 
-<div class="vlm-image-strip vlm-no-image" id="${this._id}-strip">
-    Select a photo in the gallery to begin.
-</div>
 <div class="vlm-messages" id="${this._id}-msgs">
     <div class="vlm-empty">Open a photo, then ask anything about it.</div>
 </div>
@@ -753,10 +1000,42 @@ class GalleryVLMOverlay {
         document.body.appendChild(this._panel);
 
         // ── Panel event wiring ─────────────────────────────────────────────
-        this._q('-close').addEventListener('click', () => this._closePanel());
-        this._q('-new').addEventListener('click',   () => this._newChat());
-        this._q('-fs').addEventListener('click',    () => this._toggleFullscreen());
-        this._q('-gear').addEventListener('click',  () => this._openSettings());
+        this._q('-close').addEventListener('click',    () => this._closePanel());
+        this._q('-new').addEventListener('click',      () => this._newChat());
+        this._q('-fs').addEventListener('click',       () => this._toggleFullscreen());
+        this._q('-gear').addEventListener('click',     () => this._openSettings());
+        this._q('-font-dn').addEventListener('click',  () => this._changeFontSize(-1));
+        this._q('-font-up').addEventListener('click',  () => this._changeFontSize(+1));
+        this._q('-exif-toggle').addEventListener('click', () => {
+            const btn    = this._q('-exif-toggle');
+            const drawer = this._q('-exif-drawer');
+            const open   = drawer.classList.toggle('vlm-exif-open');
+            btn.classList.toggle('vlm-exif-open', open);
+        });
+        this._q('-bypass').addEventListener('click', () => {
+            this._exifBypass = !this._exifBypass;
+            localStorage.setItem('vlm-exif-bypass', this._exifBypass ? 'on' : 'off');
+            const btn = this._q('-bypass');
+            btn.classList.toggle('vlm-bypass-on', this._exifBypass);
+            btn.title = this._exifBypass
+                ? 'EXIF auto-answer ON — camera/settings questions answered directly from metadata. Click to let the VLM answer instead.'
+                : 'EXIF auto-answer OFF — camera/settings questions answered by the VLM using injected metadata. Click to restore direct answers.';
+        });
+        this._q('-dlbtn').addEventListener('click', () => {
+            this._directLinks = !this._directLinks;
+            localStorage.setItem('vlm-direct-links', this._directLinks ? 'on' : 'off');
+            const btn = this._q('-dlbtn');
+            btn.classList.toggle('vlm-dl-on', this._directLinks);
+            btn.title = this._directLinks
+                ? 'Direct links ON — maps shown as links. Click to show as embeds.'
+                : 'Direct links OFF — maps shown as embeds. Click to use plain links.';
+        });
+
+        // Restore saved font size
+        const saved = localStorage.getItem('vlm-font-sz');
+        if (saved) this._panel.style.setProperty('--vlm-font-sz', saved);
+
+        this._initResize();
 
         const sendBtn = this._q('-send');
         const input   = this._q('-input');
@@ -809,10 +1088,10 @@ class GalleryVLMOverlay {
         const isFs = this._panel.classList.toggle('vlm-fullscreen');
         const btn  = this._q('-fs');
         if (isFs) {
-            btn.title = 'Exit fullscreen';
+            btn.title = 'Collapse panel';
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
         } else {
-            btn.title = 'Expand to full screen';
+            btn.title = 'Expand to full width';
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
         }
     }
@@ -831,6 +1110,94 @@ class GalleryVLMOverlay {
                 ?? document.querySelector('[id^="vlm-"]');
             vlmSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 120);
+    }
+
+    /**
+     * Step font size up (+1) or down (−1) through a fixed scale.
+     * Persists the choice to localStorage so it survives page reloads.
+     */
+    _changeFontSize(dir) {
+        const sizes = [10, 11, 12, 13, 14, 15, 16, 18];
+        const cur = parseFloat(
+            getComputedStyle(this._panel).getPropertyValue('--vlm-font-sz') || '13'
+        );
+        const idx  = sizes.reduce((best, s, i) =>
+            Math.abs(s - cur) < Math.abs(sizes[best] - cur) ? i : best, 0);
+        const next = sizes[Math.max(0, Math.min(sizes.length - 1, idx + dir))];
+        const val  = `${next}px`;
+        this._panel.style.setProperty('--vlm-font-sz', val);
+        localStorage.setItem('vlm-font-sz', val);
+    }
+
+    /**
+     * Wire up the top-left resize handle so the user can drag the panel to any
+     * size.  Dragging leftward / upward expands; rightward / downward shrinks.
+     * Disabled while the panel is in fullscreen mode.
+     */
+    _initResize() {
+        const handle = this._panel.querySelector('.vlm-resize-handle');
+        if (!handle) return;
+
+        let startX, startY, startW, startH;
+        let dragging    = false;
+        let cursorStyle = null;
+
+        const startDrag = (clientX, clientY) => {
+            startX   = clientX; startY = clientY;
+            startW   = this._panel.offsetWidth;
+            startH   = this._panel.offsetHeight;
+            dragging = true;
+            this._panel.classList.add('vlm-resizing');
+            // Inject a global style so the cursor stays nw-resize even when the
+            // pointer outruns the handle, and selection is suppressed everywhere.
+            cursorStyle = document.createElement('style');
+            cursorStyle.textContent = '* { cursor: nw-resize !important; user-select: none !important; }';
+            document.head.appendChild(cursorStyle);
+        };
+
+        const onMove = (clientX, clientY) => {
+            if (!dragging) return;
+            const dx = startX - clientX;
+            const dy = startY - clientY;
+            const w  = Math.max(280, Math.min(window.innerWidth  - 40, startW + dx));
+            const h  = Math.max(300, Math.min(window.innerHeight - 40, startH + dy));
+            this._panel.style.width     = `${w}px`;
+            this._panel.style.height    = `${h}px`;
+            this._panel.style.maxHeight = `${h}px`;
+        };
+
+        const endDrag = (e) => {
+            if (!dragging) return;
+            dragging = false;
+            if (e?.pointerId != null) {
+                try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+            }
+            this._panel.classList.remove('vlm-resizing');
+            if (cursorStyle) { cursorStyle.remove(); cursorStyle = null; }
+        };
+
+        // ── Pointer Events (mouse + touch unified) ──────────────────────────
+        // setPointerCapture keeps all pointer events routed to the handle even
+        // when the cursor moves far outside it — this is what makes pointerup
+        // fire reliably instead of getting "stuck".
+        handle.addEventListener('pointerdown', (e) => {
+            if (this._panel.classList.contains('vlm-fullscreen')) return;
+            if (e.button != null && e.button !== 0) return; // left / primary only
+            e.preventDefault();
+            handle.setPointerCapture(e.pointerId);
+            startDrag(e.clientX, e.clientY);
+        });
+
+        handle.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            onMove(e.clientX, e.clientY);
+        });
+
+        handle.addEventListener('pointerup',     (e) => endDrag(e));
+        handle.addEventListener('pointercancel', (e) => endDrag(e));
+
+        // Safety net: end drag when window loses focus (e.g. Alt-Tab mid-drag)
+        window.addEventListener('blur', () => endDrag());
     }
 
     _newChat() {
@@ -880,6 +1247,26 @@ class GalleryVLMOverlay {
             container.appendChild(this._btn);
             container.appendChild(this._panel);
         }
+
+        // Fullscreen fix: when the gallery inside the iframe requests browser fullscreen,
+        // the browser makes the <iframe> element the top-layer fullscreen element and hides
+        // everything else on the parent page — including the VLM overlay.
+        // Re-hoist to document.documentElement so the parent page (and VLM overlay) stays
+        // in the top layer.  Works for both the gallery's "Go Fullscreen" button and the
+        // viewer's per-image fullscreen toggle.
+        const fsHandler = () => {
+            if (document.fullscreenElement === iframeEl) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        };
+        document.addEventListener('fullscreenchange', fsHandler);
+        document.addEventListener('webkitfullscreenchange', fsHandler);
+        this._observers.push({
+            disconnect: () => {
+                document.removeEventListener('fullscreenchange', fsHandler);
+                document.removeEventListener('webkitfullscreenchange', fsHandler);
+            },
+        });
 
         // Primary trigger: iframe load event (desktop + most Android)
         const loadHandler = () => this._onIframeLoad();
@@ -967,8 +1354,19 @@ class GalleryVLMOverlay {
     /**
      * Attach MutationObservers and delegated click listeners to a gallery document.
      * Safe to call each time a new gallery loads — old observers are already cleared.
+     * Routes to _attachAboutObservers when the about page is detected.
      */
     _attachIframeObservers(doc) {
+        // ── About page: profile + card images, no gallery viewer ─────────────
+        if (doc.querySelector('.info-grid, .profile-img')) {
+            this._attachAboutObservers(doc);
+            return;
+        }
+
+        // ── Gallery page: restore gallery context ─────────────────────────────
+        this._pageContext = null;
+        this.manager.setSystemPrompt(_GALLERY_SYSTEM_PROMPT);
+
         const viewer  = doc.querySelector('#imageViewer');
         const imgCont = doc.querySelector('#full-image-container');
 
@@ -1002,6 +1400,18 @@ class GalleryVLMOverlay {
         if (imgCont) obs.observe(imgCont, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
         this._iframeObservers.push(obs);
 
+        // Strategy 1b: watch #thumbnail-selector for active-class changes.
+        // In 3D-preview mode the fullImageContainer is empty; the active thumbnail
+        // is the only reliable signal that the user switched to a different photo.
+        // This catches the case where the active class changes but fullImageContainer
+        // doesn't change (e.g. after exiting magnify mode and clicking a new thumb).
+        const thumbSel = doc.querySelector('#thumbnail-selector');
+        if (thumbSel) {
+            const thumbObs = new MutationObserver(() => this._tryExtractFromViewer());
+            thumbObs.observe(thumbSel, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            this._iframeObservers.push(thumbObs);
+        }
+
         // Strategy 2: capture-phase click delegation on #gallery-2d
         const grid = doc.querySelector('#gallery-2d');
         if (grid) {
@@ -1019,6 +1429,64 @@ class GalleryVLMOverlay {
         }
     }
 
+    /**
+     * About page: extract images from the profile photo, info-grid cards,
+     * and the lightbox.  Sets photographer biography as context for both
+     * local-model prompts (_pageContext) and API / Ollama system prompt.
+     */
+    _attachAboutObservers(doc) {
+        const base = this._iframeEl?.src || location.href;
+
+        // Set photographer context injected into the first local-model message
+        this._pageContext =
+            'About the photographer: Timothy Do (TheDoShoots) — astrophotographer and ' +
+            'landscape photographer. UCLA ECE Master\'s graduate, works in Computer Vision ' +
+            'and Image Processing. Eagle Scout with photography merit badge. Primary camera: ' +
+            'Sony Alpha A7 IV (Sony FE 28-70mm). Known for Milky Way, Orion Nebula, and ' +
+            'National Parks photography.';
+
+        // Override system prompt for API / Ollama modes
+        this.manager.setSystemPrompt(_ABOUT_SYSTEM_PROMPT);
+
+        // Default context: profile headshot
+        const profileImg = doc.querySelector('.profile-img');
+        if (profileImg?.src && !profileImg.src.startsWith('data:')) {
+            this._setImage(new URL(profileImg.src, base).href, 'Timothy Do');
+        }
+
+        // Card click → switch context to that card's photo
+        const grid = doc.querySelector('.info-grid');
+        if (grid) {
+            const clickHandler = (e) => {
+                const card = e.target.closest('.card');
+                if (!card) return;
+                const img    = card.querySelector('.card-img');
+                const rawSrc = img?.dataset.src ||
+                               (img?.src && !img.src.startsWith('data:') ? img.src : null);
+                if (!rawSrc) return;
+                const name = img?.alt || 'photo';
+                this._setImage(new URL(rawSrc, base).href, name);
+            };
+            grid.addEventListener('click', clickHandler, true);
+            this._iframeObservers.push({ disconnect: () => grid.removeEventListener('click', clickHandler, true) });
+        }
+
+        // Lightbox open → switch to the full-resolution lightbox image
+        const lightbox = doc.getElementById('lightbox');
+        if (lightbox) {
+            const lbObs = new MutationObserver(() => {
+                if (!lightbox.classList.contains('active')) return;
+                const img     = doc.getElementById('lightbox-img');
+                const caption = doc.getElementById('lightbox-caption')?.textContent?.trim();
+                if (img?.src && !img.src.startsWith('data:image/gif')) {
+                    this._setImage(new URL(img.src, base).href, caption || 'photo');
+                }
+            });
+            lbObs.observe(lightbox, { attributes: true, attributeFilter: ['class'] });
+            this._iframeObservers.push(lbObs);
+        }
+    }
+
     _detachIframeObservers() {
         this._iframeObservers.forEach(o => o.disconnect());
         this._iframeObservers  = [];
@@ -1027,16 +1495,17 @@ class GalleryVLMOverlay {
         this._pendingThumbName = null;
     }
 
-    /** Reset the image strip and hide the overlay when the gallery is closed. */
+    /** Reset the image state and hide the overlay when the gallery is closed. */
     _clearImage() {
         if (this._imageSrc) this._newChat();
         this._imageSrc  = null;
         this._imageName = null;
-        const strip = this._q('-strip');
-        if (strip) {
-            strip.className = 'vlm-image-strip vlm-no-image';
-            strip.innerHTML = 'Select a photo in the gallery to begin.';
-        }
+        const nameEl  = this._q('-imgname');
+        const exifBtn = this._q('-exif-toggle');
+        const drawer  = this._q('-exif-drawer');
+        if (nameEl)  nameEl.classList.remove('vlm-has-photo');
+        if (exifBtn) { exifBtn.style.display = 'none'; exifBtn.classList.remove('vlm-exif-open'); }
+        if (drawer)  { drawer.innerHTML = ''; drawer.classList.remove('vlm-exif-open'); }
         this._refreshSendBtn();
         this._closePanel();
         this._btn.style.display = 'none';  // gallery closed — hide until next gallery opens
@@ -1047,10 +1516,14 @@ class GalleryVLMOverlay {
      * Called automatically by observers; also exposed for manual calls.
      */
     _tryExtractFromViewer() {
-        // Priority 1 — full-res img inside the viewer
+        // Priority 1 — full-res img inside the viewer.
+        // Skip if the container is explicitly hidden (e.g. after exiting magnify mode in 3D —
+        // the gallery sets display:none but leaves the old <img> in the DOM).
+        // Prefer img.active so a fading-out old image never wins over the incoming one.
         const imgCont = this._scopedEl('#full-image-container');
-        if (imgCont) {
-            const img = imgCont.querySelector('img[src]:not([src=""])');
+        if (imgCont && imgCont.style.display !== 'none') {
+            const img = imgCont.querySelector('img.active[src]:not([src=""])') ??
+                        imgCont.querySelector('img[src]:not([src=""])');
             if (img?.src && !img.src.startsWith('data:,')) {
                 this._setImage(new URL(img.src, location.href).href,
                                img.alt || img.src.split('/').pop().replace(/\.[^.]+$/, ''));
@@ -1058,10 +1531,12 @@ class GalleryVLMOverlay {
             }
         }
 
-        // Priority 2 — active thumbnail strip inside the viewer
+        // Priority 2 — active thumbnail in #thumbnail-selector.
+        // Covers 3D-preview mode (fullImageContainer is empty/hidden; the active
+        // thumbnail class is the canonical source of truth for which image is shown).
         const strip = this._scopedEl('#thumbnail-selector');
         if (strip) {
-            const active = strip.querySelector('.thumb.active img, img.active, img[aria-selected="true"]');
+            const active = strip.querySelector('img.active, .thumb.active img, img[aria-selected="true"]');
             if (active?.src) {
                 const full = active.src.replace('/thumbs/', '/fulls/');
                 this._setImage(new URL(full, location.href).href,
@@ -1079,8 +1554,11 @@ class GalleryVLMOverlay {
         }
 
         // Priority 4 — canvas snapshot scoped to this wrapper
-        // (preserveDrawingBuffer is false on the gallery renderer so this will
-        // usually return a blank/black frame — documented limitation)
+        // Only attempt when the gallery has an active selection; without this guard
+        // the WebGL initialisation frame (captured before any image is shown) would
+        // be sent as a data-URI that has no entry in metadata.json.
+        const hasActiveThumb = strip?.querySelector('img.active, .thumb.active img, img[aria-selected="true"]');
+        if (!hasActiveThumb) return;
         const canvas = this.wrapper.querySelector('canvas');
         if (canvas) {
             try {
@@ -1104,29 +1582,66 @@ class GalleryVLMOverlay {
     _setImage(src, name) {
         if (src === this._imageSrc) return;
 
-        // Image changed — clear prior conversation so context stays coherent
-        if (this._imageSrc) this._newChat();
+        // Always reset conversation when the image changes, even when switching
+        // from a null state — ensures stale streaming/history state is never
+        // carried into a fresh image context.
+        this._newChat();
 
         this._imageSrc  = src;
         this._imageName = name ?? 'photo';
         this._imageExif        = null;
+        this._imageGps         = null;
         this._imageExifPromise = null;
 
+        // For API/Ollama: reset system prompt with filename now so any
+        // in-progress query sees the right image context immediately.
+        if (this.manager._mode === 'api') {
+            this.manager.setSystemPrompt(
+                _GALLERY_SYSTEM_PROMPT + `\n\n[Current photo]\nFile: ${this._imageName}`
+            );
+        }
+
         // Kick off EXIF extraction; store the promise so _sendMessage can await it
-        this._imageExifPromise = _extractExif(src).then(exif => {
-            if (this._imageSrc === src) this._imageExif = exif;
+        this._imageExifPromise = _extractExif(src).then(result => {
+            if (this._imageSrc !== src) return;
+            this._imageExif = result?.text ?? null;
+            this._imageGps  = result?.gps  ?? null;
         });
 
-        const strip = this._q('-strip');
-        strip.className = 'vlm-image-strip';
-        strip.innerHTML = `
-<img class="vlm-thumb" src="${src}" alt=""
-     onerror="this.replaceWith(Object.assign(document.createElement('span'),
-                {className:'vlm-image-hint',textContent:'Preview unavailable'}))">
-<div class="vlm-image-meta">
-    <div class="vlm-image-name">${this._imageName}</div>
-    <div class="vlm-image-hint">Ready — ask anything about this photo</div>
-</div>`;
+        // Show image name in the label bar; populate EXIF drawer once extraction finishes
+        const nameEl   = this._q('-imgname');
+        const nameSpan = this._q('-photoname');
+        const exifBtn  = this._q('-exif-toggle');
+        const drawer   = this._q('-exif-drawer');
+        if (nameEl) nameEl.classList.add('vlm-has-photo');
+        if (nameSpan) nameSpan.textContent = this._imageName;
+        if (exifBtn) exifBtn.style.display = 'none';
+        if (drawer)  { drawer.innerHTML = ''; drawer.classList.remove('vlm-exif-open'); }
+        if (exifBtn) exifBtn.classList.remove('vlm-exif-open');
+
+        this._imageExifPromise.then(() => {
+            // Guard: image may have changed while EXIF was loading
+            if (this._imageSrc !== src) return;
+            if (!this._imageExif || !exifBtn || !drawer) return;
+
+            // Build a two-column table from the newline-delimited EXIF string
+            const rows = this._imageExif.split('\n').map(line => {
+                const sep = line.indexOf(': ');
+                if (sep === -1) return `<tr><td colspan="2">${line}</td></tr>`;
+                return `<tr><td>${line.slice(0, sep)}</td><td>${line.slice(sep + 2)}</td></tr>`;
+            }).join('');
+            drawer.innerHTML = `<table class="vlm-exif-table">${rows}</table>`;
+            exifBtn.style.display = '';
+
+            // For API/Ollama: promote EXIF into the system prompt so the model
+            // treats these values as authoritative ground truth — not a visual guess.
+            if (this.manager._mode === 'api') {
+                this.manager.setSystemPrompt(
+                    _GALLERY_SYSTEM_PROMPT +
+                    `\n\n[Current photo metadata]\nFile: ${name}\n${this._imageExif}`
+                );
+            }
+        });
 
         this._refreshSendBtn();
     }
@@ -1194,6 +1709,65 @@ class GalleryVLMOverlay {
         });
     }
 
+    /**
+     * Returns true if the prompt is specifically asking about camera/EXIF metadata.
+     * Always intercepts these questions — _answerFromExif handles the no-EXIF case
+     * by explaining the data is unavailable, rather than letting the model refuse.
+     */
+    _isMetadataQuestion(prompt) {
+        return /\b(what\s+(camera|lens|iso|aperture|shutter|focal|gear|settings|exif|specs)|which\s+(camera|lens)|what\s+(was|were|is|are)\s+the\s+(camera|lens|iso|aperture|shutter|focal|settings|specs|exif)|camera\s+(model|make|brand|used|settings?)|lens\s+(used|model)|iso\s+(setting|value|used|speed)?|shutter\s+speed|exposure\s+time|focal\s+length|f[\/-]?stop|f\/[\d.]+|camera\s+settings?|photo\s+settings?|shot\s+settings?|exif\s+data|metadata|what\s+settings?|camera\s+specs?|taken\s+with\s+what|shot\s+with\s+what|what\s+gear|where\s+(was|is)\s+(this\s+)?(photo|image|picture|shot|taken)|where\s+was\s+this|gps\s+(coordinates?|data|location)?|coordinates?|what\s+(location|place|city|country|state)|location\s+of\s+(this\s+)?(photo|image|picture)|shot\s+location|photo\s+location|taken\s+where|where\s+taken)\b/i.test(prompt);
+    }
+
+    /**
+     * Answer a metadata question directly from EXIF — no VLM call.
+     * If EXIF is unavailable says so clearly rather than letting the model guess.
+     */
+    _answerFromExif(prompt) {
+        let answer;
+        if (this._imageExif) {
+            const lines = this._imageExif.split('\n');
+            const formatted = lines.map(l => {
+                const sep = l.indexOf(': ');
+                if (sep === -1) return `• **${l}**`;
+                // In direct-links mode, append Google Maps + Light Pollution links to the Location line
+                if (this._directLinks && l.startsWith('Location:') && this._imageGps) {
+                    const { lat, lon } = this._imageGps;
+                    return `• **${l.slice(0, sep)}:** ${l.slice(sep + 2)} ` +
+                        `([Google Maps](https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)}) · ` +
+                        `[Light Pollution](https://timothydo.me/astronomy/lightpollution?lat=${lat.toFixed(6)}&lon=${lon.toFixed(6)}))`;
+                }
+                return `• **${l.slice(0, sep)}:** ${l.slice(sep + 2)}`;
+            }).join('\n');
+            answer = `**EXIF Metadata**\n\n${formatted}`;
+        } else {
+            answer = 'No EXIF metadata was found for this image — the file may not contain embedded camera data.';
+        }
+        this._history.push({ role: 'user',      content: prompt });
+        this._history.push({ role: 'assistant', content: answer });
+        const el = this._appendMsg('assistant', answer);
+
+        // Render markdown text (_loadMarked already awaited by _sendMessage before this call)
+        const textEl = Object.assign(document.createElement('span'), { className: 'vlm-msg-text vlm-md' });
+        textEl.innerHTML = _markedReady ? _renderMarkdown(answer) : answer;
+        el.innerHTML = '';
+        el.appendChild(textEl);
+
+        // Embed mode: inject iframes for Google Maps and Light Pollution when GPS is available
+        if (!this._directLinks && this._imageGps) {
+            const { lat, lon } = this._imageGps;
+            const embedDiv = document.createElement('div');
+            embedDiv.className = 'vlm-map-embeds';
+            embedDiv.innerHTML =
+                `<div class="vlm-embed-label">Google Maps</div>` +
+                `<iframe src="https://maps.google.com/maps?q=${lat.toFixed(6)},${lon.toFixed(6)}&z=13&output=embed" height="200" loading="lazy" referrerpolicy="no-referrer"></iframe>` +
+                `<div class="vlm-embed-label">Light Pollution</div>` +
+                `<iframe src="https://timothydo.me/astronomy/lightpollution?lat=${lat.toFixed(6)}&lon=${lon.toFixed(6)}" height="220" loading="lazy" referrerpolicy="no-referrer"></iframe>`;
+            el.appendChild(embedDiv);
+        }
+
+        this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
+    }
+
     async _sendMessage() {
         const input  = this._q('-input');
         const prompt = input.value.trim();
@@ -1206,6 +1780,19 @@ class GalleryVLMOverlay {
         this._refreshSendBtn();
 
         this._appendMsg('user', prompt);
+
+        // Short-circuit: answer camera/EXIF questions directly from metadata.
+        // Only fires when EXIF auto-answer is enabled; otherwise the VLM answers
+        // using the EXIF data already injected into the prompt context.
+        await this._imageExifPromise;
+        if (this._exifBypass && this._isMetadataQuestion(prompt)) {
+            await _loadMarked();
+            this._answerFromExif(prompt);
+            this._streaming = false;
+            _vlmIsRunning   = false;
+            this._refreshSendBtn();
+            return;
+        }
 
         // Create assistant bubble with a separate text node and a live stats bar
         const assistantEl = this._appendMsg('assistant', '', true);
@@ -1225,11 +1812,20 @@ class GalleryVLMOverlay {
         const imageSrc = await this._downsample(this._imageSrc);
         let fullText   = '';
 
-        // Append EXIF metadata as context so the model can reference camera settings
-        const exifContext = this._imageExif
-            ? `\n\n[Image metadata — ${this._imageExif}]`
+        // Build a metadata preamble injected at the start of every user prompt.
+        // — Local mode: include full EXIF here (only injection point available).
+        // — API mode:   EXIF is already in the system prompt (authoritative); user
+        //               message carries only the filename as a lightweight anchor.
+        const metaLines = [`File: ${this._imageName ?? 'unknown'}`];
+        if (this.manager._mode !== 'api' && this._imageExif) metaLines.push(this._imageExif);
+        const metaBlock = `[Photo metadata]\n${metaLines.join('\n')}\n\n`;
+
+        // Inject about-page photographer bio only on the first turn (local models
+        // don't have a system prompt; API mode uses setSystemPrompt instead)
+        const pageCtx = (!this._history.length && this._pageContext)
+            ? `[About the photographer: ${this._pageContext}]\n\n`
             : '';
-        const queryPrompt = prompt + exifContext;
+        const queryPrompt = metaBlock + pageCtx + prompt;
 
         // Snapshot generation at send-time. If the user switches images or clicks
         // "New" before this query finishes, _generation increments and these
@@ -1330,43 +1926,63 @@ class GalleryVLMOverlay {
         this._backend = 'WASM';   // updated on 'ready'
 
         this.manager.on('progress', (data) => {
-            const { stage, message, pct, file, fileMB, downloadedMB, loadedMB, heapMB } = data;
-
-            this._q('-status').textContent = message ?? 'Loading…';
-            if (pct != null) this._q('-prog').style.width = `${pct}%`;
+            const { stage, pct, file, fileMB, downloadedMB, loadedMB, heapMB } = data;
 
             switch (stage) {
                 case 'proc':
+                    this._q('-status').textContent = 'Loading processor…';
                     this._setStage(1, 'active', '');
                     break;
 
                 case 'proc_done':
-                    this._setStage(1, 'done',  '');
+                    this._q('-status').textContent = 'Downloading model weights…';
+                    this._setStage(1, 'done', '');
                     this._setStage(2, 'active', 'Starting download…');
                     break;
 
                 case 'download': {
+                    // Advance the top progress bar monotonically — never go backwards.
+                    // pct from the worker is per-file (resets to ~10% each new file).
+                    if (pct != null && pct > this._dlMaxPct) {
+                        this._dlMaxPct = pct;
+                        this._q('-prog').style.width = `${pct}%`;
+                    }
+
+                    // Stable header: overall MB + percentage, not the filename
+                    const mbLabel  = downloadedMB ? `${downloadedMB} MB` : '';
+                    const pctLabel = this._dlMaxPct ? `${this._dlMaxPct}%` : '';
+                    this._q('-status').textContent =
+                        `Downloading model… ${[mbLabel, pctLabel].filter(Boolean).join(' · ')}`;
+
+                    // Activate the download track on the first download event
+                    this._q('-dltrack')?.classList.add('vlm-dl-active');
                     this._setStage(1, 'done', '');
-                    // e.g.  "decoder_model.onnx — 45.2 MB  |  Total: 234.5 MB"
-                    const parts = [];
-                    if (file)          parts.push(file);
-                    if (fileMB)        parts.push(`${fileMB} MB`);
-                    if (downloadedMB)  parts.push(`↓ ${downloadedMB} MB total`);
-                    this._setStage(2, 'active', parts.join('  ·  '));
+                    this._setStage(2, 'active', '');   // clear detail — track shows the info
+
+                    // Download track: bar fill, totals row, current file
+                    if (this._q('-dlbar'))  this._q('-dlbar').style.width = `${this._dlMaxPct}%`;
+                    if (this._q('-dlmb'))   this._q('-dlmb').textContent  = downloadedMB ? `↓ ${downloadedMB} MB` : '';
+                    if (this._q('-dlpct'))  this._q('-dlpct').textContent  = pctLabel;
+                    if (this._q('-dlfile')) {
+                        // Show filename + its own progress; this line is expected to change
+                        const fileInfo = [file, fileMB ? `${fileMB} MB` : null].filter(Boolean).join(' — ');
+                        this._q('-dlfile').textContent = fileInfo;
+                    }
                     break;
                 }
 
                 case 'compile': {
+                    this._q('-status').textContent = 'Initialising ONNX runtime…';
+                    this._q('-prog').style.width   = `${pct ?? 85}%`;
+                    this._q('-dltrack')?.classList.remove('vlm-dl-active');
                     this._setStage(1, 'done', '');
                     this._setStage(2, 'done', downloadedMB ? `${downloadedMB} MB downloaded` : '');
-                    // e.g.  "Compiling ONNX graph  ·  234.5 MB in memory  ·  Heap: 512 MB"
                     const parts = ['Compiling ONNX graph'];
                     if (loadedMB) parts.push(`${loadedMB} MB in memory`);
                     if (heapMB)   parts.push(`Heap: ${heapMB} MB`);
                     this._setStage(3, 'active', parts.join('  ·  '));
                     break;
                 }
-
             }
         });
 
@@ -1479,6 +2095,8 @@ class GalleryVLMOverlay {
 
     /** Reset the loading UI to its initial state (used when worker restarts). */
     _resetLoadingUI() {
+        this._dlMaxPct = 0;
+        this._q('-dltrack')?.classList.remove('vlm-dl-active');
         this._setStage(1, 'pending', '');
         this._setStage(2, 'pending', 'Waiting…');
         this._setStage(3, 'pending', '');
