@@ -135,6 +135,11 @@ async function _extractExif(src) {
         const date = d['EXIF DateTimeOriginal'];
         if (date) lines.push(`Date: ${date}`);
 
+        // Resolution — pixel dimensions of the processed image
+        const imgW = d['Image Width']  ?? d['EXIF ExifImageWidth'];
+        const imgH = d['Image Height'] ?? d['EXIF ExifImageLength'];
+        if (imgW != null && imgH != null) lines.push(`Resolution: ${imgW} × ${imgH} px`);
+
         // GPS — stored separately so the caller can render iframes or links
         let gps = null;
         const lat    = _parseDMS(d['GPS GPSLatitude']);
@@ -300,28 +305,30 @@ function injectCSS() {
     50%       { box-shadow: 0 0 0 9px rgba(79,195,247,0); }
 }
 
-/* ── VLM Panel ────────────────────────────────────────────────── */
+/* ── VLM Panel — full-height right sidebar ────────────────────── */
 .vlm-panel {
     position: fixed;
-    bottom: 0;
-    right: 20px;
-    width: 340px;
-    max-height: 530px;
+    top: 0;
+    right: 0;
+    width: 360px;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
     display: flex;
     flex-direction: column;
     background: rgba(10, 10, 18, 0.96);
-    border: 1px solid rgba(79, 195, 247, 0.2);
-    border-radius: 13px 13px 0 0;
+    border: none;
+    border-left: 1px solid rgba(79, 195, 247, 0.2);
+    border-radius: 0;
     z-index: 4500;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    box-shadow: 0 -4px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(79,195,247,0.07);
+    box-shadow: -4px 0 30px rgba(0,0,0,0.6), -1px 0 0 rgba(79,195,247,0.07);
     overflow: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(20px);
-    transition: opacity 0.22s ease, transform 0.22s ease, width 0.25s ease,
-                max-height 0.25s ease;
+    transform: translateX(100%);
+    transition: opacity 0.22s ease, transform 0.22s ease, width 0.25s ease;
     font-family: 'Roboto', system-ui, sans-serif;
     font-size: var(--vlm-font-sz, 13px);
     color: #cfd8dc;
@@ -331,55 +338,61 @@ function injectCSS() {
 .vlm-panel.vlm-open {
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0);
+    transform: translateX(0);
 }
-/* ── Resize handle (top-left corner, drags to resize width + height) ── */
+/* ── Resize handle (left edge, drags to resize width) ──────────── */
 .vlm-resize-handle {
     position: absolute;
     top: 0;
     left: 0;
-    width: 32px;
-    height: 32px;
-    cursor: nw-resize;
+    width: 6px;
+    height: 100%;
+    cursor: ew-resize;
     z-index: 2;
-    border-top-left-radius: 13px;
     opacity: 0.35;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, background 0.15s;
 }
-.vlm-resize-handle:hover { opacity: 0.85; }
+.vlm-resize-handle:hover { opacity: 0.85; background: rgba(79,195,247,0.08); }
 /* Kill all transitions while dragging so the panel tracks the cursor exactly */
 .vlm-panel.vlm-resizing { transition: none !important; }
 .vlm-panel.vlm-resizing * { transition: none !important; }
 .vlm-resize-handle::after {
     content: '';
     position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 10px;
-    height: 10px;
+    top: 50%;
+    left: 1px;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 36px;
     background-image:
         radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
         radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
         radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
         radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
-        radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px),
         radial-gradient(circle, rgba(79,195,247,0.9) 1px, transparent 1px);
-    background-size: 4px 4px;
-    background-position: 0 0, 4px 0, 0 4px, 8px 0, 4px 4px, 0 8px;
+    background-size: 3px 8px;
+    background-position: 0 0, 0 8px, 0 16px, 0 24px, 0 32px;
     background-repeat: no-repeat;
 }
-/* Hide resize handle when panel is in its own fullscreen mode */
-.vlm-panel.vlm-fullscreen .vlm-resize-handle { display: none; }
 
 /* ── Header ──────────────────────────────────────────────────── */
 .vlm-header {
     display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 12px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 10px;
     border-bottom: 1px solid rgba(255,255,255,0.07);
     background: rgba(79, 195, 247, 0.05);
     flex-shrink: 0;
+}
+.vlm-header-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+.vlm-header-btns {
+    gap: 3px;
 }
 .vlm-header-title {
     flex: 1;
@@ -417,22 +430,22 @@ function injectCSS() {
     color: #78909c;
     cursor: pointer;
     border-radius: 4px;
-    font-size: 11px;
-    padding: 2px 6px;
+    font-size: 10px;
+    padding: 1px 5px;
     line-height: 1.4;
     flex-shrink: 0;
     transition: color 0.15s, border-color 0.15s;
 }
 .vlm-new-btn:hover  { color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
-.vlm-close-btn      { font-size: 15px; padding: 0 5px; border-color: transparent; }
+.vlm-close-btn      { font-size: 14px; padding: 0 4px; border-color: transparent; }
 .vlm-close-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-.vlm-fs-btn, .vlm-gear-btn { font-size: 14px; padding: 0 5px; border-color: transparent; display: flex; align-items: center; }
+.vlm-fs-btn, .vlm-gear-btn { font-size: 13px; padding: 0 4px; border-color: transparent; display: flex; align-items: center; }
 .vlm-fs-btn:hover, .vlm-gear-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-.vlm-font-btns { display: flex; gap: 2px; flex-shrink: 0; }
-.vlm-font-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: #78909c; cursor: pointer; border-radius: 4px; padding: 1px 5px; line-height: 1.4; transition: color 0.15s, border-color 0.15s; }
+.vlm-font-btns { display: flex; gap: 1px; flex-shrink: 0; }
+.vlm-font-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: #78909c; cursor: pointer; border-radius: 4px; padding: 1px 4px; line-height: 1.4; transition: color 0.15s, border-color 0.15s; }
 .vlm-font-btn:hover { color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
-.vlm-font-btn-sm { font-size: 9px; }
-.vlm-font-btn-lg { font-size: 13px; }
+.vlm-font-btn-sm { font-size: 8px; }
+.vlm-font-btn-lg { font-size: 11px; }
 
 /* ── Progress bar ─────────────────────────────────────────────── */
 .vlm-progress-bar { height: 2px; background: transparent; flex-shrink: 0; }
@@ -484,8 +497,8 @@ function injectCSS() {
     color: #546e7a;
     cursor: pointer;
     border-radius: 3px;
-    font-size: 9.5px;
-    padding: 1px 5px;
+    font-size: 9px;
+    padding: 1px 4px;
     flex-shrink: 0;
     white-space: nowrap;
     transition: color 0.15s, border-color 0.15s, background 0.15s;
@@ -496,8 +509,8 @@ function injectCSS() {
     color: #546e7a;
     cursor: pointer;
     border-radius: 3px;
-    font-size: 9.5px;
-    padding: 1px 5px;
+    font-size: 9px;
+    padding: 1px 4px;
     flex-shrink: 0;
     white-space: nowrap;
     transition: color 0.15s, border-color 0.15s, background 0.15s;
@@ -657,28 +670,82 @@ function injectCSS() {
 }
 .vlm-send-btn:hover:not(:disabled) { background: rgba(79, 195, 247, 0.24); }
 .vlm-send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.vlm-stop-btn {
+    background: rgba(239, 83, 80, 0.12);
+    border: 1px solid rgba(239, 83, 80, 0.35);
+    color: #ef5350;
+    border-radius: 7px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.18s;
+    line-height: 1.45;
+    min-height: 32px;
+}
+.vlm-stop-btn:hover { background: rgba(239, 83, 80, 0.24); }
 
-/* ── Responsive / Mobile ──────────────────────────────────────── */
+/* ── Per-message copy button ───────────────────────────────────── */
+.vlm-msg-copy {
+    display: block;
+    margin-top: 7px;
+    background: none;
+    border: 1px solid rgba(79,195,247,0.18);
+    border-radius: 5px;
+    color: #546e7a;
+    font-size: 0.74em;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+    width: fit-content;
+}
+.vlm-msg-copy:hover { color: #4fc3f7; border-color: rgba(79,195,247,0.45); }
+
+/* ── Chat-level action bar (Copy Chat / Export Log) ────────────── */
+.vlm-chat-actions {
+    display: flex;
+    gap: 6px;
+    padding: 5px 10px;
+    border-top: 1px solid rgba(79,195,247,0.1);
+    flex-shrink: 0;
+}
+.vlm-action-btn {
+    background: rgba(79,195,247,0.07);
+    border: 1px solid rgba(79,195,247,0.18);
+    border-radius: 6px;
+    color: #78909c;
+    font-size: 0.76em;
+    padding: 3px 9px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+}
+.vlm-action-btn:hover { color: #4fc3f7; background: rgba(79,195,247,0.15); }
+
+/* ── Responsive / Mobile — bottom sheet ───────────────────────── */
 @media (max-width: 600px) {
-    /* Bottom-sheet: full width, slides up from the very bottom */
     .vlm-panel {
-        width: 100%;
+        width: 100% !important;
         left: 0;
         right: 0;
+        top: auto;
         bottom: 0;
-        /* Extend into safe area so content isn't clipped by home indicator */
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        height: auto;
         max-height: 75vh;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        border-left: none;
+        border-top: 1px solid rgba(79, 195, 247, 0.2);
         border-radius: 14px 14px 0 0;
-        transform: translateY(12px) scale(1);   /* only slide, no scale on mobile */
+        box-shadow: 0 -4px 30px rgba(0,0,0,0.6);
+        transform: translateY(12px);
     }
-    .vlm-panel.vlm-open {
-        transform: translateY(0) scale(1);
-    }
-    /* Larger tap target; sit above iOS home indicator */
+    .vlm-panel.vlm-open { transform: translateY(0); }
+    .vlm-resize-handle  { display: none; }
     .vlm-toggle-btn {
         bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-        right: 20px;
+        right: 20px !important;
         width: 52px;
         height: 52px;
     }
@@ -778,16 +845,11 @@ function injectCSS() {
     font-style: italic;
 }
 
-/* ── Expanded (full-width bottom bar) ─────────────────────────── */
+/* ── Expanded (wider panel) ────────────────────────────────────── */
 .vlm-panel.vlm-fullscreen {
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    max-height: 45vh !important;
-    border-radius: 0 !important;
+    width: min(680px, 50vw) !important;
 }
-.vlm-panel.vlm-fullscreen.vlm-open { transform: none !important; }
+.vlm-panel.vlm-fullscreen.vlm-open { transform: translateX(0) !important; }
 
 /* ── Per-message generation stats bar ────────────────────────── */
 .vlm-msg-text { display: block; white-space: pre-wrap; word-break: break-word; }
@@ -858,7 +920,7 @@ const _ABOUT_SYSTEM_PROMPT =
     'You help visitors learn about the photographer and his work. ' +
     'Timothy Do is an astrophotographer and landscape photographer based in California. ' +
     'He graduated with a Master\'s degree in Electrical and Computer Engineering from UCLA, now works in Computer Vision and Image Processing, and is an Eagle Scout with a photography merit badge. ' +
-    'Primary camera: Sony Alpha A7 IV with Sony FE 28-70mm; secondary: Canon EOS Rebel T5 with Canon EF 75-300mm; mobile: Samsung S24 Ultra and Pixel 9 Pro. ' +
+    'Primary camera: Sony Alpha A7 IV with lenses: Sony FE 28-70mm F/3.5-5.6, Sony FE 50mm F/1.8, Tamron 70-300mm F/4.5-6.3, Samyang 12mm F/2.0; secondary: Canon EOS Rebel T5 with lenses: Canon EF 70-300mm F/4-5.6, Canon EF 18-55mm F/3.5-5.6; mobile: Samsung S24 Ultra and Pixel 9 Pro. ' +
     'He is known for astrophotography (Milky Way, Orion Nebula) and National Parks landscape photography. ' +
     'When shown an image, describe what you see and connect it to the photographer\'s story where relevant. ' +
     'Answer any question about Timothy\'s background, gear, specialties, philosophy, or the images shown. ' +
@@ -925,23 +987,27 @@ class GalleryVLMOverlay {
         this._panel.innerHTML = `
 <div class="vlm-resize-handle" aria-hidden="true"></div>
 <div class="vlm-header">
-    <span class="vlm-header-title">TheDoInspector</span>
-    <span class="vlm-status-dot vlm-dot-loading" id="${this._id}-dot"></span>
-    <span class="vlm-status-label"  id="${this._id}-status">Loading model…</span>
-    <button class="vlm-new-btn"   id="${this._id}-new"   title="Start new conversation">New</button>
-    <div class="vlm-font-btns" title="Adjust font size">
-        <button class="vlm-font-btn vlm-font-btn-sm" id="${this._id}-font-dn" aria-label="Decrease font size">A−</button>
-        <button class="vlm-font-btn vlm-font-btn-lg" id="${this._id}-font-up" aria-label="Increase font size">A+</button>
+    <div class="vlm-header-row">
+        <span class="vlm-header-title">TheDoInspector</span>
+        <span class="vlm-status-dot vlm-dot-loading" id="${this._id}-dot"></span>
+        <span class="vlm-status-label" id="${this._id}-status">Loading model…</span>
+        <button class="vlm-gear-btn"  id="${this._id}-gear"  title="VLM Settings" aria-label="Open VLM settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+        <button class="vlm-fs-btn"    id="${this._id}-fs"    title="Expand panel" aria-label="Toggle fullscreen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
+        <button class="vlm-close-btn" id="${this._id}-close" title="Close panel" aria-label="Close">×</button>
     </div>
-    <button class="vlm-exif-bypass-btn vlm-bypass-on" id="${this._id}-bypass"
-            title="EXIF auto-answer ON — camera/settings questions answered directly from metadata. Click to let the VLM answer instead."
-            aria-label="Toggle EXIF auto-answer">EXIF auto</button>
-    <button class="vlm-direct-links-btn${this._directLinks ? ' vlm-dl-on' : ''}" id="${this._id}-dlbtn"
-            title="${this._directLinks ? 'Direct links ON — maps shown as links. Click to show as embeds.' : 'Direct links OFF — maps shown as embeds. Click to use plain links.'}"
-            aria-label="Toggle map embeds">Direct links</button>
-    <button class="vlm-gear-btn"  id="${this._id}-gear"  title="VLM Settings" aria-label="Open VLM settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-    <button class="vlm-fs-btn"    id="${this._id}-fs"    title="Expand to full screen" aria-label="Toggle fullscreen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
-    <button class="vlm-close-btn" id="${this._id}-close" title="Close panel" aria-label="Close">×</button>
+    <div class="vlm-header-row vlm-header-btns">
+        <button class="vlm-new-btn" id="${this._id}-new" title="Start new conversation">New</button>
+        <div class="vlm-font-btns" title="Adjust font size">
+            <button class="vlm-font-btn vlm-font-btn-sm" id="${this._id}-font-dn" aria-label="Decrease font size">A−</button>
+            <button class="vlm-font-btn vlm-font-btn-lg" id="${this._id}-font-up" aria-label="Increase font size">A+</button>
+        </div>
+        <button class="vlm-exif-bypass-btn vlm-bypass-on" id="${this._id}-bypass"
+                title="EXIF auto-answer ON — camera/settings questions answered directly from metadata. Click to let the VLM answer instead."
+                aria-label="Toggle EXIF auto-answer">EXIF auto</button>
+        <button class="vlm-direct-links-btn${this._directLinks ? ' vlm-dl-on' : ''}" id="${this._id}-dlbtn"
+                title="${this._directLinks ? 'Direct links ON — maps shown as links. Click to show as embeds.' : 'Direct links OFF — maps shown as embeds. Click to use plain links.'}"
+                aria-label="Toggle map embeds">Direct links</button>
+    </div>
 </div>
 <div class="vlm-progress-bar">
     <div class="vlm-progress-fill" id="${this._id}-prog"></div>
@@ -991,10 +1057,15 @@ class GalleryVLMOverlay {
 <div class="vlm-messages" id="${this._id}-msgs">
     <div class="vlm-empty">Open a photo, then ask anything about it.</div>
 </div>
+<div class="vlm-chat-actions" id="${this._id}-chat-actions" style="display:none">
+    <button class="vlm-action-btn" id="${this._id}-copy-chat">&#128203; Copy Chat</button>
+    <button class="vlm-action-btn" id="${this._id}-export-log">&#128462; Export Log</button>
+</div>
 <div class="vlm-input-area">
     <textarea class="vlm-input" id="${this._id}-input" rows="1"
         placeholder="What camera settings? What's the subject? …"
         aria-label="Ask about the photo"></textarea>
+    <button class="vlm-stop-btn" id="${this._id}-stop" style="display:none">&#9632; Stop</button>
     <button class="vlm-send-btn" id="${this._id}-send" disabled>Send</button>
 </div>`;
         document.body.appendChild(this._panel);
@@ -1041,6 +1112,9 @@ class GalleryVLMOverlay {
         const input   = this._q('-input');
 
         sendBtn.addEventListener('click',   () => this._sendMessage());
+        this._q('-stop').addEventListener('click', () => this._abortController?.abort());
+        this._q('-copy-chat').addEventListener('click', () => this._copyChat());
+        this._q('-export-log').addEventListener('click', () => this._exportLog());
         // stopPropagation on all keyboard events so typing in the chat never
         // triggers the gallery's own keyboard shortcuts (arrow keys, escape, etc.)
         input.addEventListener('keydown', (e) => {
@@ -1061,6 +1135,8 @@ class GalleryVLMOverlay {
         // Shift the panel up so it sits just above the keyboard.
         if (window.visualViewport) {
             const vvHandler = () => {
+                // Bottom adjustment only applies to the mobile bottom-sheet layout
+                if (window.innerWidth > 600) return;
                 if (!this._panel.classList.contains('vlm-open')) return;
                 const kbHeight = window.innerHeight - window.visualViewport.height;
                 this._panel.style.bottom = kbHeight > 50 ? `${kbHeight + 8}px` : '';
@@ -1081,18 +1157,47 @@ class GalleryVLMOverlay {
 
     // ── Panel State ────────────────────────────────────────────────────────
 
-    _togglePanel() { this._panel.classList.toggle('vlm-open'); }
-    _closePanel()  { this._panel.classList.remove('vlm-open'); }
+    _togglePanel() {
+        const open = this._panel.classList.toggle('vlm-open');
+        this._setPush(open);
+    }
+    _closePanel() {
+        this._panel.classList.remove('vlm-open');
+        this._setPush(false);
+    }
+
+    /**
+     * Push the page content left when the sidebar opens (desktop only).
+     * For gallery pages (inside #iframe-container) the panel simply overlays
+     * the canvas — fixed-position elements can't be pushed by padding.
+     * For standard-flow pages (about, index) padding-right on body shifts content.
+     */
+    _setPush(open) {
+        if (window.innerWidth <= 600) return;
+        const w = open ? this._panel.offsetWidth : 0;
+        // Shift the toggle button to sit just outside the panel's left edge
+        this._btn.style.transition = 'right 0.22s ease';
+        this._btn.style.right = open ? `${w + 12}px` : '';
+        // Push normal document-flow content (skip for iframe-container pages)
+        if (!this._iframeEl) {
+            document.body.style.transition = 'padding-right 0.25s ease';
+            document.body.style.paddingRight = open ? `${w}px` : '';
+        }
+    }
 
     _toggleFullscreen() {
         const isFs = this._panel.classList.toggle('vlm-fullscreen');
         const btn  = this._q('-fs');
         if (isFs) {
-            btn.title = 'Collapse panel';
+            btn.title = 'Narrow panel';
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
         } else {
-            btn.title = 'Expand to full width';
+            btn.title = 'Expand panel';
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+        }
+        // Re-sync body push after CSS transition settles
+        if (this._panel.classList.contains('vlm-open')) {
+            setTimeout(() => this._setPush(true), 260);
         }
     }
 
@@ -1151,19 +1256,19 @@ class GalleryVLMOverlay {
             // Inject a global style so the cursor stays nw-resize even when the
             // pointer outruns the handle, and selection is suppressed everywhere.
             cursorStyle = document.createElement('style');
-            cursorStyle.textContent = '* { cursor: nw-resize !important; user-select: none !important; }';
+            cursorStyle.textContent = '* { cursor: ew-resize !important; user-select: none !important; }';
             document.head.appendChild(cursorStyle);
         };
 
-        const onMove = (clientX, clientY) => {
+        const onMove = (clientX, _clientY) => {
             if (!dragging) return;
-            const dx = startX - clientX;
-            const dy = startY - clientY;
-            const w  = Math.max(280, Math.min(window.innerWidth  - 40, startW + dx));
-            const h  = Math.max(300, Math.min(window.innerHeight - 40, startH + dy));
-            this._panel.style.width     = `${w}px`;
-            this._panel.style.height    = `${h}px`;
-            this._panel.style.maxHeight = `${h}px`;
+            const dx = startX - clientX;   // drag left = positive = wider
+            const w  = Math.max(280, Math.min(window.innerWidth - 40, startW + dx));
+            this._panel.style.width = `${w}px`;
+            // Keep body padding in sync while dragging
+            if (!this._iframeEl && this._panel.classList.contains('vlm-open')) {
+                document.body.style.paddingRight = `${w}px`;
+            }
         };
 
         const endDrag = (e) => {
@@ -1190,7 +1295,7 @@ class GalleryVLMOverlay {
 
         handle.addEventListener('pointermove', (e) => {
             if (!dragging) return;
-            onMove(e.clientX, e.clientY);
+            onMove(e.clientX, e.clientY);  // clientY unused but kept for signature parity
         });
 
         handle.addEventListener('pointerup',     (e) => endDrag(e));
@@ -1201,24 +1306,62 @@ class GalleryVLMOverlay {
     }
 
     _newChat() {
+        this._abortController?.abort();  // cancel any in-flight API request
         this._generation++;              // invalidate any in-flight callbacks
         this._history   = [];
         this._streaming = false;         // abandon any streaming state
         _vlmIsRunning   = false;
         const msgs = this._q('-msgs');
         msgs.innerHTML = '<div class="vlm-empty">Open a photo, then ask anything about it.</div>';
+        this._q('-chat-actions').style.display = 'none';
         this._refreshSendBtn();
     }
 
     _refreshSendBtn() {
         const input   = this._q('-input');
         const sendBtn = this._q('-send');
+        const stopBtn = this._q('-stop');
         sendBtn.disabled = (
             !this._imageSrc          ||
             !input.value.trim()      ||
             !this.manager.isReady    ||
             this._streaming
         );
+        if (stopBtn) stopBtn.style.display = this._streaming ? '' : 'none';
+    }
+
+    _copyChat() {
+        if (!this._history.length) return;
+        const lines = this._history.map(turn => {
+            const label = turn.role === 'user' ? 'You' : 'Assistant';
+            return `${label}:\n${turn.content}`;
+        });
+        navigator.clipboard.writeText(lines.join('\n\n')).then(() => {
+            const btn = this._q('-copy-chat');
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+        }).catch(() => {});
+    }
+
+    _exportLog() {
+        if (!this._history.length) return;
+        const header = [
+            'VLM Chat Export',
+            `Date: ${new Date().toLocaleString()}`,
+            `Image: ${this._imageName ?? 'unknown'}`,
+            '',
+        ];
+        const body = [];
+        for (const turn of this._history) {
+            const label = turn.role === 'user' ? '--- You ---' : '--- Assistant ---';
+            body.push(label, turn.content, '');
+        }
+        const blob = new Blob([[...header, ...body].join('\n')], { type: 'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = Object.assign(document.createElement('a'), { href: url, download: 'chat.log' });
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     // ── Image Extraction ───────────────────────────────────────────────────
@@ -1442,7 +1585,8 @@ class GalleryVLMOverlay {
             'About the photographer: Timothy Do (TheDoShoots) — astrophotographer and ' +
             'landscape photographer. UCLA ECE Master\'s graduate, works in Computer Vision ' +
             'and Image Processing. Eagle Scout with photography merit badge. Primary camera: ' +
-            'Sony Alpha A7 IV (Sony FE 28-70mm). Known for Milky Way, Orion Nebula, and ' +
+            'Sony Alpha A7 IV (Sony FE 28-70mm F/3.5-5.6, Sony FE 50mm F/1.8, Tamron 70-300mm F/4.5-6.3, Samyang 12mm F/2.0); ' +
+            'secondary: Canon EOS Rebel T5 (Canon EF 70-300mm F/4-5.6, Canon EF 18-55mm F/3.5-5.6). Known for Milky Way, Orion Nebula, and ' +
             'National Parks photography.';
 
         // Override system prompt for API / Ollama modes
@@ -1773,10 +1917,11 @@ class GalleryVLMOverlay {
         const prompt = input.value.trim();
         if (!prompt || !this._imageSrc || !this.manager.isReady || this._streaming) return;
 
-        input.value        = '';
-        input.style.height = 'auto';
-        this._streaming    = true;
-        _vlmIsRunning      = true;
+        input.value             = '';
+        input.style.height      = 'auto';
+        this._streaming         = true;
+        _vlmIsRunning           = true;
+        this._abortController   = new AbortController();
         this._refreshSendBtn();
 
         this._appendMsg('user', prompt);
@@ -1837,6 +1982,7 @@ class GalleryVLMOverlay {
             queryPrompt,
             this._history.slice(),
             {
+                signal: this._abortController.signal,
                 onToken: (tok, tps, tokenCount) => {
                     if (this._generation !== gen) return;
                     fullText += tok;
@@ -1875,6 +2021,22 @@ class GalleryVLMOverlay {
                     this._history.push({ role: 'user',      content: prompt    });
                     this._history.push({ role: 'assistant', content: finalText });
                     if (this._history.length > 10) this._history = this._history.slice(-10);
+
+                    // Per-message copy button
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className   = 'vlm-msg-copy';
+                    copyBtn.textContent = 'Copy response';
+                    copyBtn.title       = 'Copy this response to clipboard';
+                    copyBtn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(finalText).then(() => {
+                            copyBtn.textContent = 'Copied!';
+                            setTimeout(() => { copyBtn.textContent = 'Copy response'; }, 1500);
+                        }).catch(() => {});
+                    });
+                    assistantEl.appendChild(copyBtn);
+
+                    // Show chat-level action bar
+                    this._q('-chat-actions').style.display = '';
 
                     _vlmIsRunning   = false;
                     this._streaming = false;

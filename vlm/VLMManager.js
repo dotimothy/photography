@@ -349,6 +349,10 @@ class VLMManager {
             messages.push({ role: 'user', content: prompt });
         }
 
+        let fullText   = '';
+        let tokenCount = 0;
+        let startMs    = 0;
+
         try {
             const headers = { 'Content-Type': 'application/json' };
             if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
@@ -356,6 +360,7 @@ class VLMManager {
             const res = await fetch(`${endpoint}/chat/completions`, {
                 method: 'POST',
                 headers,
+                signal: callbacks.signal ?? null,
                 body: JSON.stringify({
                     model,
                     messages,
@@ -374,9 +379,7 @@ class VLMManager {
             const reader  = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer     = '';
-            let fullText   = '';
-            let tokenCount = 0;
-            const startMs  = performance.now();
+            startMs        = performance.now();
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -411,7 +414,15 @@ class VLMManager {
             callbacks.onDone?.(fullText, tokenCount, avgTps);
 
         } catch (err) {
-            callbacks.onError?.(err.message);
+            if (err.name === 'AbortError') {
+                // User stopped the response — treat as a completed (partial) reply
+                const elapsed = (performance.now() - startMs) / 1000;
+                const avgTps  = elapsed > 0 && tokenCount > 0
+                    ? parseFloat((tokenCount / elapsed).toFixed(1)) : null;
+                callbacks.onDone?.(fullText, tokenCount, avgTps);
+            } else {
+                callbacks.onError?.(err.message);
+            }
         }
     }
 
