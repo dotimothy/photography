@@ -1444,6 +1444,14 @@
                            placeholder="gemma3">
                 </div>
                 <div class="setting-row">
+                    <span class="setting-label">Thinking</span>
+                    <select class="setting-select" id="vlm-ollama-think">
+                        <option value="null">Auto</option>
+                        <option value="true">Think</option>
+                        <option value="false">No Think</option>
+                    </select>
+                </div>
+                <div class="setting-row">
                     <button id="vlm-ollama-fetch-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Fetch Models</button>
                 </div>
                 <div class="setting-row" id="vlm-ollama-model-row" style="display:none">
@@ -1460,6 +1468,31 @@
                     <button id="vlm-ollama-unload-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;flex:1">Unload</button>
                 </div>
                 <div id="vlm-ollama-running-list" style="display:none;padding:4px 0;font-size:11px;color:#78909c"></div>
+            </div>
+            <!-- TTS Voice (shown when browser supports speechSynthesis) -->
+            <div id="vlm-voice-settings" style="display:none">
+                <div class="setting-row">
+                    <span class="setting-label">Voice</span>
+                    <select class="setting-select" id="vlm-voice-select"></select>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Speed</span>
+                    <input type="range" id="vlm-voice-speed" min="0.5" max="2" step="0.1" value="1"
+                           style="flex:1;accent-color:#4fc3f7;cursor:pointer">
+                    <span id="vlm-voice-speed-val" style="font-size:11px;color:#78909c;min-width:28px;text-align:right">1.0×</span>
+                </div>
+            </div>
+            <!-- System Prompt (shown when backend = api or ollama) -->
+            <div id="vlm-systemprompt-settings" style="display:none">
+                <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+                    <span class="setting-label">System Prompt</span>
+                    <textarea class="setting-input" id="vlm-system-prompt" rows="5"
+                              placeholder="Leave blank to use the built-in default…"
+                              style="width:100%;resize:vertical;font-size:11px;padding:5px 7px;font-family:monospace;line-height:1.4"></textarea>
+                </div>
+                <div class="setting-row">
+                    <button id="vlm-system-prompt-reset" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Reset to Default</button>
+                </div>
             </div>
             </div><!-- /#settings-advanced -->
             </div><!-- /.settings-col (right) -->
@@ -1499,6 +1532,8 @@
             vlmApiModel:      'gpt-4o',
             vlmOllamaEndpoint: 'http://localhost:11434',
             vlmOllamaModel:   'gemma3',
+            vlmOllamaThink:   null,
+            vlmSystemPrompt:  '',
         };
 
         // Shared VLM settings object — read by GalleryVLMOverlay.js (same page context)
@@ -1511,6 +1546,8 @@
             apiModel:       state.vlmApiModel,
             ollamaEndpoint: state.vlmOllamaEndpoint,
             ollamaModel:    state.vlmOllamaModel,
+            ollamaThink:    state.vlmOllamaThink,
+            systemPrompt:   state.vlmSystemPrompt,
         };
 
         function syncVLMSettings() {
@@ -1522,6 +1559,8 @@
             window.VLM_SETTINGS.apiModel       = state.vlmApiModel;
             window.VLM_SETTINGS.ollamaEndpoint = state.vlmOllamaEndpoint;
             window.VLM_SETTINGS.ollamaModel    = state.vlmOllamaModel;
+            window.VLM_SETTINGS.ollamaThink    = state.vlmOllamaThink;
+            window.VLM_SETTINGS.systemPrompt   = state.vlmSystemPrompt;
             window.dispatchEvent(new CustomEvent('vlmsettingschanged', {
                 detail: {
                     enabled:        state.vlmEnabled,
@@ -1532,6 +1571,8 @@
                     apiModel:       state.vlmApiModel,
                     ollamaEndpoint: state.vlmOllamaEndpoint,
                     ollamaModel:    state.vlmOllamaModel,
+                    ollamaThink:    state.vlmOllamaThink,
+                    systemPrompt:   state.vlmSystemPrompt,
                 }
             }));
         }
@@ -1630,6 +1671,12 @@
             if (savedVlmOllamaEndpoint) state.vlmOllamaEndpoint = savedVlmOllamaEndpoint;
             const savedVlmOllamaModel = localStorage.getItem('vlmOllamaModel');
             if (savedVlmOllamaModel) state.vlmOllamaModel = savedVlmOllamaModel;
+            const savedVlmOllamaThink = localStorage.getItem('vlmOllamaThink');
+            if (savedVlmOllamaThink !== null) {
+                state.vlmOllamaThink = savedVlmOllamaThink === 'null' ? null : savedVlmOllamaThink === 'true';
+            }
+            const savedVlmSystemPrompt = localStorage.getItem('vlmSystemPrompt');
+            if (savedVlmSystemPrompt !== null) state.vlmSystemPrompt = savedVlmSystemPrompt;
             window.VLM_SETTINGS = {
                 enabled:        state.vlmEnabled,
                 model:          state.vlmModel,
@@ -1639,6 +1686,8 @@
                 apiModel:       state.vlmApiModel,
                 ollamaEndpoint: state.vlmOllamaEndpoint,
                 ollamaModel:    state.vlmOllamaModel,
+                ollamaThink:    state.vlmOllamaThink,
+                systemPrompt:   state.vlmSystemPrompt,
             };
 
             // Sync UI Toggles
@@ -1652,19 +1701,24 @@
             document.getElementById('vlm-api-key').value            = state.vlmApiKey;
             document.getElementById('vlm-ollama-endpoint').value    = state.vlmOllamaEndpoint;
             document.getElementById('vlm-ollama-model').value       = state.vlmOllamaModel;
+            document.getElementById('vlm-ollama-think').value       = state.vlmOllamaThink === null ? 'null' : String(state.vlmOllamaThink);
+            document.getElementById('vlm-system-prompt').value      = state.vlmSystemPrompt;
             const _vlmOn     = state.vlmEnabled;
             const _vlmApi    = state.vlmType === 'api';
             const _vlmOllama = state.vlmType === 'ollama';
-            document.getElementById('vlm-backend-row').style.display       = _vlmOn ? '' : 'none';
-            document.getElementById('vlm-local-settings').style.display    = (_vlmOn && !_vlmApi && !_vlmOllama) ? '' : 'none';
-            document.getElementById('vlm-api-settings').style.display      = (_vlmOn && _vlmApi)    ? '' : 'none';
-            document.getElementById('vlm-ollama-settings').style.display   = (_vlmOn && _vlmOllama) ? '' : 'none';
+            document.getElementById('vlm-backend-row').style.display             = _vlmOn ? '' : 'none';
+            document.getElementById('vlm-local-settings').style.display          = (_vlmOn && !_vlmApi && !_vlmOllama) ? '' : 'none';
+            document.getElementById('vlm-api-settings').style.display            = (_vlmOn && _vlmApi)    ? '' : 'none';
+            document.getElementById('vlm-ollama-settings').style.display         = (_vlmOn && _vlmOllama) ? '' : 'none';
+            document.getElementById('vlm-systemprompt-settings').style.display   = (_vlmOn && (_vlmApi || _vlmOllama)) ? '' : 'none';
+            document.getElementById('vlm-voice-settings').style.display          = (_vlmOn && !!window.speechSynthesis) ? '' : 'none';
         }
 
         function setupEventListeners() {
             // Settings Open/Close
             document.getElementById('btn-open-settings').addEventListener('click', () => {
                 els.settingsOverlay.classList.add('visible');
+                populateVoiceSelect();  // re-populate in case voices loaded after page init
             });
             document.getElementById('btn-close-settings').addEventListener('click', () => {
                 els.settingsOverlay.classList.remove('visible');
@@ -1823,10 +1877,11 @@
                 localStorage.setItem('vlmEnabled', val);
                 const isApi    = state.vlmType === 'api';
                 const isOllama = state.vlmType === 'ollama';
-                document.getElementById('vlm-backend-row').style.display       = val ? '' : 'none';
-                document.getElementById('vlm-local-settings').style.display    = (val && !isApi && !isOllama) ? '' : 'none';
-                document.getElementById('vlm-api-settings').style.display      = (val && isApi)    ? '' : 'none';
-                document.getElementById('vlm-ollama-settings').style.display   = (val && isOllama) ? '' : 'none';
+                document.getElementById('vlm-backend-row').style.display             = val ? '' : 'none';
+                document.getElementById('vlm-local-settings').style.display          = (val && !isApi && !isOllama) ? '' : 'none';
+                document.getElementById('vlm-api-settings').style.display            = (val && isApi)    ? '' : 'none';
+                document.getElementById('vlm-ollama-settings').style.display         = (val && isOllama) ? '' : 'none';
+                document.getElementById('vlm-systemprompt-settings').style.display   = (val && (isApi || isOllama)) ? '' : 'none';
                 document.getElementById('vlm-model-note').style.display = 'none';
                 syncVLMSettings();
             });
@@ -1837,9 +1892,10 @@
                 localStorage.setItem('vlmType', state.vlmType);
                 const isApi    = state.vlmType === 'api';
                 const isOllama = state.vlmType === 'ollama';
-                document.getElementById('vlm-local-settings').style.display    = (!isApi && !isOllama) ? '' : 'none';
-                document.getElementById('vlm-api-settings').style.display      = isApi    ? '' : 'none';
-                document.getElementById('vlm-ollama-settings').style.display   = isOllama ? '' : 'none';
+                document.getElementById('vlm-local-settings').style.display          = (!isApi && !isOllama) ? '' : 'none';
+                document.getElementById('vlm-api-settings').style.display            = isApi    ? '' : 'none';
+                document.getElementById('vlm-ollama-settings').style.display         = isOllama ? '' : 'none';
+                document.getElementById('vlm-systemprompt-settings').style.display   = (isApi || isOllama) ? '' : 'none';
                 document.getElementById('vlm-model-note').style.display = 'none';
                 syncVLMSettings();
             });
@@ -1884,6 +1940,54 @@
             document.getElementById('vlm-ollama-model').addEventListener('change', (e) => {
                 state.vlmOllamaModel = e.target.value;
                 localStorage.setItem('vlmOllamaModel', state.vlmOllamaModel);
+                syncVLMSettings();
+            });
+            document.getElementById('vlm-ollama-think').addEventListener('change', (e) => {
+                const raw = e.target.value;
+                state.vlmOllamaThink = raw === 'null' ? null : raw === 'true';
+                localStorage.setItem('vlmOllamaThink', raw);
+                syncVLMSettings();
+            });
+            // TTS Voice selector — populate on open and on voiceschanged
+            function populateVoiceSelect() {
+                const sel = document.getElementById('vlm-voice-select');
+                if (!sel || !window.speechSynthesis) return;
+                const voices = window.speechSynthesis.getVoices();
+                if (!voices.length) return;
+                const saved = localStorage.getItem('vlm-voice-uri') ?? '';
+                const defaultOpt = `<option value=""${!saved ? ' selected' : ''}>System default</option>`;
+                sel.innerHTML = defaultOpt + voices.map(v =>
+                    `<option value="${v.voiceURI}"${v.voiceURI === saved ? ' selected' : ''}>${v.name} (${v.lang})</option>`
+                ).join('');
+            }
+            populateVoiceSelect();
+            if (window.speechSynthesis) {
+                window.speechSynthesis.addEventListener('voiceschanged', populateVoiceSelect);
+            }
+            document.getElementById('vlm-voice-select').addEventListener('change', (e) => {
+                localStorage.setItem('vlm-voice-uri', e.target.value);
+            });
+            // TTS Speed slider
+            const _speedSlider = document.getElementById('vlm-voice-speed');
+            const _speedVal    = document.getElementById('vlm-voice-speed-val');
+            const _savedSpeed  = parseFloat(localStorage.getItem('vlm-voice-speed') ?? '1');
+            _speedSlider.value     = _savedSpeed;
+            _speedVal.textContent  = _savedSpeed.toFixed(1) + '×';
+            _speedSlider.addEventListener('input', (e) => {
+                const v = parseFloat(e.target.value);
+                _speedVal.textContent = v.toFixed(1) + '×';
+                localStorage.setItem('vlm-voice-speed', v);
+            });
+
+            document.getElementById('vlm-system-prompt').addEventListener('input', (e) => {
+                state.vlmSystemPrompt = e.target.value;
+                localStorage.setItem('vlmSystemPrompt', state.vlmSystemPrompt);
+                syncVLMSettings();
+            });
+            document.getElementById('vlm-system-prompt-reset').addEventListener('click', () => {
+                state.vlmSystemPrompt = '';
+                localStorage.removeItem('vlmSystemPrompt');
+                document.getElementById('vlm-system-prompt').value = '';
                 syncVLMSettings();
             });
             document.getElementById('vlm-ollama-fetch-btn').addEventListener('click', async () => {

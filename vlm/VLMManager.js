@@ -135,12 +135,21 @@ class VLMManager {
      * Switch to Ollama mode.  Uses Ollama's OpenAI-compatible /v1 endpoint.
      * Terminates any running local worker; fires 'ready' immediately.
      *
-     * @param {string} endpoint  Ollama server base URL, e.g. 'http://localhost:11434'
-     * @param {string} model     Model name, e.g. 'llava' or 'llava:13b'
+     * @param {string}       endpoint  Ollama server base URL, e.g. 'http://localhost:11434'
+     * @param {string}       model     Model name, e.g. 'llava' or 'llava:13b'
+     * @param {boolean|null} think     null = let model decide, true = force thinking on,
+     *                                 false = force thinking off.  Only takes effect on
+     *                                 models that support Ollama's think parameter (e.g.
+     *                                 qwq, deepseek-r1, qwen3).
      */
-    setOllamaMode(endpoint, model) {
+    setOllamaMode(endpoint, model, think = null) {
         const base = (endpoint || 'http://localhost:11434').replace(/\/$/, '').replace(/\/v1$/, '');
         this.setApiMode(`${base}/v1`, '', model || 'gemma3');
+        // Mark as native Ollama so _queryApi routes to the /api/chat endpoint,
+        // which is the only path that correctly supports the `think` parameter.
+        this._apiConfig.isOllama   = true;
+        this._apiConfig.ollamaBase = base;
+        this._apiConfig.think = (think === true || think === false) ? think : null;
     }
 
     /**
@@ -304,6 +313,9 @@ class VLMManager {
     // ─── Internal — OpenAI-compatible API streaming ────────────────────────
 
     async _queryApi(imageSrc, prompt, chatHistory, callbacks) {
+        if (this._apiConfig.isOllama) {
+            return this._queryOllamaChat(imageSrc, prompt, chatHistory, callbacks);
+        }
         const { endpoint, apiKey, model } = this._apiConfig;
 
         callbacks.onStart?.();
@@ -357,16 +369,13 @@ class VLMManager {
             const headers = { 'Content-Type': 'application/json' };
             if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
+            const body = { model, messages, stream: true, max_tokens: 2048 };
+
             const res = await fetch(`${endpoint}/chat/completions`, {
                 method: 'POST',
                 headers,
                 signal: callbacks.signal ?? null,
-                body: JSON.stringify({
-                    model,
-                    messages,
-                    stream:     true,
-                    max_tokens: 2048,
-                }),
+                body: JSON.stringify(body),
             });
 
             if (!res.ok) {
@@ -394,16 +403,22 @@ class VLMManager {
                     const payload = line.slice(6).trim();
                     if (payload === '[DONE]') continue;
                     try {
-                        const json  = JSON.parse(payload);
-                        const delta = json.choices?.[0]?.delta?.content;
-                        if (delta) {
-                            fullText += delta;
+                        const json    = JSON.parse(payload);
+                        const delta   = json.choices?.[0]?.delta ?? {};
+                        // Ollama uses delta.thinking; OpenRouter / other OpenAI-compat
+                        // providers use delta.reasoning or delta.reasoning_content.
+                        const thinkChunk = delta.thinking ?? delta.reasoning ?? delta.reasoning_content;
+                        if (thinkChunk) {
+                            callbacks.onThinking?.(thinkChunk);
+                        }
+                        if (delta.content) {
+                            fullText += delta.content;
                             tokenCount++;
                             const elapsed = (performance.now() - startMs) / 1000;
                             const tps = elapsed > 0.5
                                 ? parseFloat((tokenCount / elapsed).toFixed(1))
                                 : null;
-                            callbacks.onToken?.(delta, tps, tokenCount);
+                            callbacks.onToken?.(delta.content, tps, tokenCount);
                         }
                     } catch (_) { /* malformed SSE chunk — skip */ }
                 }
@@ -416,6 +431,138 @@ class VLMManager {
         } catch (err) {
             if (err.name === 'AbortError') {
                 // User stopped the response — treat as a completed (partial) reply
+                const elapsed = (performance.now() - startMs) / 1000;
+                const avgTps  = elapsed > 0 && tokenCount > 0
+                    ? parseFloat((tokenCount / elapsed).toFixed(1)) : null;
+                callbacks.onDone?.(fullText, tokenCount, avgTps);
+            } else {
+                callbacks.onError?.(err.message);
+            }
+        }
+    }
+
+    // ─── Internal — Ollama native /api/chat streaming ─────────────────────
+
+    async _queryOllamaChat(imageSrc, prompt, chatHistory, callbacks) {
+        const { ollamaBase, model, think } = this._apiConfig;
+        callbacks.onStart?.();
+
+        // Convert imageSrc to base64 for Ollama's native messages format.
+        // data URIs: strip the header.  URLs: fetch and encode.
+        let imageB64 = null;
+        if (imageSrc) {
+            try {
+                if (imageSrc.startsWith('data:')) {
+                    imageB64 = imageSrc.split(',')[1] ?? null;
+                } else {
+                    const res = await fetch(imageSrc);
+                    const buf = await res.arrayBuffer();
+                    let binary = '';
+                    const bytes = new Uint8Array(buf);
+                    // Chunked to avoid call-stack limits on large images
+                    for (let i = 0; i < bytes.length; i += 8192) {
+                        binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+                    }
+                    imageB64 = btoa(binary);
+                }
+            } catch (_) { /* proceed without image */ }
+        }
+
+        // Build messages — image attached to the first user turn only
+        const messages = [];
+        if (this._systemPrompt) {
+            messages.push({ role: 'system', content: this._systemPrompt });
+        }
+
+        let imageInserted = false;
+        for (const turn of chatHistory ?? []) {
+            if (turn.role === 'user' && !imageInserted && imageB64) {
+                messages.push({ role: 'user', content: turn.content, images: [imageB64] });
+                imageInserted = true;
+            } else {
+                messages.push({ role: turn.role, content: turn.content });
+            }
+        }
+
+        if (!imageInserted) {
+            const msg = { role: 'user', content: prompt };
+            if (imageB64) msg.images = [imageB64];
+            messages.push(msg);
+        } else {
+            messages.push({ role: 'user', content: prompt });
+        }
+
+        let fullText   = '';
+        let tokenCount = 0;
+        let startMs    = 0;
+
+        try {
+            const body = { model, messages, stream: true };
+            if (think !== null && think !== undefined) body.think = think;
+
+            const res = await fetch(`${ollamaBase}/api/chat`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal:  callbacks.signal ?? null,
+                body:    JSON.stringify(body),
+            });
+
+            if (!res.ok) {
+                const errText = await res.text().catch(() => res.statusText);
+                callbacks.onError?.(`Ollama ${res.status}: ${errText}`);
+                return;
+            }
+
+            // Ollama streams NDJSON — one JSON object per line
+            const reader  = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer     = '';
+            startMs        = performance.now();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() ?? '';
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    try {
+                        const json = JSON.parse(trimmed);
+                        const msg  = json.message ?? {};
+                        if (msg.thinking) {
+                            callbacks.onThinking?.(msg.thinking);
+                        }
+                        if (msg.content) {
+                            fullText += msg.content;
+                            tokenCount++;
+                            const elapsed = (performance.now() - startMs) / 1000;
+                            const tps = elapsed > 0.5
+                                ? parseFloat((tokenCount / elapsed).toFixed(1))
+                                : null;
+                            callbacks.onToken?.(msg.content, tps, tokenCount);
+                        }
+                        if (json.done) {
+                            const elapsed = (performance.now() - startMs) / 1000;
+                            const avgTps  = elapsed > 0 ? parseFloat((tokenCount / elapsed).toFixed(1)) : null;
+                            callbacks.onDone?.(fullText, tokenCount, avgTps);
+                            return;
+                        }
+                    } catch (_) { /* malformed line — skip */ }
+                }
+            }
+
+            // Stream closed without done marker
+            const elapsed = (performance.now() - startMs) / 1000;
+            const avgTps  = elapsed > 0 && tokenCount > 0
+                ? parseFloat((tokenCount / elapsed).toFixed(1)) : null;
+            callbacks.onDone?.(fullText, tokenCount, avgTps);
+
+        } catch (err) {
+            if (err.name === 'AbortError') {
                 const elapsed = (performance.now() - startMs) / 1000;
                 const avgTps  = elapsed > 0 && tokenCount > 0
                     ? parseFloat((tokenCount / elapsed).toFixed(1)) : null;

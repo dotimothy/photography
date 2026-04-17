@@ -686,6 +686,82 @@ function injectCSS() {
 }
 .vlm-stop-btn:hover { background: rgba(239, 83, 80, 0.24); }
 
+/* ── Voice buttons (mic / TTS) ─────────────────────────────────── */
+.vlm-voice-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #78909c;
+    cursor: pointer;
+    border-radius: 7px;
+    padding: 0 9px;
+    font-size: 15px;
+    line-height: 1;
+    min-height: 32px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.vlm-voice-btn:hover { color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
+.vlm-mic-btn.vlm-mic-active {
+    color: #ef5350;
+    border-color: rgba(239,83,80,0.4);
+    background: rgba(239,83,80,0.1);
+    animation: vlm-mic-pulse 1s ease-in-out infinite;
+}
+@keyframes vlm-mic-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,83,80,0.45); }
+    50%      { box-shadow: 0 0 0 6px rgba(239,83,80,0); }
+}
+.vlm-tts-btn.vlm-tts-on { color: #4fc3f7; border-color: rgba(79,195,247,0.35); background: rgba(79,195,247,0.08); }
+.vlm-tts-btn.vlm-tts-speaking { color: #66bb6a; border-color: rgba(102,187,106,0.4); background: rgba(102,187,106,0.08); animation: vlm-blink 1.1s ease-in-out infinite; }
+
+/* ── Live mode button ──────────────────────────────────────────── */
+.vlm-live-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #78909c;
+    cursor: pointer;
+    border-radius: 7px;
+    padding: 0 9px;
+    font-size: 11px;
+    font-family: inherit;
+    line-height: 1;
+    min-height: 32px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.vlm-live-btn:hover { color: #ef5350; border-color: rgba(239,83,80,0.4); }
+.vlm-live-btn.vlm-live-on {
+    color: #ef5350;
+    border-color: rgba(239,83,80,0.4);
+    background: rgba(239,83,80,0.08);
+    animation: vlm-mic-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── TTS caption bar (shows current spoken sentence + word highlight) */
+.vlm-tts-bar {
+    display: none;
+    padding: 4px 12px 5px;
+    font-size: 11px;
+    color: #78909c;
+    background: rgba(79,195,247,0.04);
+    border-top: 1px solid rgba(79,195,247,0.1);
+    line-height: 1.5;
+    flex-shrink: 0;
+    max-height: 60px;
+    overflow: hidden;
+}
+.vlm-tts-bar.vlm-tts-bar-on { display: block; }
+.vlm-tts-hl {
+    background: rgba(79,195,247,0.25);
+    border-radius: 2px;
+    color: #b2ebf2;
+    padding: 0 1px;
+}
+
 /* ── Per-message copy button ───────────────────────────────────── */
 .vlm-msg-copy {
     display: block;
@@ -886,6 +962,44 @@ function injectCSS() {
 .vlm-msg-text.vlm-md .katex { color: #e0f7fa; font-size: 1em; }
 .vlm-msg-text.vlm-md .katex-display { overflow-x: auto; margin: 8px 0; }
 
+/* ── Thinking block (Ollama extended thinking) ───────────────────── */
+.vlm-thinking {
+    margin-bottom: 5px;
+    border: 1px solid rgba(79,195,247,0.12);
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(79,195,247,0.03);
+}
+.vlm-thinking summary {
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 10.5px;
+    color: #546e7a;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.vlm-thinking summary::-webkit-details-marker { display: none; }
+.vlm-thinking summary::before {
+    content: '▶';
+    font-size: 7px;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+}
+.vlm-thinking[open] summary::before { transform: rotate(90deg); }
+.vlm-thinking-text {
+    padding: 5px 8px 7px;
+    font-size: 10.5px;
+    color: #455a64;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-top: 1px solid rgba(79,195,247,0.08);
+    max-height: 180px;
+    overflow-y: auto;
+}
+
 .vlm-gen-stats {
     margin-top: 5px;
     font-size: 10px;
@@ -914,6 +1028,12 @@ const _GALLERY_SYSTEM_PROMPT =
     'Only refuse if the request has absolutely no connection to the image (e.g. unrelated coding, math). ' +
     'In that case respond only with: "I can only answer questions about this photograph." ' +
     'Use markdown formatting (bold, lists, headings) to structure responses clearly.';
+
+const _GALLERY_LIVE_PROMPT =
+    'You are an AI assistant in a live voice conversation about a photograph. ' +
+    'Keep every reply to 2–3 sentences maximum — you are being read aloud. ' +
+    'Be direct and conversational. No lists, no headings, no markdown. ' +
+    'Do not mention, guess, or estimate camera settings unless explicitly asked.';
 
 const _ABOUT_SYSTEM_PROMPT =
     'You are TheDoInspector, an AI assistant for the photography portfolio of Timothy Do (TheDoShoots). ' +
@@ -957,12 +1077,276 @@ class GalleryVLMOverlay {
         this._dlMaxPct         = 0;     // monotonic download progress (never decreases)
         this._exifBypass       = localStorage.getItem('vlm-exif-bypass') !== 'off'; // default on
         this._directLinks      = localStorage.getItem('vlm-direct-links') === 'on'; // default off (embeds)
+        // User-editable system prompt override (empty = use built-in default)
+        this._customSystemPrompt = window.VLM_SETTINGS?.systemPrompt ?? '';
         // Default system prompt for API / Ollama modes (gallery context)
-        manager.setSystemPrompt(_GALLERY_SYSTEM_PROMPT);
+        manager.setSystemPrompt(this._baseSystemPrompt());
+
+        // Voice I/O state
+        this._ttsEnabled = localStorage.getItem('vlm-tts') === 'on';
+        this._sttActive  = false;
+        this._stt        = null;
+        this._liveMode         = false;
+        this._ttsBuf           = '';
+        this._activeTTSTextEl  = null;
+        this._ttsHLMark        = null;
 
         this._buildUI();
         this._bindManagerEvents();
         this._bindSettingsEvents();
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the system prompt to use for API/Ollama mode.
+     * Falls back to the built-in default when no custom prompt is configured.
+     */
+    _baseSystemPrompt() {
+        if (this._liveMode) return _GALLERY_LIVE_PROMPT;
+        return this._customSystemPrompt?.trim() || _GALLERY_SYSTEM_PROMPT;
+    }
+
+    /**
+     * Returns the full system prompt including current photo metadata (EXIF).
+     * Always use this instead of _baseSystemPrompt() when calling setSystemPrompt.
+     */
+    _buildSystemPrompt() {
+        const base = this._baseSystemPrompt();
+        if (!this._imageName) return base;
+        if (this._imageExif) {
+            return base + `\n\n[Current photo metadata]\nFile: ${this._imageName}\n${this._imageExif}`;
+        }
+        return base + `\n\n[Current photo]\nFile: ${this._imageName}`;
+    }
+
+    // ── Voice I/O ──────────────────────────────────────────────────────────
+
+    _toggleSTT() {
+        if (this._sttActive) { this._stt?.stop(); return; }
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) return;
+        const micBtn = this._q('-mic');
+        const input  = this._q('-input');
+        this._stt = new SR();
+        this._stt.lang = navigator.language || 'en-US';
+        this._stt.interimResults = true;
+        this._stt.maxAlternatives = 1;
+        this._sttActive = true;
+        micBtn.classList.add('vlm-mic-active');
+        this._stt.onresult = (e) => {
+            let interim = '', final = '';
+            for (const r of e.results) {
+                if (r.isFinal) final += r[0].transcript;
+                else interim += r[0].transcript;
+            }
+            input.value = final || interim;
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 90) + 'px';
+            this._refreshSendBtn();
+        };
+        this._stt.onend = () => {
+            this._sttActive = false;
+            micBtn.classList.remove('vlm-mic-active');
+            this._stt = null;
+            if (input.value.trim() && !this._streaming) this._sendMessage();
+            // Live mode: restart mic only when TTS is not playing
+            if (this._liveMode) setTimeout(() => {
+                if (this._liveMode && !this._sttActive &&
+                    !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+                    this._toggleSTT();
+            }, 150);
+        };
+        this._stt.onerror = (e) => {
+            this._sttActive = false;
+            micBtn.classList.remove('vlm-mic-active');
+            this._stt = null;
+            // Restart unless the user denied permission
+            if (this._liveMode && e.error !== 'not-allowed' && e.error !== 'service-not-allowed') {
+                setTimeout(() => {
+                    if (this._liveMode && !this._sttActive &&
+                        !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+                        this._toggleSTT();
+                }, 500);
+            }
+        };
+        this._stt.start();
+    }
+
+    _toggleTTS() {
+        // When actively speaking/queued: act as stop button
+        if (window.speechSynthesis?.speaking || window.speechSynthesis?.pending) {
+            this._stopTTS();
+            return;
+        }
+        this._ttsEnabled = !this._ttsEnabled;
+        localStorage.setItem('vlm-tts', this._ttsEnabled ? 'on' : 'off');
+        const btn = this._q('-tts');
+        btn.classList.toggle('vlm-tts-on', this._ttsEnabled);
+        btn.textContent = this._ttsEnabled ? '🔊' : '🔇';
+        btn.title = this._ttsEnabled ? 'Read aloud: on (click to stop)' : 'Read aloud: off';
+    }
+
+    _selectedVoice() {
+        const uri    = localStorage.getItem('vlm-voice-uri');
+        if (!uri || !window.speechSynthesis) return null;
+        return window.speechSynthesis.getVoices().find(v => v.voiceURI === uri) ?? null;
+    }
+
+    _stopTTS() {
+        window.speechSynthesis?.cancel();
+        this._ttsBuf = '';
+        this._clearTTSHighlight();
+        this._q('-tts')?.classList.remove('vlm-tts-speaking');
+        const bar = this._q('-tts-bar');
+        if (bar) bar.classList.remove('vlm-tts-bar-on');
+    }
+
+    /** Called per token during streaming — speaks complete sentences as they form. */
+    _feedTTS(chunk) {
+        if (!this._ttsEnabled || !window.speechSynthesis) return;
+        this._ttsBuf = (this._ttsBuf ?? '') + chunk;
+        // Split on sentence-ending punctuation followed by whitespace
+        const parts = this._ttsBuf.split(/([.!?…])\s+/);
+        for (let i = 0; i + 1 < parts.length; i += 2) {
+            this._speakChunk(parts[i] + parts[i + 1]);
+        }
+        this._ttsBuf = parts[parts.length - 1] ?? '';
+    }
+
+    /** Speak any remaining buffered text (call in onDone). */
+    _flushTTS() {
+        if (!this._ttsEnabled || !window.speechSynthesis) return;
+        const remaining = (this._ttsBuf ?? '').trim();
+        if (remaining) this._speakChunk(remaining);
+        this._ttsBuf = '';
+    }
+
+    _toggleLiveMode() {
+        this._liveMode = !this._liveMode;
+        const btn = this._q('-live');
+        btn.classList.toggle('vlm-live-on', this._liveMode);
+        btn.title = this._liveMode ? 'Live mode on — click to stop' : 'Live conversation mode';
+        // Swap system prompt between live (concise) and normal
+        this.manager.setSystemPrompt(this._buildSystemPrompt());
+        if (!this._liveMode) {
+            this._stopTTS();
+            this._stt?.stop();
+        } else {
+            // Ensure TTS is enabled for live mode
+            if (!this._ttsEnabled) {
+                this._ttsEnabled = true;
+                localStorage.setItem('vlm-tts', 'on');
+                const ttsBtn = this._q('-tts');
+                ttsBtn.classList.add('vlm-tts-on');
+                ttsBtn.textContent = '🔊';
+                ttsBtn.title = 'Read aloud: on (click to stop)';
+            }
+            // If not currently generating or speaking, start listening immediately
+            if (!this._streaming && !window.speechSynthesis?.speaking) {
+                this._toggleSTT();
+            }
+        }
+    }
+
+    _speakChunk(text) {
+        const plain = text
+            .replace(/#{1,6}\s+/g, '')
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/\*(.+?)\*/g, '$1')
+            .replace(/`{1,3}[^`\n]*`{1,3}/g, '')
+            .replace(/\[(.+?)\]\([^)]*\)/g, '$1')
+            .replace(/\n+/g, ' ')
+            .trim();
+        if (!plain) return;
+        const utt    = new SpeechSynthesisUtterance(plain);
+        const voice  = this._selectedVoice();
+        if (voice) utt.voice = voice;
+        utt.rate = parseFloat(localStorage.getItem('vlm-voice-speed') ?? '1');
+        const ttsBtn = this._q('-tts');
+        const bar    = this._q('-tts-bar');
+
+        utt.onstart = () => {
+            ttsBtn?.classList.add('vlm-tts-speaking');
+            if (bar) {
+                bar.textContent = plain;
+                bar.classList.add('vlm-tts-bar-on');
+            }
+            this._highlightTTSSentence(plain);
+        };
+
+        utt.onboundary = (e) => {
+            if (!bar || e.name !== 'word') return;
+            const len    = e.charLength ?? 0;
+            const before = plain.slice(0, e.charIndex).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+            const word   = plain.slice(e.charIndex, e.charIndex + len).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+            const after  = plain.slice(e.charIndex + len).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+            bar.innerHTML = `${before}<mark class="vlm-tts-hl">${word}</mark>${after}`;
+        };
+
+        utt.onend = utt.onerror = () => {
+            this._clearTTSHighlight();
+            if (!window.speechSynthesis?.speaking && !window.speechSynthesis?.pending) {
+                ttsBtn?.classList.remove('vlm-tts-speaking');
+                if (bar) bar.classList.remove('vlm-tts-bar-on');
+                // Live mode: TTS is fully done — start listening now
+                if (this._liveMode && !this._sttActive && !this._streaming) {
+                    setTimeout(() => {
+                        if (this._liveMode && !this._sttActive &&
+                            !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+                            this._toggleSTT();
+                    }, 300);
+                }
+            }
+        };
+
+        window.speechSynthesis.speak(utt);
+    }
+
+    /** Wrap the plain-text sentence in a <mark> inside the active response textEl. */
+    _highlightTTSSentence(plain) {
+        this._clearTTSHighlight();
+        const textEl = this._activeTTSTextEl;
+        if (!textEl || !plain) return;
+        const content = textEl.textContent;
+        const pos = content.indexOf(plain);
+        if (pos === -1) return;
+        try {
+            const range = document.createRange();
+            // Locate start node
+            let charCount = 0;
+            const tw = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT);
+            let node;
+            while ((node = tw.nextNode())) {
+                const end = charCount + node.textContent.length;
+                if (end > pos) { range.setStart(node, pos - charCount); break; }
+                charCount += node.textContent.length;
+            }
+            // Locate end node
+            charCount = 0;
+            const endPos = pos + plain.length;
+            const tw2 = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT);
+            while ((node = tw2.nextNode())) {
+                const end = charCount + node.textContent.length;
+                if (end >= endPos) { range.setEnd(node, endPos - charCount); break; }
+                charCount += node.textContent.length;
+            }
+            const mark = document.createElement('mark');
+            mark.className = 'vlm-tts-hl';
+            range.surroundContents(mark);
+            this._ttsHLMark = mark;
+            mark.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        } catch (_) { /* range spans element boundaries — skip */ }
+    }
+
+    /** Remove the inline sentence highlight. */
+    _clearTTSHighlight() {
+        const mark = this._ttsHLMark;
+        this._ttsHLMark = null;
+        if (!mark?.parentNode) return;
+        const parent = mark.parentNode;
+        while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+        parent.removeChild(mark);
     }
 
     // ── UI Construction ────────────────────────────────────────────────────
@@ -978,6 +1362,12 @@ class GalleryVLMOverlay {
         this._btn.style.display = 'none';   // hidden until a gallery iframe loads
         this._btn.addEventListener('click', () => this._togglePanel());
         document.body.appendChild(this._btn);
+
+        // Cut TTS and STT on page unload so audio never bleeds through a refresh
+        window.addEventListener('beforeunload', () => {
+            window.speechSynthesis?.cancel();
+            this._stt?.stop();
+        }, { once: true });
 
         // ── Panel ──────────────────────────────────────────────────────────
         this._panel = document.createElement('div');
@@ -1059,12 +1449,16 @@ class GalleryVLMOverlay {
 </div>
 <div class="vlm-chat-actions" id="${this._id}-chat-actions" style="display:none">
     <button class="vlm-action-btn" id="${this._id}-copy-chat">&#128203; Copy Chat</button>
-    <button class="vlm-action-btn" id="${this._id}-export-log">&#128462; Export Log</button>
+    <button class="vlm-action-btn" id="${this._id}-export-log">&#128229; Export Log</button>
 </div>
+<div class="vlm-tts-bar" id="${this._id}-tts-bar"></div>
 <div class="vlm-input-area">
     <textarea class="vlm-input" id="${this._id}-input" rows="1"
         placeholder="What camera settings? What's the subject? …"
         aria-label="Ask about the photo"></textarea>
+    <button class="vlm-voice-btn vlm-mic-btn" id="${this._id}-mic" title="Voice input" style="display:none">🎤</button>
+    <button class="vlm-voice-btn vlm-tts-btn" id="${this._id}-tts" title="Read aloud: off">🔇</button>
+    <button class="vlm-live-btn" id="${this._id}-live" title="Live conversation mode" style="display:none">⏺ Live</button>
     <button class="vlm-stop-btn" id="${this._id}-stop" style="display:none">&#9632; Stop</button>
     <button class="vlm-send-btn" id="${this._id}-send" disabled>Send</button>
 </div>`;
@@ -1113,6 +1507,21 @@ class GalleryVLMOverlay {
 
         sendBtn.addEventListener('click',   () => this._sendMessage());
         this._q('-stop').addEventListener('click', () => this._abortController?.abort());
+        this._q('-mic').addEventListener('click',  () => this._toggleSTT());
+        this._q('-tts').addEventListener('click',  () => this._toggleTTS());
+        this._q('-live').addEventListener('click', () => this._toggleLiveMode());
+        // Show mic/live buttons only when SpeechRecognition is available
+        if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+            this._q('-mic').style.display = '';
+            if (window.speechSynthesis) this._q('-live').style.display = '';
+        }
+        // Restore TTS button state
+        if (this._ttsEnabled) {
+            const ttsBtn = this._q('-tts');
+            ttsBtn.classList.add('vlm-tts-on');
+            ttsBtn.textContent = '🔊';
+            ttsBtn.title = 'Read aloud: on (click to stop)';
+        }
         this._q('-copy-chat').addEventListener('click', () => this._copyChat());
         this._q('-export-log').addEventListener('click', () => this._exportLog());
         // stopPropagation on all keyboard events so typing in the chat never
@@ -1311,6 +1720,10 @@ class GalleryVLMOverlay {
         this._history   = [];
         this._streaming = false;         // abandon any streaming state
         _vlmIsRunning   = false;
+        this._liveMode  = false;
+        this._q('-live')?.classList.remove('vlm-live-on');
+        this._stopTTS();
+        this.manager.setSystemPrompt(this._buildSystemPrompt());
         const msgs = this._q('-msgs');
         msgs.innerHTML = '<div class="vlm-empty">Open a photo, then ask anything about it.</div>';
         this._q('-chat-actions').style.display = 'none';
@@ -1328,6 +1741,10 @@ class GalleryVLMOverlay {
             this._streaming
         );
         if (stopBtn) stopBtn.style.display = this._streaming ? '' : 'none';
+        // Live mode: restart mic once generation ends, but only if TTS is not playing
+        if (this._liveMode && !this._streaming && !this._sttActive &&
+            !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+            this._toggleSTT();
     }
 
     _copyChat() {
@@ -1458,7 +1875,7 @@ class GalleryVLMOverlay {
         const firstLoad = isApi ? !this.manager.isReady : !this.manager._worker;
 
         if (settings.type === 'ollama') {
-            this.manager.setOllamaMode(settings.ollamaEndpoint, settings.ollamaModel);
+            this.manager.setOllamaMode(settings.ollamaEndpoint, settings.ollamaModel, settings.ollamaThink ?? null);
         } else if (isApi) {
             this.manager.setApiMode(
                 settings.apiEndpoint,
@@ -1508,7 +1925,7 @@ class GalleryVLMOverlay {
 
         // ── Gallery page: restore gallery context ─────────────────────────────
         this._pageContext = null;
-        this.manager.setSystemPrompt(_GALLERY_SYSTEM_PROMPT);
+        this.manager.setSystemPrompt(this._buildSystemPrompt());
 
         const viewer  = doc.querySelector('#imageViewer');
         const imgCont = doc.querySelector('#full-image-container');
@@ -1740,9 +2157,7 @@ class GalleryVLMOverlay {
         // For API/Ollama: reset system prompt with filename now so any
         // in-progress query sees the right image context immediately.
         if (this.manager._mode === 'api') {
-            this.manager.setSystemPrompt(
-                _GALLERY_SYSTEM_PROMPT + `\n\n[Current photo]\nFile: ${this._imageName}`
-            );
+            this.manager.setSystemPrompt(this._buildSystemPrompt());
         }
 
         // Kick off EXIF extraction; store the promise so _sendMessage can await it
@@ -1780,10 +2195,7 @@ class GalleryVLMOverlay {
             // For API/Ollama: promote EXIF into the system prompt so the model
             // treats these values as authoritative ground truth — not a visual guess.
             if (this.manager._mode === 'api') {
-                this.manager.setSystemPrompt(
-                    _GALLERY_SYSTEM_PROMPT +
-                    `\n\n[Current photo metadata]\nFile: ${name}\n${this._imageExif}`
-                );
+                this.manager.setSystemPrompt(this._buildSystemPrompt());
             }
         });
 
@@ -1922,6 +2334,7 @@ class GalleryVLMOverlay {
         this._streaming         = true;
         _vlmIsRunning           = true;
         this._abortController   = new AbortController();
+        this._ttsBuf            = '';   // reset streaming TTS sentence buffer
         this._refreshSendBtn();
 
         this._appendMsg('user', prompt);
@@ -1941,7 +2354,12 @@ class GalleryVLMOverlay {
 
         // Create assistant bubble with a separate text node and a live stats bar
         const assistantEl = this._appendMsg('assistant', '', true);
+        // Thinking block — created lazily on first onThinking chunk
+        let thinkEl   = null;
+        let thinkBody = null;   // cached .vlm-thinking-text node
+        let thinkText = '';
         const textEl  = Object.assign(document.createElement('span'), { className: 'vlm-msg-text' });
+        this._activeTTSTextEl = textEl;  // expose to _speakChunk for inline highlighting
         const statsEl = Object.assign(document.createElement('div'),  { className: 'vlm-gen-stats' });
         statsEl.textContent = 'Generating…';
         assistantEl.appendChild(textEl);
@@ -1983,6 +2401,25 @@ class GalleryVLMOverlay {
             this._history.slice(),
             {
                 signal: this._abortController.signal,
+                onThinking: (chunk) => {
+                    if (this._generation !== gen) return;
+                    // Lazily create the collapsible think block on first chunk
+                    if (!thinkEl) {
+                        thinkEl = document.createElement('details');
+                        thinkEl.className = 'vlm-thinking';
+                        thinkEl.innerHTML = '<summary>Thinking…</summary><div class="vlm-thinking-text"></div>';
+                        thinkBody = thinkEl.querySelector('.vlm-thinking-text');
+                        assistantEl.insertBefore(thinkEl, textEl);
+                    }
+                    thinkText += chunk;
+                    if (_markedReady) {
+                        thinkBody.innerHTML = _renderMarkdown(thinkText);
+                        thinkBody.classList.add('vlm-md');
+                    } else {
+                        thinkBody.textContent = thinkText;
+                    }
+                    this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
+                },
                 onToken: (tok, tps, tokenCount) => {
                     if (this._generation !== gen) return;
                     fullText += tok;
@@ -1995,6 +2432,7 @@ class GalleryVLMOverlay {
                     if (tps != null) {
                         statsEl.textContent = `${tokenCount} tok · ${tps} tok/s · ${this._backend}`;
                     }
+                    this._feedTTS(tok);
                     this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
                 },
                 onDone: (text, tokenCount, avgTps) => {
@@ -2008,6 +2446,11 @@ class GalleryVLMOverlay {
                         textEl.classList.add('vlm-md');
                     } else {
                         textEl.textContent = finalText;
+                    }
+
+                    // Collapse the thinking block and update its label once done
+                    if (thinkEl) {
+                        thinkEl.querySelector('summary').textContent = 'Thought process';
                     }
 
                     // Freeze final stats
@@ -2038,6 +2481,7 @@ class GalleryVLMOverlay {
                     // Show chat-level action bar
                     this._q('-chat-actions').style.display = '';
 
+                    this._flushTTS();
                     _vlmIsRunning   = false;
                     this._streaming = false;
                     this._refreshSendBtn();
@@ -2214,7 +2658,9 @@ class GalleryVLMOverlay {
      */
     _bindSettingsEvents() {
         window.addEventListener('vlmsettingschanged', (e) => {
-            const { enabled, type, model, apiEndpoint, apiKey, apiModel, ollamaEndpoint, ollamaModel } = e.detail ?? {};
+            const { enabled, type, model, apiEndpoint, apiKey, apiModel, ollamaEndpoint, ollamaModel, ollamaThink, systemPrompt } = e.detail ?? {};
+            // Update stored system prompt before any mode-switch (mode code reads _baseSystemPrompt())
+            if (systemPrompt !== undefined) this._customSystemPrompt = systemPrompt ?? '';
             const galleryOpen = !!(this._iframeDoc &&
                 this._iframeDoc.location?.href !== 'about:blank');
 
@@ -2231,12 +2677,14 @@ class GalleryVLMOverlay {
             if (type === 'ollama') {
                 // Switch to (or update) Ollama mode — setOllamaMode fires 'ready'
                 // synchronously, which updates the status bar. Don't reset UI after.
-                this.manager.setOllamaMode(ollamaEndpoint, ollamaModel);
+                this.manager.setOllamaMode(ollamaEndpoint, ollamaModel, ollamaThink ?? null);
+                this.manager.setSystemPrompt(this._buildSystemPrompt());
                 this._newChat();
             } else if (type === 'api') {
                 // Switch to (or update) API mode — setApiMode fires 'ready'
                 // synchronously, which updates the status bar. Don't reset UI after.
                 this.manager.setApiMode(apiEndpoint, apiKey, apiModel);
+                this.manager.setSystemPrompt(this._buildSystemPrompt());
                 this._newChat();
             } else {
                 // Local model mode
