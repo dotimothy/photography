@@ -1191,7 +1191,10 @@ class GalleryVLMOverlay {
         const uri = localStorage.getItem('vlm-voice-uri');
         if (!uri || !window.speechSynthesis) return null;
         if (uri.startsWith('lang:')) return { _langOnly: uri.slice(5) };
-        return window.speechSynthesis.getVoices().find(v => v.voiceURI === uri) ?? null;
+        // Prefer the shared list built by the settings UI — same objects, same URIs.
+        // Fall back to a fresh getVoices() call if the list isn't available yet.
+        const voices = window._vlmAllVoices ?? window.speechSynthesis.getVoices();
+        return voices.find(v => v.voiceURI === uri) ?? null;
     }
 
     _stopTTS() {

@@ -2106,6 +2106,7 @@
                 const base = [...voices].sort((a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name));
                 const extras = _EXTRA_VOICES.filter(e => !base.some(v => v.lang === e.lang && v.name === e.name));
                 _allVoices = [...base, ...extras].sort((a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name));
+                window._vlmAllVoices = _allVoices;  // expose for GalleryVLMOverlay voice lookup
                 renderVoiceList(document.getElementById('vlm-voice-filter')?.value ?? '');
             }
             function renderVoiceList(filter) {
