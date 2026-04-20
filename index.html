@@ -805,6 +805,17 @@
 
     @media (max-width: 599px) {
         .settings-body { flex-direction: column; gap: 0; }
+        .settings-overlay {
+            align-items: flex-start;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 16px 0 32px;
+        }
+        .settings-modal {
+            width: 94vw;
+            max-height: none;
+            margin: auto;
+        }
     }
 
     .settings-overlay.visible .settings-modal {
@@ -849,7 +860,7 @@
 
     .setting-label {
         font-size: 0.9rem;
-        color: #aaa;
+        color: #fff;
     }
 
     .toggle-switch {
@@ -894,7 +905,7 @@
 
     .setting-select {
         background: #1a1a1a;
-        color: #ddd;
+        color: #fff;
         border: 1px solid #444;
         padding: 5px 8px;
         border-radius: 4px;
@@ -908,7 +919,7 @@
 
     .setting-input {
         background: #1a1a1a;
-        color: #ddd;
+        color: #fff;
         border: 1px solid #444;
         padding: 5px 8px;
         border-radius: 4px;
@@ -918,13 +929,95 @@
         min-width: 0;
     }
     .setting-input:focus { outline: none; border-color: var(--accent-color); }
-    .setting-input::placeholder { color: #555; }
+    .setting-input::placeholder { color: #666; }
 
     .setting-note {
         font-size: 0.78rem;
         color: #ffa726;
         font-style: italic;
         line-height: 1.4;
+    }
+
+    /* --- VOICE SEARCH --- */
+    .vlm-voice-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #1a1a1a;
+        border: 1px solid #444;
+        border-radius: 6px;
+        padding: 6px 10px;
+        margin-bottom: 6px;
+        transition: border-color 0.2s;
+    }
+    .vlm-voice-search-wrap:focus-within { border-color: var(--accent-color); }
+    .vlm-voice-search-icon { font-size: 13px; opacity: 0.5; flex-shrink: 0; }
+    .vlm-voice-search-wrap input {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        color: #fff;
+        font-size: 0.82rem;
+        font-family: inherit;
+    }
+    .vlm-voice-search-wrap input::placeholder { color: #555; }
+    #vlm-voice-filter-clear {
+        background: none;
+        border: none;
+        color: #555;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0 2px;
+        line-height: 1;
+        display: none;
+    }
+    #vlm-voice-filter-clear.visible { display: block; color: #aaa; }
+    #vlm-voice-filter-clear:hover { color: #fff; }
+    #vlm-voice-list {
+        max-height: 160px;
+        overflow-y: auto;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        background: #141414;
+    }
+    #vlm-voice-list::-webkit-scrollbar { width: 4px; }
+    #vlm-voice-list::-webkit-scrollbar-track { background: transparent; }
+    #vlm-voice-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    .vlm-voice-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 7px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #1e1e1e;
+        transition: background 0.15s;
+        gap: 8px;
+    }
+    .vlm-voice-item:last-child { border-bottom: none; }
+    .vlm-voice-item:hover { background: #1e2a35; }
+    .vlm-voice-item.selected { background: rgba(79,195,247,0.25); }
+    .vlm-voice-item-name {
+        font-size: 0.82rem;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .vlm-voice-item.selected .vlm-voice-item-name { color: #fff !important; font-weight: 500; }
+    .vlm-voice-item-lang {
+        font-size: 0.72rem;
+        color: #555;
+        flex-shrink: 0;
+        font-family: monospace;
+    }
+    .vlm-voice-item.selected .vlm-voice-item-lang { color: rgba(255,255,255,0.7); opacity: 1; }
+    .vlm-voice-empty {
+        padding: 12px;
+        text-align: center;
+        color: #444;
+        font-size: 0.8rem;
+        font-style: italic;
     }
 
     /* --- IFRAME OVERLAY --- */
@@ -1463,23 +1556,29 @@
                 </div>
                 <!-- Running models / load-unload -->
                 <div class="setting-row" style="gap:6px;flex-wrap:wrap">
-                    <button id="vlm-ollama-ps-btn"     style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;flex:1">Active Models</button>
-                    <button id="vlm-ollama-load-btn"   style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;flex:1">Load</button>
-                    <button id="vlm-ollama-unload-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;flex:1">Unload</button>
+                    <button id="vlm-ollama-ps-btn"     style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Active Models</button>
+                    <button id="vlm-ollama-load-btn"   style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Load</button>
+                    <button id="vlm-ollama-unload-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Unload</button>
                 </div>
-                <div id="vlm-ollama-running-list" style="display:none;padding:4px 0;font-size:11px;color:#78909c"></div>
+                <div id="vlm-ollama-running-list" style="display:none;padding:4px 0;font-size:11px;color:#fff"></div>
             </div>
             <!-- TTS Voice (shown when browser supports speechSynthesis) -->
             <div id="vlm-voice-settings" style="display:none">
-                <div class="setting-row">
+                <div class="setting-row" style="margin-bottom:6px">
                     <span class="setting-label">Voice</span>
-                    <select class="setting-select" id="vlm-voice-select"></select>
                 </div>
-                <div class="setting-row">
+                <div class="vlm-voice-search-wrap">
+                    <span class="vlm-voice-search-icon">&#128269;</span>
+                    <input type="text" id="vlm-voice-filter" placeholder="Search voices or language…"
+                           autocomplete="off" spellcheck="false">
+                    <button id="vlm-voice-filter-clear" title="Clear">&#10005;</button>
+                </div>
+                <div id="vlm-voice-list"></div>
+                <div class="setting-row" style="margin-top:10px">
                     <span class="setting-label">Speed</span>
                     <input type="range" id="vlm-voice-speed" min="0.5" max="2" step="0.1" value="1"
                            style="flex:1;accent-color:#4fc3f7;cursor:pointer">
-                    <span id="vlm-voice-speed-val" style="font-size:11px;color:#78909c;min-width:28px;text-align:right">1.0×</span>
+                    <span id="vlm-voice-speed-val" style="font-size:11px;color:#fff;min-width:28px;text-align:right">1.0×</span>
                 </div>
             </div>
             <!-- System Prompt (shown when backend = api or ollama) -->
@@ -1718,7 +1817,10 @@
             // Settings Open/Close
             document.getElementById('btn-open-settings').addEventListener('click', () => {
                 els.settingsOverlay.classList.add('visible');
-                populateVoiceSelect();  // re-populate in case voices loaded after page init
+                const _vf = document.getElementById('vlm-voice-filter');
+                if (_vf) _vf.value = '';
+                populateVoiceSelect();
+                renderVoiceList('');
             });
             document.getElementById('btn-close-settings').addEventListener('click', () => {
                 els.settingsOverlay.classList.remove('visible');
@@ -1948,24 +2050,119 @@
                 localStorage.setItem('vlmOllamaThink', raw);
                 syncVLMSettings();
             });
-            // TTS Voice selector — populate on open and on voiceschanged
+            // TTS Voice selector — custom styled list with search
+            const _EXTRA_VOICES = [
+                // European
+                { voiceURI: 'lang:de-DE', name: 'Google Deutsch',          lang: 'de-DE' },
+                { voiceURI: 'lang:fr-FR', name: 'Google français',         lang: 'fr-FR' },
+                { voiceURI: 'lang:es-ES', name: 'Google español',          lang: 'es-ES' },
+                { voiceURI: 'lang:es-US', name: 'Google español (US)',     lang: 'es-US' },
+                { voiceURI: 'lang:it-IT', name: 'Google italiano',         lang: 'it-IT' },
+                { voiceURI: 'lang:pt-BR', name: 'Google português (BR)',   lang: 'pt-BR' },
+                { voiceURI: 'lang:pt-PT', name: 'Google português (PT)',   lang: 'pt-PT' },
+                { voiceURI: 'lang:nl-NL', name: 'Google Nederlands',       lang: 'nl-NL' },
+                { voiceURI: 'lang:pl-PL', name: 'Google polski',           lang: 'pl-PL' },
+                { voiceURI: 'lang:ru-RU', name: 'Google русский',          lang: 'ru-RU' },
+                { voiceURI: 'lang:sv-SE', name: 'Google svenska',          lang: 'sv-SE' },
+                { voiceURI: 'lang:nb-NO', name: 'Google norsk',            lang: 'nb-NO' },
+                { voiceURI: 'lang:da-DK', name: 'Google dansk',            lang: 'da-DK' },
+                { voiceURI: 'lang:fi-FI', name: 'Google suomi',            lang: 'fi-FI' },
+                { voiceURI: 'lang:cs-CZ', name: 'Google čeština',          lang: 'cs-CZ' },
+                { voiceURI: 'lang:ro-RO', name: 'Google română',           lang: 'ro-RO' },
+                { voiceURI: 'lang:hu-HU', name: 'Google magyar',           lang: 'hu-HU' },
+                { voiceURI: 'lang:el-GR', name: 'Google ελληνικά',         lang: 'el-GR' },
+                { voiceURI: 'lang:uk-UA', name: 'Google українська',       lang: 'uk-UA' },
+                // Middle East & Africa
+                { voiceURI: 'lang:ar-XA', name: 'Google العربية',          lang: 'ar-XA' },
+                { voiceURI: 'lang:he-IL', name: 'Google עברית',            lang: 'he-IL' },
+                { voiceURI: 'lang:tr-TR', name: 'Google Türkçe',           lang: 'tr-TR' },
+                // South Asia
+                { voiceURI: 'lang:hi-IN', name: 'Google Hindi',            lang: 'hi-IN' },
+                { voiceURI: 'lang:ta-IN', name: 'Google Tamil',            lang: 'ta-IN' },
+                { voiceURI: 'lang:te-IN', name: 'Google Telugu',           lang: 'te-IN' },
+                { voiceURI: 'lang:bn-IN', name: 'Google বাংলা',            lang: 'bn-IN' },
+                { voiceURI: 'lang:ml-IN', name: 'Google മലയാളം',           lang: 'ml-IN' },
+                { voiceURI: 'lang:kn-IN', name: 'Google ಕನ್ನಡ',            lang: 'kn-IN' },
+                { voiceURI: 'lang:mr-IN', name: 'Google मराठी',            lang: 'mr-IN' },
+                { voiceURI: 'lang:gu-IN', name: 'Google ગુજરાતી',          lang: 'gu-IN' },
+                { voiceURI: 'lang:ur-PK', name: 'Google اردو',             lang: 'ur-PK' },
+                // East & Southeast Asia
+                { voiceURI: 'lang:zh-CN', name: 'Google 普通话 (CN)',       lang: 'zh-CN' },
+                { voiceURI: 'lang:zh-TW', name: 'Google 國語 (TW)',         lang: 'zh-TW' },
+                { voiceURI: 'lang:zh-HK', name: 'Google 粵語 (HK)',         lang: 'zh-HK' },
+                { voiceURI: 'lang:ja-JP', name: 'Google 日本語',            lang: 'ja-JP' },
+                { voiceURI: 'lang:ko-KR', name: 'Google 한국어',            lang: 'ko-KR' },
+                { voiceURI: 'lang:vi-VN', name: 'Google Vietnamese',       lang: 'vi-VN' },
+                { voiceURI: 'lang:th-TH', name: 'Google ภาษาไทย',          lang: 'th-TH' },
+                { voiceURI: 'lang:id-ID', name: 'Google Bahasa Indonesia',  lang: 'id-ID' },
+                { voiceURI: 'lang:ms-MY', name: 'Google Bahasa Melayu',    lang: 'ms-MY' },
+                { voiceURI: 'lang:fil-PH', name: 'Google Filipino',        lang: 'fil-PH' },
+            ];
+            let _allVoices = [];
             function populateVoiceSelect() {
-                const sel = document.getElementById('vlm-voice-select');
-                if (!sel || !window.speechSynthesis) return;
+                if (!window.speechSynthesis) return;
                 const voices = window.speechSynthesis.getVoices();
                 if (!voices.length) return;
+                const base = [...voices].sort((a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name));
+                const extras = _EXTRA_VOICES.filter(e => !base.some(v => v.lang === e.lang && v.name === e.name));
+                _allVoices = [...base, ...extras].sort((a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name));
+                renderVoiceList(document.getElementById('vlm-voice-filter')?.value ?? '');
+            }
+            function renderVoiceList(filter) {
+                const list  = document.getElementById('vlm-voice-list');
+                const clear = document.getElementById('vlm-voice-filter-clear');
+                if (!list) return;
                 const saved = localStorage.getItem('vlm-voice-uri') ?? '';
-                const defaultOpt = `<option value=""${!saved ? ' selected' : ''}>System default</option>`;
-                sel.innerHTML = defaultOpt + voices.map(v =>
-                    `<option value="${v.voiceURI}"${v.voiceURI === saved ? ' selected' : ''}>${v.name} (${v.lang})</option>`
-                ).join('');
+                const q = filter.trim().toLowerCase();
+                if (clear) clear.classList.toggle('visible', q.length > 0);
+
+                const systemItem = !q
+                    ? `<div class="vlm-voice-item${!saved ? ' selected' : ''}" data-uri="">
+                           <span class="vlm-voice-item-name">System default</span>
+                           <span class="vlm-voice-item-lang">auto</span>
+                       </div>`
+                    : '';
+
+                const items = (q ? _allVoices.filter(v =>
+                    v.name.toLowerCase().includes(q) || v.lang.toLowerCase().includes(q)
+                ) : _allVoices).map(v => {
+                    const sel = v.voiceURI === saved;
+                    const nameHl = q ? v.name.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
+                        '<mark style="background:rgba(79,195,247,0.25);color:#fff;border-radius:2px">$1</mark>') : v.name;
+                    return `<div class="vlm-voice-item${sel ? ' selected' : ''}" data-uri="${v.voiceURI}">
+                        <span class="vlm-voice-item-name">${nameHl}</span>
+                        <span class="vlm-voice-item-lang">${v.lang}</span>
+                    </div>`;
+                }).join('');
+
+                list.innerHTML = systemItem + items ||
+                    '<div class="vlm-voice-empty">No voices match</div>';
+
+                // Scroll selected item into view
+                const selEl = list.querySelector('.vlm-voice-item.selected');
+                if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+
+                list.querySelectorAll('.vlm-voice-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const uri = el.dataset.uri;
+                        if (uri) localStorage.setItem('vlm-voice-uri', uri);
+                        else localStorage.removeItem('vlm-voice-uri');
+                        list.querySelectorAll('.vlm-voice-item').forEach(x => x.classList.remove('selected'));
+                        el.classList.add('selected');
+                    });
+                });
             }
             populateVoiceSelect();
             if (window.speechSynthesis) {
                 window.speechSynthesis.addEventListener('voiceschanged', populateVoiceSelect);
             }
-            document.getElementById('vlm-voice-select').addEventListener('change', (e) => {
-                localStorage.setItem('vlm-voice-uri', e.target.value);
+            const _vfInput = document.getElementById('vlm-voice-filter');
+            const _vfClear = document.getElementById('vlm-voice-filter-clear');
+            _vfInput.addEventListener('input', (e) => renderVoiceList(e.target.value));
+            _vfClear.addEventListener('click', () => {
+                _vfInput.value = '';
+                renderVoiceList('');
+                _vfInput.focus();
             });
             // TTS Speed slider
             const _speedSlider = document.getElementById('vlm-voice-speed');

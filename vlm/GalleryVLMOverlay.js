@@ -1088,6 +1088,7 @@ class GalleryVLMOverlay {
         this._stt        = null;
         this._liveMode         = false;
         this._ttsBuf           = '';
+        this._ttsPending       = 0;   // number of utterances queued or playing
         this._activeTTSTextEl  = null;
         this._ttsHLMark        = null;
 
@@ -1129,7 +1130,8 @@ class GalleryVLMOverlay {
         const micBtn = this._q('-mic');
         const input  = this._q('-input');
         this._stt = new SR();
-        this._stt.lang = navigator.language || 'en-US';
+        const _sttVoice = this._selectedVoice();
+        this._stt.lang = _sttVoice?._langOnly ?? _sttVoice?.lang ?? navigator.language ?? 'en-US';
         this._stt.interimResults = true;
         this._stt.maxAlternatives = 1;
         this._sttActive = true;
@@ -1152,8 +1154,7 @@ class GalleryVLMOverlay {
             if (input.value.trim() && !this._streaming) this._sendMessage();
             // Live mode: restart mic only when TTS is not playing
             if (this._liveMode) setTimeout(() => {
-                if (this._liveMode && !this._sttActive &&
-                    !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+                if (this._liveMode && !this._sttActive && this._ttsPending === 0)
                     this._toggleSTT();
             }, 150);
         };
@@ -1164,8 +1165,7 @@ class GalleryVLMOverlay {
             // Restart unless the user denied permission
             if (this._liveMode && e.error !== 'not-allowed' && e.error !== 'service-not-allowed') {
                 setTimeout(() => {
-                    if (this._liveMode && !this._sttActive &&
-                        !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+                    if (this._liveMode && !this._sttActive && this._ttsPending === 0)
                         this._toggleSTT();
                 }, 500);
             }
@@ -1188,14 +1188,16 @@ class GalleryVLMOverlay {
     }
 
     _selectedVoice() {
-        const uri    = localStorage.getItem('vlm-voice-uri');
+        const uri = localStorage.getItem('vlm-voice-uri');
         if (!uri || !window.speechSynthesis) return null;
+        if (uri.startsWith('lang:')) return { _langOnly: uri.slice(5) };
         return window.speechSynthesis.getVoices().find(v => v.voiceURI === uri) ?? null;
     }
 
     _stopTTS() {
         window.speechSynthesis?.cancel();
-        this._ttsBuf = '';
+        this._ttsBuf    = '';
+        this._ttsPending = 0;
         this._clearTTSHighlight();
         this._q('-tts')?.classList.remove('vlm-tts-speaking');
         const bar = this._q('-tts-bar');
@@ -1230,6 +1232,7 @@ class GalleryVLMOverlay {
         // Swap system prompt between live (concise) and normal
         this.manager.setSystemPrompt(this._buildSystemPrompt());
         if (!this._liveMode) {
+            this._abortController?.abort();
             this._stopTTS();
             this._stt?.stop();
         } else {
@@ -1243,7 +1246,7 @@ class GalleryVLMOverlay {
                 ttsBtn.title = 'Read aloud: on (click to stop)';
             }
             // If not currently generating or speaking, start listening immediately
-            if (!this._streaming && !window.speechSynthesis?.speaking) {
+            if (!this._streaming && this._ttsPending === 0) {
                 this._toggleSTT();
             }
         }
@@ -1259,9 +1262,11 @@ class GalleryVLMOverlay {
             .replace(/\n+/g, ' ')
             .trim();
         if (!plain) return;
+        this._ttsPending++;
         const utt    = new SpeechSynthesisUtterance(plain);
         const voice  = this._selectedVoice();
-        if (voice) utt.voice = voice;
+        if (voice?._langOnly) utt.lang = voice._langOnly;
+        else if (voice) utt.voice = voice;
         utt.rate = parseFloat(localStorage.getItem('vlm-voice-speed') ?? '1');
         const ttsBtn = this._q('-tts');
         const bar    = this._q('-tts-bar');
@@ -1285,15 +1290,15 @@ class GalleryVLMOverlay {
         };
 
         utt.onend = utt.onerror = () => {
+            this._ttsPending = Math.max(0, this._ttsPending - 1);
             this._clearTTSHighlight();
-            if (!window.speechSynthesis?.speaking && !window.speechSynthesis?.pending) {
+            if (this._ttsPending === 0) {
                 ttsBtn?.classList.remove('vlm-tts-speaking');
                 if (bar) bar.classList.remove('vlm-tts-bar-on');
-                // Live mode: TTS is fully done — start listening now
+                // Live mode: all utterances done — start listening
                 if (this._liveMode && !this._sttActive && !this._streaming) {
                     setTimeout(() => {
-                        if (this._liveMode && !this._sttActive &&
-                            !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+                        if (this._liveMode && !this._sttActive && this._ttsPending === 0)
                             this._toggleSTT();
                     }, 300);
                 }
@@ -1303,40 +1308,59 @@ class GalleryVLMOverlay {
         window.speechSynthesis.speak(utt);
     }
 
-    /** Wrap the plain-text sentence in a <mark> inside the active response textEl. */
+    /** Wrap the plain-text sentence in a <mark> inside the active response textEl.
+     *  Uses a normalized char-map so whitespace differences (newlines vs spaces)
+     *  between the TTS plain text and the rendered DOM don't break the search. */
     _highlightTTSSentence(plain) {
         this._clearTTSHighlight();
         const textEl = this._activeTTSTextEl;
         if (!textEl || !plain) return;
-        const content = textEl.textContent;
-        const pos = content.indexOf(plain);
-        if (pos === -1) return;
+
+        const normTarget = plain.replace(/\s+/g, ' ').trim();
+        if (!normTarget) return;
+
         try {
-            const range = document.createRange();
-            // Locate start node
-            let charCount = 0;
+            // Build a flat list of {node, offset} for every character in text nodes,
+            // plus a whitespace-collapsed string with a mapping back to that list.
             const tw = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT);
+            const chars = [];   // [{node, offset}]
             let node;
             while ((node = tw.nextNode())) {
-                const end = charCount + node.textContent.length;
-                if (end > pos) { range.setStart(node, pos - charCount); break; }
-                charCount += node.textContent.length;
+                for (let i = 0; i < node.textContent.length; i++)
+                    chars.push({ node, offset: i });
             }
-            // Locate end node
-            charCount = 0;
-            const endPos = pos + plain.length;
-            const tw2 = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT);
-            while ((node = tw2.nextNode())) {
-                const end = charCount + node.textContent.length;
-                if (end >= endPos) { range.setEnd(node, endPos - charCount); break; }
-                charCount += node.textContent.length;
+
+            let normStr = '';
+            const normToChar = [];   // normStr index → chars index
+            let inWS = false;
+            for (let i = 0; i < chars.length; i++) {
+                const ch = chars[i].node.textContent[chars[i].offset];
+                if (/\s/.test(ch)) {
+                    if (!inWS) { normStr += ' '; normToChar.push(i); inWS = true; }
+                } else {
+                    normStr += ch; normToChar.push(i); inWS = false;
+                }
             }
+            normStr = normStr.trimStart();
+            const trimOffset = normToChar.length - normStr.length; // chars trimmed from front
+
+            const pos = normStr.indexOf(normTarget);
+            if (pos === -1) return;
+
+            const startIdx = normToChar[pos + trimOffset];
+            const endIdx   = normToChar[pos + trimOffset + normTarget.length - 1];
+            if (startIdx == null || endIdx == null) return;
+
+            const range = document.createRange();
+            range.setStart(chars[startIdx].node, chars[startIdx].offset);
+            range.setEnd(chars[endIdx].node,   chars[endIdx].offset + 1);
+
             const mark = document.createElement('mark');
             mark.className = 'vlm-tts-hl';
             range.surroundContents(mark);
             this._ttsHLMark = mark;
             mark.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        } catch (_) { /* range spans element boundaries — skip */ }
+        } catch (_) { /* range spans element boundary — skip */ }
     }
 
     /** Remove the inline sentence highlight. */
@@ -1506,7 +1530,7 @@ class GalleryVLMOverlay {
         const input   = this._q('-input');
 
         sendBtn.addEventListener('click',   () => this._sendMessage());
-        this._q('-stop').addEventListener('click', () => this._abortController?.abort());
+        this._q('-stop').addEventListener('click', () => { this._abortController?.abort(); this._stopTTS(); });
         this._q('-mic').addEventListener('click',  () => this._toggleSTT());
         this._q('-tts').addEventListener('click',  () => this._toggleTTS());
         this._q('-live').addEventListener('click', () => this._toggleLiveMode());
@@ -1742,8 +1766,7 @@ class GalleryVLMOverlay {
         );
         if (stopBtn) stopBtn.style.display = this._streaming ? '' : 'none';
         // Live mode: restart mic once generation ends, but only if TTS is not playing
-        if (this._liveMode && !this._streaming && !this._sttActive &&
-            !window.speechSynthesis?.speaking && !window.speechSynthesis?.pending)
+        if (this._liveMode && !this._streaming && !this._sttActive && this._ttsPending === 0)
             this._toggleSTT();
     }
 
@@ -2490,12 +2513,18 @@ class GalleryVLMOverlay {
                 onError: (msg) => {
                     if (this._generation !== gen) return;
                     assistantEl.classList.remove('vlm-streaming');
+                    _vlmIsRunning   = false;
+                    this._streaming = false;
+                    // Suppress abort — user stopped intentionally
+                    if (String(msg).toLowerCase().includes('abort')) {
+                        if (!fullText) assistantEl.remove();
+                        statsEl.remove();
+                        this._refreshSendBtn();
+                        return;
+                    }
                     textEl.textContent = `Error: ${msg}`;
                     textEl.style.color = '#ef5350';
                     statsEl.remove();
-
-                    _vlmIsRunning   = false;
-                    this._streaming = false;
                     this._refreshSendBtn();
                 },
             },
