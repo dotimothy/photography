@@ -6,7 +6,7 @@ VENV        = .venv
 VENV_PYTHON = $(VENV)/bin/python
 
 # '?=' sets a default, but allows CLI overrides
-quality ?= 60
+quality ?= 80
 jobs ?= 0
 
 .PHONY: all build clean install help fast exif deepclean
