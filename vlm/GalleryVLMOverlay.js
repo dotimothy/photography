@@ -249,6 +249,11 @@ function _renderMarkdown(text) {
 let _threePatched  = false;
 let _vlmIsRunning  = false;
 
+function _setVlmRunning(v) {
+    _vlmIsRunning = v;
+    try { window.dispatchEvent(new CustomEvent(v ? 'vlm:inference-start' : 'vlm:inference-end')); } catch (_) {}
+}
+
 function patchThreeRenderer() {
     if (_threePatched) return;
     if (typeof THREE === 'undefined') return;
@@ -810,20 +815,45 @@ function injectCSS() {
         bottom: 0;
         height: auto;
         max-height: 75vh;
+        max-height: 75dvh;  /* dynamic viewport height — handles toolbars + keyboard */
         padding-bottom: env(safe-area-inset-bottom, 0px);
         border-left: none;
         border-top: 1px solid rgba(79, 195, 247, 0.2);
-        border-radius: 14px 14px 0 0;
+        border-radius: 16px 16px 0 0;
         box-shadow: 0 -4px 30px rgba(0,0,0,0.6);
         transform: translateY(12px);
+        transition: transform 0.25s ease, opacity 0.22s ease;
     }
     .vlm-panel.vlm-open { transform: translateY(0); }
+    .vlm-panel.vlm-dragging { transition: none; }
     .vlm-resize-handle  { display: none; }
     .vlm-toggle-btn {
         bottom: calc(20px + env(safe-area-inset-bottom, 0px));
         right: 20px !important;
         width: 52px;
         height: 52px;
+    }
+    /* Header is the drag handle — hint to users with cursor + tiny grab tab */
+    .vlm-header { cursor: grab; touch-action: none; position: relative; }
+    .vlm-header::before {
+        content: '';
+        position: absolute;
+        top: 6px; left: 50%;
+        transform: translateX(-50%);
+        width: 36px; height: 4px;
+        background: rgba(255,255,255,0.18);
+        border-radius: 2px;
+    }
+    /* Sticky composer: input row pinned to bottom of the sheet so the
+       send/stop buttons never disappear under the virtual keyboard. */
+    .vlm-input-row {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        background: rgba(10, 10, 18, 0.96);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
     }
 }
 
@@ -927,6 +957,19 @@ function injectCSS() {
 }
 .vlm-panel.vlm-fullscreen.vlm-open { transform: translateX(0) !important; }
 
+/* ── Iframe-panel mode: fills the host iframe viewport ────────── */
+.vlm-panel.vlm-iframe-mode {
+    position: fixed;
+    inset: 0;
+    width: 100% !important;
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    border-left: none;
+    z-index: 1;
+}
+.vlm-panel.vlm-iframe-mode .vlm-resize-handle { display: none; }
+
 /* ── Per-message generation stats bar ────────────────────────── */
 .vlm-msg-text { display: block; white-space: pre-wrap; word-break: break-word; }
 
@@ -999,6 +1042,16 @@ function injectCSS() {
     max-height: 180px;
     overflow-y: auto;
 }
+.vlm-thinking-text.vlm-md       { white-space: normal; }
+.vlm-thinking-text.vlm-md > p   { margin: 0 0 4px; }
+.vlm-thinking-text.vlm-md ul,
+.vlm-thinking-text.vlm-md ol    { margin: 3px 0 3px 14px; padding: 0; }
+.vlm-thinking-text.vlm-md code  { background: rgba(255,255,255,0.06); padding: 0 3px; border-radius: 3px; font-size: 10px; }
+.vlm-thinking-text.vlm-md pre   { background: rgba(0,0,0,0.3); padding: 5px 7px; border-radius: 4px; overflow-x: auto; font-size: 10px; margin: 4px 0; }
+.vlm-thinking-text.vlm-md .katex { font-size: 0.95em; }
+.vlm-thinking-text.vlm-md h1,
+.vlm-thinking-text.vlm-md h2,
+.vlm-thinking-text.vlm-md h3    { font-size: 1em; margin: 4px 0 2px; font-weight: 600; }
 
 .vlm-gen-stats {
     margin-top: 5px;
@@ -1077,6 +1130,8 @@ class GalleryVLMOverlay {
         this._dlMaxPct         = 0;     // monotonic download progress (never decreases)
         this._exifBypass       = localStorage.getItem('vlm-exif-bypass') !== 'off'; // default on
         this._directLinks      = localStorage.getItem('vlm-direct-links') === 'on'; // default off (embeds)
+        this._iframeMode       = window.VLM_PANEL_MODE === true;  // running inside vlm/panel.html
+        this._galleryOpen      = false;  // tracks gallery state in iframe mode
         // User-editable system prompt override (empty = use built-in default)
         this._customSystemPrompt = window.VLM_SETTINGS?.systemPrompt ?? '';
         // Default system prompt for API / Ollama modes (gallery context)
@@ -1495,6 +1550,9 @@ class GalleryVLMOverlay {
         this._q('-close').addEventListener('click',    () => this._closePanel());
         this._q('-new').addEventListener('click',      () => this._newChat());
         this._q('-fs').addEventListener('click',       () => this._toggleFullscreen());
+
+        // Mobile drag-to-dismiss: pulldown on the header closes the bottom sheet.
+        this._initHeaderDrag();
         this._q('-gear').addEventListener('click',     () => this._openSettings());
         this._q('-font-dn').addEventListener('click',  () => this._changeFontSize(-1));
         this._q('-font-up').addEventListener('click',  () => this._changeFontSize(+1));
@@ -1529,10 +1587,30 @@ class GalleryVLMOverlay {
 
         this._initResize();
 
+        // Re-sync layout vars when the window crosses the 600px push/sheet boundary
+        // or when desktop layout otherwise resizes. Uses _setPush so all the
+        // inner-iframe propagation runs through one path.
+        const winResize = () => {
+            if (this._panel.classList.contains('vlm-open')) {
+                this._setPush(true);
+            } else if (window.innerWidth <= 600) {
+                // Ensure no stale var is left over after closing on mobile
+                document.documentElement.style.setProperty('--vlm-pane-width', '0px');
+                if (this._iframeDoc?.documentElement) {
+                    this._iframeDoc.documentElement.style.setProperty('--vlm-pane-width', '0px');
+                }
+            }
+        };
+        window.addEventListener('resize', winResize);
+        this._observers.push({ disconnect: () => window.removeEventListener('resize', winResize) });
+
         const sendBtn = this._q('-send');
         const input   = this._q('-input');
 
-        sendBtn.addEventListener('click',   () => this._sendMessage());
+        sendBtn.addEventListener('click',   () => {
+            if (navigator.vibrate) try { navigator.vibrate(8); } catch (_) {}
+            this._sendMessage();
+        });
         this._q('-stop').addEventListener('click', () => { this._abortController?.abort(); this._stopTTS(); });
         this._q('-mic').addEventListener('click',  () => this._toggleSTT());
         this._q('-tts').addEventListener('click',  () => this._toggleTTS());
@@ -1604,21 +1682,55 @@ class GalleryVLMOverlay {
 
     /**
      * Push the page content left when the sidebar opens (desktop only).
-     * For gallery pages (inside #iframe-container) the panel simply overlays
-     * the canvas — fixed-position elements can't be pushed by padding.
-     * For standard-flow pages (about, index) padding-right on body shifts content.
+     * Strategy: write a `--vlm-pane-width` CSS variable on the document root.
+     * Gallery CSS uses `right: var(--vlm-pane-width)` on full-viewport fixed
+     * elements so the canvas / grid / overlays shrink alongside the panel.
+     * The home page's `.iframe-container` uses the same var so iframe-mode
+     * galleries shrink with their wrapper. About / direct-gallery pages also
+     * fall back to body.paddingRight for normal-flow content.
      */
     _setPush(open) {
-        if (window.innerWidth <= 600) return;
+        if (window.innerWidth <= 600) {
+            // Mobile bottom-sheet: never push; clear any leftover state.
+            document.documentElement.style.setProperty('--vlm-pane-width', '0px');
+            document.body.style.paddingRight = '';
+            this._btn.style.right = '';
+            return;
+        }
         const w = open ? this._panel.offsetWidth : 0;
         // Shift the toggle button to sit just outside the panel's left edge
         this._btn.style.transition = 'right 0.22s ease';
         this._btn.style.right = open ? `${w + 12}px` : '';
-        // Push normal document-flow content (skip for iframe-container pages)
+        // Parent doc only — drives .iframe-container's `right: var(...)` so
+        // the iframe element flexes to (viewport - panel) width. The gallery
+        // INSIDE the iframe stays unchanged: its own `window.innerWidth`
+        // already reflects the iframe's new size, so its `width: 100%`
+        // canvases fill the iframe correctly.
+        document.documentElement.style.setProperty('--vlm-pane-width', `${w}px`);
+        // For about / direct-gallery pages where there's no wrapper iframe,
+        // push body content via padding so normal-flow children shift.
         if (!this._iframeEl) {
             document.body.style.transition = 'padding-right 0.25s ease';
             document.body.style.paddingRight = open ? `${w}px` : '';
         }
+        // Fire a resize event into the inner iframe so its three.js + 2D grid
+        // pick up the new viewport. (window.innerWidth inside the iframe
+        // already reflects the smaller box; the resize event just nudges
+        // listeners to re-read it.)
+        this._fireInnerResize();
+    }
+
+    /**
+     * Fire `resize` on the inner-iframe window so its three.js render loop
+     * picks up the new viewport size after the CSS transition.
+     */
+    _fireInnerResize() {
+        const fire = () => {
+            const cw = this._iframeEl?.contentWindow;
+            if (cw) { try { cw.dispatchEvent(new Event('resize')); } catch (_) {} }
+        };
+        fire();
+        setTimeout(fire, 240);
     }
 
     _toggleFullscreen() {
@@ -1671,6 +1783,55 @@ class GalleryVLMOverlay {
     }
 
     /**
+     * Mobile bottom-sheet: drag the header downward to dismiss the panel.
+     * Active only when window <= 600 px (matches the bottom-sheet media query)
+     * and only when the panel is open. Translates the panel during drag,
+     * commits a close above 100 px of pull, snaps back otherwise.
+     */
+    _initHeaderDrag() {
+        const header = this._panel?.querySelector('.vlm-header');
+        if (!header) return;
+        let startY = 0;
+        let dragging = false;
+        // Ignore drags that start on a header button (close/fs/font-up etc.)
+        const isInteractive = (el) => !!el?.closest('button, a, input, [role="button"]');
+
+        header.addEventListener('pointerdown', (e) => {
+            if (window.innerWidth > 600) return;
+            if (!this._panel.classList.contains('vlm-open')) return;
+            if (isInteractive(e.target)) return;
+            if (e.button != null && e.button !== 0) return;
+            startY = e.clientY;
+            dragging = true;
+            this._panel.classList.add('vlm-dragging');
+            try { header.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+        header.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            const dy = e.clientY - startY;
+            if (dy <= 0) {
+                this._panel.style.transform = '';
+            } else {
+                this._panel.style.transform = `translateY(${dy}px)`;
+            }
+        });
+        const endHeaderDrag = (e) => {
+            if (!dragging) return;
+            dragging = false;
+            this._panel.classList.remove('vlm-dragging');
+            const dy = (e?.clientY ?? startY) - startY;
+            this._panel.style.transform = '';
+            if (e?.pointerId != null) { try { header.releasePointerCapture(e.pointerId); } catch (_) {} }
+            if (dy > 100) {
+                if (navigator.vibrate) try { navigator.vibrate(15); } catch (_) {}
+                this._closePanel();
+            }
+        };
+        header.addEventListener('pointerup', endHeaderDrag);
+        header.addEventListener('pointercancel', endHeaderDrag);
+    }
+
+    /**
      * Wire up the top-left resize handle so the user can drag the panel to any
      * size.  Dragging leftward / upward expands; rightward / downward shrinks.
      * Disabled while the panel is in fullscreen mode.
@@ -1700,10 +1861,21 @@ class GalleryVLMOverlay {
             if (!dragging) return;
             const dx = startX - clientX;   // drag left = positive = wider
             const w  = Math.max(280, Math.min(window.innerWidth - 40, startW + dx));
+            if (this._iframeMode) {
+                // In iframe mode the panel fills the iframe — resize by telling parent to
+                // adjust the VLM iframe column width via --vlm-pane-width.
+                if (window.innerWidth > 600) {
+                    window.parent.postMessage({ type: 'vlm-resize', width: w }, '*');
+                }
+                return;
+            }
             this._panel.style.width = `${w}px`;
-            // Keep body padding in sync while dragging
-            if (!this._iframeEl && this._panel.classList.contains('vlm-open')) {
-                document.body.style.paddingRight = `${w}px`;
+            // Drive the parent doc's var — iframe-container shrinks via CSS,
+            // the iframe element flexes with it.
+            if (window.innerWidth > 600 && this._panel.classList.contains('vlm-open')) {
+                document.documentElement.style.setProperty('--vlm-pane-width', `${w}px`);
+                if (!this._iframeEl) document.body.style.paddingRight = `${w}px`;
+                this._btn.style.right = `${w + 12}px`;
             }
         };
 
@@ -1715,6 +1887,8 @@ class GalleryVLMOverlay {
             }
             this._panel.classList.remove('vlm-resizing');
             if (cursorStyle) { cursorStyle.remove(); cursorStyle = null; }
+            // Final renderer/grid sync after the user releases the handle
+            if (this._panel.classList.contains('vlm-open')) this._fireInnerResize();
         };
 
         // ── Pointer Events (mouse + touch unified) ──────────────────────────
@@ -1746,7 +1920,7 @@ class GalleryVLMOverlay {
         this._generation++;              // invalidate any in-flight callbacks
         this._history   = [];
         this._streaming = false;         // abandon any streaming state
-        _vlmIsRunning   = false;
+        _setVlmRunning(false);
         this._liveMode  = false;
         this._q('-live')?.classList.remove('vlm-live-on');
         this._stopTTS();
@@ -1889,6 +2063,10 @@ class GalleryVLMOverlay {
             return;
         }
         this._iframeDoc = doc;
+
+        // (No inner-doc var manipulation: the iframe element itself shrinks
+        // when .iframe-container does, so the gallery's `width: 100%` fills
+        // the already-narrower iframe naturally.)
 
         // Gallery is open — show button and kick off model loading,
         // but only if VLM is enabled in settings (default: enabled).
@@ -2094,8 +2272,10 @@ class GalleryVLMOverlay {
         if (exifBtn) { exifBtn.style.display = 'none'; exifBtn.classList.remove('vlm-exif-open'); }
         if (drawer)  { drawer.innerHTML = ''; drawer.classList.remove('vlm-exif-open'); }
         this._refreshSendBtn();
-        this._closePanel();
-        this._btn.style.display = 'none';  // gallery closed — hide until next gallery opens
+        if (!this._iframeMode) {
+            this._closePanel();
+            this._btn.style.display = 'none';  // gallery closed — hide until next gallery opens
+        }
     }
 
     /**
@@ -2358,7 +2538,7 @@ class GalleryVLMOverlay {
         input.value             = '';
         input.style.height      = 'auto';
         this._streaming         = true;
-        _vlmIsRunning           = true;
+        _setVlmRunning(true);
         this._abortController   = new AbortController();
         this._ttsBuf            = '';   // reset streaming TTS sentence buffer
         this._refreshSendBtn();
@@ -2373,7 +2553,7 @@ class GalleryVLMOverlay {
             await _loadMarked();
             this._answerFromExif(prompt);
             this._streaming = false;
-            _vlmIsRunning   = false;
+            _setVlmRunning(false);
             this._refreshSendBtn();
             return;
         }
@@ -2384,6 +2564,8 @@ class GalleryVLMOverlay {
         let thinkEl   = null;
         let thinkBody = null;   // cached .vlm-thinking-text node
         let thinkText = '';
+        let pendingTokenFlush = false;
+        let pendingThinkFlush = false;
         const textEl  = Object.assign(document.createElement('span'), { className: 'vlm-msg-text' });
         this._activeTTSTextEl = textEl;  // expose to _speakChunk for inline highlighting
         const statsEl = Object.assign(document.createElement('div'),  { className: 'vlm-gen-stats' });
@@ -2391,8 +2573,12 @@ class GalleryVLMOverlay {
         assistantEl.appendChild(textEl);
         assistantEl.appendChild(statsEl);
 
-        // Start loading markdown + LaTeX libs in parallel with the first tokens
-        Promise.all([_loadMarked(), _loadKaTeX()]);
+        // Pre-load markdown BEFORE manager.query so the prefix of the streaming
+        // buffer never renders as plain textContent (would otherwise produce a
+        // visible plain-text → formatted flip mid-stream). KaTeX stays
+        // un-awaited as a graceful fallback.
+        await _loadMarked();
+        _loadKaTeX();
 
         // Wait for EXIF extraction to finish (usually already done by the time
         // the user types a question; guarantees metadata is available on first send)
@@ -2438,31 +2624,48 @@ class GalleryVLMOverlay {
                         assistantEl.insertBefore(thinkEl, textEl);
                     }
                     thinkText += chunk;
-                    if (_markedReady) {
-                        thinkBody.innerHTML = _renderMarkdown(thinkText);
-                        thinkBody.classList.add('vlm-md');
-                    } else {
-                        thinkBody.textContent = thinkText;
+                    if (!pendingThinkFlush) {
+                        pendingThinkFlush = true;
+                        requestAnimationFrame(() => {
+                            pendingThinkFlush = false;
+                            if (this._generation !== gen) return;
+                            if (_markedReady) {
+                                thinkBody.innerHTML = _renderMarkdown(thinkText);
+                                thinkBody.classList.add('vlm-md');
+                            } else {
+                                thinkBody.textContent = thinkText;
+                            }
+                            this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
+                        });
                     }
-                    this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
                 },
                 onToken: (tok, tps, tokenCount) => {
                     if (this._generation !== gen) return;
                     fullText += tok;
-                    if (_markedReady) {
-                        textEl.innerHTML = _renderMarkdown(fullText);
-                        textEl.classList.add('vlm-md');
-                    } else {
-                        textEl.textContent = fullText;
-                    }
                     if (tps != null) {
                         statsEl.textContent = `${tokenCount} tok · ${tps} tok/s · ${this._backend}`;
                     }
                     this._feedTTS(tok);
-                    this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
+                    if (!pendingTokenFlush) {
+                        pendingTokenFlush = true;
+                        requestAnimationFrame(() => {
+                            pendingTokenFlush = false;
+                            if (this._generation !== gen) return;
+                            if (_markedReady) {
+                                textEl.innerHTML = _renderMarkdown(fullText);
+                                textEl.classList.add('vlm-md');
+                            } else {
+                                textEl.textContent = fullText;
+                            }
+                            this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
+                        });
+                    }
                 },
                 onDone: (text, tokenCount, avgTps) => {
                     if (this._generation !== gen) return;
+                    // Skip any queued RAF — we'll flush synchronously below
+                    pendingTokenFlush = true;
+                    pendingThinkFlush = true;
                     const finalText = text || fullText;
                     assistantEl.classList.remove('vlm-streaming');
 
@@ -2474,9 +2677,16 @@ class GalleryVLMOverlay {
                         textEl.textContent = finalText;
                     }
 
-                    // Collapse the thinking block and update its label once done
+                    // Collapse the thinking block and update its label once done.
+                    // Final markdown re-render guarantees the collapsed details
+                    // element has fully markdown-rendered content even if a RAF
+                    // flush was pending or marked loaded mid-stream.
                     if (thinkEl) {
                         thinkEl.querySelector('summary').textContent = 'Thought process';
+                        if (thinkBody && _markedReady) {
+                            thinkBody.innerHTML = _renderMarkdown(thinkText);
+                            thinkBody.classList.add('vlm-md');
+                        }
                     }
 
                     // Freeze final stats
@@ -2508,7 +2718,7 @@ class GalleryVLMOverlay {
                     this._q('-chat-actions').style.display = '';
 
                     this._flushTTS();
-                    _vlmIsRunning   = false;
+                    _setVlmRunning(false);
                     this._streaming = false;
                     this._refreshSendBtn();
                     this._q('-msgs').scrollTop = this._q('-msgs').scrollHeight;
@@ -2516,7 +2726,7 @@ class GalleryVLMOverlay {
                 onError: (msg) => {
                     if (this._generation !== gen) return;
                     assistantEl.classList.remove('vlm-streaming');
-                    _vlmIsRunning   = false;
+                    _setVlmRunning(false);
                     this._streaming = false;
                     // Suppress abort — user stopped intentionally
                     if (String(msg).toLowerCase().includes('abort')) {
@@ -2630,6 +2840,7 @@ class GalleryVLMOverlay {
             this._q('-dot').className      = 'vlm-status-dot vlm-dot-ready';
             this._q('-status').textContent = `Ready · ${this._backend}`;
             this._btn.classList.remove('vlm-model-loading');
+            if (this._iframeMode) window.parent.postMessage({ type: 'vlm-btn-state', loading: false }, '*');
 
             if (device === 'api') {
                 // API mode — no model download stages; collapse loading section right away
@@ -2693,18 +2904,19 @@ class GalleryVLMOverlay {
             const { enabled, type, model, apiEndpoint, apiKey, apiModel, ollamaEndpoint, ollamaModel, ollamaThink, systemPrompt } = e.detail ?? {};
             // Update stored system prompt before any mode-switch (mode code reads _baseSystemPrompt())
             if (systemPrompt !== undefined) this._customSystemPrompt = systemPrompt ?? '';
-            const galleryOpen = !!(this._iframeDoc &&
-                this._iframeDoc.location?.href !== 'about:blank');
+            const galleryOpen = this._iframeMode
+                ? this._galleryOpen
+                : !!(this._iframeDoc && this._iframeDoc.location?.href !== 'about:blank');
 
             if (!enabled) {
-                this._btn.style.display = 'none';
+                if (!this._iframeMode) this._btn.style.display = 'none';
                 this._closePanel();
                 return;
             }
 
             if (!galleryOpen) return;
 
-            this._btn.style.display = '';
+            if (!this._iframeMode) this._btn.style.display = '';
 
             if (type === 'ollama') {
                 // Switch to (or update) Ollama mode — setOllamaMode fires 'ready'
@@ -2747,6 +2959,7 @@ class GalleryVLMOverlay {
         this._q('-status').textContent = 'Loading model…';
         this._q('-prog').style.width   = '0%';
         this._btn.classList.add('vlm-model-loading');
+        if (this._iframeMode) window.parent.postMessage({ type: 'vlm-btn-state', loading: true }, '*');
         this._refreshSendBtn();
     }
 
@@ -2778,22 +2991,67 @@ function initGalleryVLM() {
     patchThreeRenderer();
 
     const manager = VLMManager.getInstance();
-    // NOTE: do NOT call manager.init() here in parent-portfolio mode.
-    // The Worker is spawned lazily when the first gallery opens (_onIframeLoad),
-    // so the space loading screen is not burdened by model downloads.
 
     const overlay = new GalleryVLMOverlay(document.body, manager);
 
-    const iframeEl = document.getElementById('exhibit-iframe');
-    if (iframeEl) {
-        // Parent-portfolio mode: button hidden, model deferred until iframe loads.
-        overlay._watchIframe(iframeEl);
+    if (overlay._iframeMode) {
+        // ── Iframe-panel mode (vlm/panel.html) ──────────────────────────────
+        // The panel fills the entire #vlm-iframe viewport and stays permanently open.
+        // All gallery context arrives via postMessage from the parent; layout is
+        // driven by --vlm-pane-width on the parent's #vlm-iframe element.
+        overlay._btn.style.display = 'none';
+        overlay._panel.classList.add('vlm-open', 'vlm-iframe-mode');
+
+        // No-op: parent drives #vlm-iframe width, not this doc's CSS var
+        overlay._setPush = () => {};
+
+        // Settings modal lives in the parent page
+        overlay._openSettings = () => {
+            window.parent.postMessage({ type: 'vlm-open-settings' }, '*');
+        };
+
+        window.addEventListener('message', (e) => {
+            if (!e.data?.type) return;
+            const d = e.data;
+            if (d.type === 'gallery-opened') {
+                overlay._galleryOpen = true;
+                // Init manager using current settings (vlm-config will have arrived at page load)
+                const cfg = window.VLM_SETTINGS ?? {};
+                if (cfg.enabled !== false) {
+                    if (cfg.type === 'ollama') {
+                        manager.setOllamaMode(cfg.ollamaEndpoint, cfg.ollamaModel, cfg.ollamaThink ?? null);
+                    } else if (cfg.type === 'api') {
+                        manager.setApiMode(cfg.apiEndpoint, cfg.apiKey, cfg.apiModel);
+                    } else {
+                        manager.init(cfg.model ?? 'HuggingFaceTB/SmolVLM-256M-Instruct');
+                    }
+                }
+            } else if (d.type === 'gallery-closed') {
+                overlay._galleryOpen = false;
+                overlay._clearImage();
+            } else if (d.type === 'gallery-image-changed') {
+                overlay._setImage(d.src, d.name || 'photo');
+            } else if (d.type === 'vlm-config') {
+                if (!window.VLM_SETTINGS) window.VLM_SETTINGS = {};
+                Object.assign(window.VLM_SETTINGS, d.config);
+                window.dispatchEvent(new CustomEvent('vlmsettingschanged', { detail: d.config }));
+            }
+        });
+
+        // Signal readiness so parent immediately sends current vlm-config
+        window.parent.postMessage({ type: 'vlm-iframe-ready' }, '*');
+
     } else {
-        // Direct-gallery mode (local testing / single-gallery deployment):
-        // no iframe — show button immediately and start model loading now.
-        overlay._btn.style.display = '';
-        manager.init();
-        overlay._attachDocObservers(document);
+        const iframeEl = document.getElementById('exhibit-iframe');
+        if (iframeEl) {
+            // Parent-portfolio mode: button hidden, model deferred until iframe loads.
+            overlay._watchIframe(iframeEl);
+        } else {
+            // Direct-gallery mode (local testing / single-gallery deployment):
+            overlay._btn.style.display = '';
+            manager.init();
+            overlay._attachDocObservers(document);
+        }
     }
 
     return [overlay];

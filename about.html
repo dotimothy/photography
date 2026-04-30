@@ -3,9 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="theme-color" content="#050505">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TheDoShoots">
     <meta name="description" content="Portfolio of Timothy Do - Photographer, Engineer, Explorer">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
     <title>About - TheDoShoots</title>
 
     <!-- Preconnect to Google Fonts for faster handshake -->
@@ -48,6 +54,7 @@
             padding: 20px 16px calc(40px + var(--safe-area-bottom));
             /* Safe area for iPhone home bar */
             overflow-x: hidden;
+            overscroll-behavior: contain;
             -webkit-font-smoothing: antialiased;
             -webkit-tap-highlight-color: transparent;
             /* Remove orange tap box on Android */
@@ -849,6 +856,14 @@
         lightbox.addEventListener('click', (e) => {
             if (e.target === lightbox) closeLightbox();
         });
+    </script>
+    <script>
+        // Service Worker registration (PWA install + offline)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+        }
     </script>
 
 </body>

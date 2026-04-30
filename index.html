@@ -6,7 +6,16 @@
 <head>
     <title>TheDoShoots</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#00e5ff" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#050505">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TheDoShoots">
+    <meta name="description" content="Portfolio of Timothy Do — Photographer, Engineer, Explorer">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
 
@@ -18,6 +27,14 @@
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/FilmPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FilmShader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 </head>
 
@@ -31,6 +48,12 @@
         --glass-bg: rgba(20, 20, 20, 0.85);
         --glass-border: rgba(255, 255, 255, 0.1);
         --museum-theme: #00e5ff;
+        --vlm-pane-width: 0px;
+        --bp-xs: 374px;
+        --bp-sm: 600px;
+        --bp-md: 768px;
+        --bp-lg: 1024px;
+        --bp-xl: 1280px;
     }
 
     * {
@@ -87,6 +110,174 @@
     @keyframes auroraBreath {
         from { transform: scale(1);    opacity: 0.75; }
         to   { transform: scale(1.08); opacity: 1; }
+    }
+
+    /* Animated CSS starfield for the 2D fallback — three layers of dots
+       parallax-drifting at different speeds. Pure CSS, no canvas, GPU-composited. */
+    .stars-layer {
+        position: fixed;
+        top: 0; left: 0;
+        width: 200%; height: 200%;
+        pointer-events: none;
+        z-index: 0;
+        will-change: transform;
+    }
+    .stars-back {
+        background-image:
+            radial-gradient(1px 1px at 12% 23%, #fff 100%, transparent),
+            radial-gradient(1px 1px at 47% 71%, #fff 100%, transparent),
+            radial-gradient(1px 1px at 83% 12%, #b6e3ff 100%, transparent),
+            radial-gradient(1.5px 1.5px at 27% 88%, #fff 100%, transparent),
+            radial-gradient(1px 1px at 64% 41%, #d4f3ff 100%, transparent),
+            radial-gradient(1px 1px at 91% 67%, #fff 100%, transparent),
+            radial-gradient(1px 1px at 33% 5%, #fff 100%, transparent),
+            radial-gradient(1px 1px at 5% 49%, #b6e3ff 100%, transparent),
+            radial-gradient(1px 1px at 73% 83%, #fff 100%, transparent),
+            radial-gradient(1.2px 1.2px at 18% 60%, #fff 100%, transparent);
+        background-size: 600px 600px;
+        opacity: 0.5;
+        animation: starsDrift 240s linear infinite;
+    }
+    .stars-mid {
+        background-image:
+            radial-gradient(1.5px 1.5px at 22% 13%, #fff, transparent),
+            radial-gradient(2px 2px at 58% 41%, #fff, transparent),
+            radial-gradient(1.2px 1.2px at 12% 78%, #b6e3ff, transparent),
+            radial-gradient(1.8px 1.8px at 78% 22%, #fff, transparent),
+            radial-gradient(1.4px 1.4px at 88% 79%, #d4f3ff, transparent);
+        background-size: 900px 900px;
+        opacity: 0.7;
+        animation: starsDrift 160s linear infinite reverse;
+    }
+    .stars-front {
+        background-image:
+            radial-gradient(2.5px 2.5px at 14% 29%, #fff, transparent),
+            radial-gradient(2px 2px at 71% 64%, #00e5ff, transparent),
+            radial-gradient(2.5px 2.5px at 86% 14%, #ff8aff, transparent);
+        background-size: 1500px 1500px;
+        opacity: 0.95;
+        animation: starsDrift 90s linear infinite, starTwinkle 4s ease-in-out infinite alternate;
+    }
+    @keyframes starsDrift {
+        from { transform: translate(0, 0); }
+        to   { transform: translate(-50%, -50%); }
+    }
+    @keyframes starTwinkle {
+        from { filter: brightness(0.85); }
+        to   { filter: brightness(1.4) drop-shadow(0 0 4px rgba(0,229,255,0.6)); }
+    }
+
+    /* Cinematic atmosphere overlay sitting above the 3D canvas, below the
+       welcome content — adds a soft global vignette + a top-and-bottom
+       letterbox ramp for "cinema" framing. */
+    .cinema-vignette {
+        position: fixed;
+        inset: 0;
+        z-index: 1999;
+        pointer-events: none;
+        background:
+            radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%),
+            linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 12%, transparent 88%, rgba(0,0,0,0.5) 100%);
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+    }
+    .cinema-vignette.active { opacity: 1; }
+
+    /* Inside-the-camera HUD: persistent labels + click prompt so users know
+       exactly what to interact with after the fly-in. */
+    #inside-hud {
+        position: fixed;
+        inset: 0;
+        z-index: 1500;
+        pointer-events: none;
+    }
+    #inside-hud.active { display: block !important; }
+    .inside-label {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        padding: 10px 16px;
+        background: rgba(6, 8, 20, 0.88);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 229, 255, 0.45);
+        border-radius: 8px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3), 0 0 0 1px rgba(0,229,255,0.18) inset;
+        opacity: 0;
+        transition: opacity 0.35s ease, transform 0.35s ease;
+        pointer-events: auto;
+        cursor: pointer;
+        animation: labelPulse 2.4s ease-in-out infinite;
+    }
+    /* Connector line from label down to the orb */
+    .inside-label::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: -28px;
+        transform: translateX(-50%);
+        width: 2px;
+        height: 22px;
+        background: linear-gradient(to bottom, rgba(0,229,255,0.6), rgba(0,229,255,0));
+        border-radius: 1px;
+    }
+    .inside-label span {
+        display: block;
+        font-size: 10px;
+        font-weight: 400;
+        opacity: 0.65;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+    .inside-label[data-portfolio="astronomy"] { border-color: rgba(120, 180, 255, 0.6); box-shadow: 0 4px 20px rgba(120, 180, 255, 0.4), 0 0 0 1px rgba(120, 180, 255, 0.25) inset; }
+    .inside-label[data-portfolio="astronomy"]::after { background: linear-gradient(to bottom, rgba(120,180,255,0.7), rgba(120,180,255,0)); }
+    .inside-label[data-portfolio="landscape"] { border-color: rgba(0, 230, 180, 0.6); box-shadow: 0 4px 20px rgba(0, 230, 180, 0.4), 0 0 0 1px rgba(0, 230, 180, 0.25) inset; }
+    .inside-label[data-portfolio="landscape"]::after { background: linear-gradient(to bottom, rgba(0,230,180,0.7), rgba(0,230,180,0)); }
+    .inside-label[data-portfolio="wildlife"]  { border-color: rgba(255, 170, 80, 0.6); box-shadow: 0 4px 20px rgba(255, 170, 80, 0.4), 0 0 0 1px rgba(255, 170, 80, 0.25) inset; }
+    .inside-label[data-portfolio="wildlife"]::after  { background: linear-gradient(to bottom, rgba(255,170,80,0.7), rgba(255,170,80,0)); }
+    .inside-label[data-portfolio="food"]      { border-color: rgba(255, 180, 110, 0.6); box-shadow: 0 4px 20px rgba(255, 180, 110, 0.4), 0 0 0 1px rgba(255, 180, 110, 0.25) inset; }
+    .inside-label[data-portfolio="food"]::after      { background: linear-gradient(to bottom, rgba(255,180,110,0.7), rgba(255,180,110,0)); }
+    .inside-label[data-portfolio="planes"]    { border-color: rgba(180, 200, 240, 0.6); box-shadow: 0 4px 20px rgba(180, 200, 240, 0.4), 0 0 0 1px rgba(180, 200, 240, 0.25) inset; }
+    .inside-label[data-portfolio="planes"]::after    { background: linear-gradient(to bottom, rgba(180,200,240,0.7), rgba(180,200,240,0)); }
+    .inside-label.visible { opacity: 1; transform: translate(-50%, -100%) translateY(0); }
+    .inside-label.visible:hover {
+        transform: translate(-50%, -100%) translateY(-3px);
+        background: rgba(12, 16, 30, 0.95);
+    }
+    @keyframes labelPulse {
+        0%, 100% { box-shadow: 0 4px 16px rgba(0, 229, 255, 0.25), 0 0 0 1px rgba(0,229,255,0.15) inset; }
+        50%      { box-shadow: 0 4px 22px rgba(0, 229, 255, 0.55), 0 0 0 1px rgba(0,229,255,0.35) inset; }
+    }
+    .inside-prompt {
+        position: absolute;
+        left: 50%;
+        bottom: 60px;
+        transform: translateX(-50%);
+        padding: 12px 28px;
+        background: rgba(8, 10, 22, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.85);
+        opacity: 0;
+        transition: opacity 0.6s ease;
+        pointer-events: none;
+        animation: promptBreath 3s ease-in-out infinite;
+    }
+    .inside-prompt.visible { opacity: 1; }
+    @keyframes promptBreath {
+        0%, 100% { letter-spacing: 1.5px; }
+        50%      { letter-spacing: 2.5px; }
     }
 
     #mode-2d::before {
@@ -1025,12 +1216,12 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
+        right: 0;
         height: 100%;
         background: #000;
         z-index: 4000;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
 
         /* Hardware Acceleration Hints */
         transform: translateY(100%) translateZ(0);
@@ -1045,6 +1236,70 @@
     .iframe-container.active {
         /* Use translate3d to ensure GPU usage */
         transform: translateY(0) translateZ(0);
+    }
+
+    #exhibit-iframe {
+        flex: 1 1 100%;
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+    }
+
+    #vlm-iframe {
+        /* Overlay approach: slides in from the right, never goes to 0-width.
+           A 0-width iframe lets Chrome freeze its browsing context; using transform
+           to show/hide keeps the VLM session alive across open/close cycles. */
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 380px;
+        height: 100%;
+        border: none;
+        border-left: 1px solid rgba(79, 195, 247, 0.15);
+        background: #0a0a12;
+        overflow: hidden;
+        display: block;
+        transform: translateX(100%);
+        transition: transform 0.22s ease;
+        will-change: transform;
+    }
+    #vlm-iframe.vlm-pane-open {
+        transform: translateX(0);
+    }
+
+    /* VLM toggle button — floats over gallery, shifts left when panel opens */
+    #vlm-toggle-btn {
+        position: fixed;
+        bottom: 20px;
+        right: calc(var(--vlm-pane-width) + 12px);
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: rgba(14, 14, 22, 0.92);
+        border: 1px solid rgba(79, 195, 247, 0.35);
+        color: #4fc3f7;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 4500;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 2px 14px rgba(0,0,0,0.6), 0 0 0 1px rgba(79,195,247,0.12);
+        transition: right 0.22s ease, transform 0.18s ease, background 0.18s ease;
+        padding: 0;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    #vlm-toggle-btn:hover  { transform: scale(1.1); background: rgba(22, 22, 38, 0.98); }
+    #vlm-toggle-btn:active { transform: scale(0.96); }
+    #vlm-toggle-btn.vlm-loading {
+        animation: vlm-btn-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes vlm-btn-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(79,195,247,0.5); }
+        50%       { box-shadow: 0 0 0 9px rgba(79,195,247,0); }
     }
 
     .close-iframe {
@@ -1218,10 +1473,33 @@
     <!-- 3D MODE CONTAINER -->
     <div id="mode-3d"></div>
 
+    <!-- INSIDE-THE-CAMERA HOTSPOT LABEL (3D internals) -->
+    <div id="hotspot-label" style="position: fixed; padding: 6px 12px; background: rgba(10,10,18,0.92); color: #fff; border: 1px solid rgba(0,229,255,0.4); border-radius: 4px; font-family: Roboto, sans-serif; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.15s ease; z-index: 200; backdrop-filter: blur(8px); white-space: nowrap;"></div>
+
+    <!-- INSIDE-THE-CAMERA MOBILE DRAWER -->
+    <div id="mobile-internals-drawer" style="display: none; position: fixed; left: 0; right: 0; bottom: 0; padding: 12px max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right)); background: rgba(10, 10, 18, 0.92); backdrop-filter: blur(18px); border-top: 1px solid rgba(0, 229, 255, 0.3); z-index: 150; gap: 8px; flex-wrap: wrap; justify-content: center;">
+        <button data-portfolio="astronomy" data-url="./portfolios/astronomy/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(0,229,255,0.08); color: #fff; border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Astronomy<br><small style="opacity:0.6">Front Lens</small></button>
+        <button data-portfolio="food" data-url="./portfolios/food/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(255,170,102,0.08); color: #fff; border: 1px solid rgba(255,170,102,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Food<br><small style="opacity:0.6">Shutter Button</small></button>
+        <button data-portfolio="landscape" data-url="./portfolios/landscape/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(0,180,120,0.08); color: #fff; border: 1px solid rgba(0,180,120,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Landscape<br><small style="opacity:0.6">LCD Screen</small></button>
+        <button data-portfolio="planes" data-url="./portfolios/planes/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(160,160,200,0.08); color: #fff; border: 1px solid rgba(160,160,200,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Planes<br><small style="opacity:0.6">Mode Dial</small></button>
+        <button data-portfolio="wildlife" data-url="./portfolios/wildlife/index.html" style="flex: 1 1 100%; min-width: 140px; padding: 10px 14px; background: rgba(184,115,51,0.08); color: #fff; border: 1px solid rgba(184,115,51,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Wildlife<br><small style="opacity:0.6">Handgrip</small></button>
+    </div>
+
     <!-- 2D MODE CONTAINER -->
     <div id="mode-2d">
         <div class="aurora-layer aurora-layer-1"></div>
         <div class="aurora-layer aurora-layer-2"></div>
+        <div class="stars-layer stars-back"></div>
+        <div class="stars-layer stars-mid"></div>
+        <div class="stars-layer stars-front"></div>
+        <svg viewBox="0 0 200 150" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 60vw; max-width: 600px; opacity: 0.06; pointer-events: none; z-index: 0;">
+            <rect x="10" y="40" width="180" height="80" rx="8" fill="none" stroke="#00e5ff" stroke-width="2"/>
+            <rect x="50" y="25" width="50" height="20" rx="4" fill="none" stroke="#00e5ff" stroke-width="2"/>
+            <circle cx="100" cy="80" r="30" fill="none" stroke="#00e5ff" stroke-width="2"/>
+            <circle cx="100" cy="80" r="22" fill="none" stroke="#00e5ff" stroke-width="1.5"/>
+            <circle cx="100" cy="80" r="14" fill="none" stroke="#00e5ff" stroke-width="1"/>
+            <circle cx="160" cy="55" r="3" fill="#00e5ff"/>
+        </svg>
         <div class="hero-container">
             <img src="./assets/photographer.jpg" alt="Profile" class="profile-pic-2d">
 
@@ -1242,7 +1520,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🌌</div>
                         <h3>Astronomy</h3>
-                        <span>Exhibit 02: Deep Space</span>
+                        <span>Telephoto Lens</span>
                     </div>
                 </a>
                 <a href="#" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;"
@@ -1250,7 +1528,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🍱</div>
                         <h3>Food</h3>
-                        <span>Exhibit 03: Delicious</span>
+                        <span>Macro Element</span>
                     </div>
                 </a>
                 <a href="#" class="nav-card"
@@ -1259,7 +1537,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🏞️</div>
                         <h3>Landscape</h3>
-                        <span>Exhibit 04: Breathtaking</span>
+                        <span>Image Sensor</span>
                     </div>
                 </a>
                 <a href="#" class="nav-card" onclick="handleNav('./portfolios/planes/index.html', true); return false;"
@@ -1267,7 +1545,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">✈️</div>
                         <h3>Planes</h3>
-                        <span>Exhibit 05: Flying</span>
+                        <span>Shutter Mechanism</span>
                     </div>
                 </a>
                 <a href="#" class="nav-card"
@@ -1276,11 +1554,27 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🐿️</div>
                         <h3>Wildlife</h3>
-                        <span>Exhibit 06: Animals</span>
+                        <span>Autofocus Motor</span>
                     </div>
                 </a>
             </div>
         </div>
+    </div>
+
+    <!-- Cinematic vignette + letterbox overlay (sits above 3D, below welcome) -->
+    <div class="cinema-vignette" id="cinema-vignette"></div>
+
+    <!-- Inside-the-camera HUD: permanent component labels + center prompt.
+         Labels float above each clickable internal in 3D space (positions
+         updated each animate() tick). Center prompt fades in once the
+         fly-in finishes so users always know what to click. -->
+    <div id="inside-hud" style="display:none;">
+        <div class="inside-prompt" id="inside-prompt">Orbit to explore &middot; Click a glowing feature to enter</div>
+        <div class="inside-label" data-portfolio="astronomy">Astronomy<span>Front Lens</span></div>
+        <div class="inside-label" data-portfolio="landscape">Landscape<span>LCD Screen</span></div>
+        <div class="inside-label" data-portfolio="wildlife">Wildlife<span>Handgrip</span></div>
+        <div class="inside-label" data-portfolio="food">Food<span>Shutter Button</span></div>
+        <div class="inside-label" data-portfolio="planes">Planes<span>Mode Dial</span></div>
     </div>
 
     <!-- UI LAYER -->
@@ -1297,7 +1591,7 @@
                 <div class="warp-sub">SYSTEM INITIALIZING</div>
             </div>
             <button id="btn-skip-intro"
-                onclick="document.getElementById('space-intro').style.display='none'; var w=document.getElementById('welcome-watermark'); if(w) w.classList.add('revealing');"
+                onclick="document.getElementById('space-intro').style.display='none'; var w=document.getElementById('welcome-watermark'); if(w) w.classList.add('revealing'); var v=document.getElementById('cinema-vignette'); if(v) v.classList.add('active');"
                 style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
                        background:transparent;border:1px solid rgba(255,255,255,0.35);
                        color:rgba(255,255,255,0.6);padding:10px 36px;font-family:inherit;
@@ -1604,7 +1898,18 @@
             <i class="fas fa-times"></i>
         </button>
         <iframe src="" id="exhibit-iframe" allowfullscreen></iframe>
+        <iframe src="./vlm/panel.html" id="vlm-iframe" title="TheDoInspector" allow="microphone"></iframe>
     </div>
+
+    <!-- VLM toggle button — shown when a gallery is open -->
+    <button id="vlm-toggle-btn" title="Toggle TheDoInspector" aria-label="Toggle TheDoInspector panel">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+    </button>
 
     <script>
         // --- GLOBAL STATE ---
@@ -1623,6 +1928,7 @@
             isPaused: false,
             muted: true,
             isFullscreen: false,
+            insideCamera: false,
             vlmEnabled:       true,
             vlmModel:         'onnx-community/FastVLM-0.5B-ONNX',
             vlmType:          'local',
@@ -1635,7 +1941,7 @@
             vlmSystemPrompt:  '',
         };
 
-        // Shared VLM settings object — read by GalleryVLMOverlay.js (same page context)
+        // Shared VLM settings object — forwarded to vlm/panel.html iframe via postMessage
         window.VLM_SETTINGS = {
             enabled:        state.vlmEnabled,
             model:          state.vlmModel,
@@ -1674,7 +1980,78 @@
                     systemPrompt:   state.vlmSystemPrompt,
                 }
             }));
+            // Forward settings to VLM panel iframe
+            _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
         }
+
+        function _postToVlmIframe(msg) {
+            try {
+                document.getElementById('vlm-iframe')?.contentWindow?.postMessage(msg, '*');
+            } catch (_) {}
+        }
+
+        // --- VLM PANEL IFRAME MESSAGING ---
+        (function () {
+            function isVlmOpen() {
+                return document.getElementById('vlm-iframe')?.classList.contains('vlm-pane-open') ?? false;
+            }
+            function setVlmOpen(open) {
+                const vlmIframe = document.getElementById('vlm-iframe');
+                if (!vlmIframe) return;
+                vlmIframe.classList.toggle('vlm-pane-open', open);
+                // Keep --vlm-pane-width in sync for the toggle button position calculation
+                document.documentElement.style.setProperty('--vlm-pane-width', open ? '380px' : '0px');
+            }
+
+            // Toggle button click: slide the VLM panel in or out
+            document.getElementById('vlm-toggle-btn')?.addEventListener('click', () => {
+                setVlmOpen(!isVlmOpen());
+            });
+
+            // Messages from VLM iframe (resize handle drag, settings request, readiness)
+            // and from gallery iframe (image changes relayed to VLM)
+            window.addEventListener('message', (e) => {
+                if (!e.data?.type) return;
+                const d = e.data;
+                const vlmIframe = document.getElementById('vlm-iframe');
+                const exhibitIframe = document.getElementById('exhibit-iframe');
+
+                if (d.type === 'vlm-iframe-ready') {
+                    // VLM panel finished loading — send current settings
+                    _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
+
+                } else if (d.type === 'vlm-resize' && e.source === vlmIframe?.contentWindow) {
+                    // User dragged the resize handle inside the VLM panel
+                    const w = Math.max(280, Math.min(window.innerWidth - 100, d.width));
+                    document.documentElement.style.setProperty('--vlm-pane-width', `${w}px`);
+
+                } else if (d.type === 'vlm-open-settings') {
+                    // VLM panel requests to open the settings modal — directly show overlay
+                    const overlay = document.getElementById('settings-overlay');
+                    if (overlay) {
+                        const _vf = document.getElementById('vlm-voice-filter');
+                        if (_vf) _vf.value = '';
+                        if (typeof populateVoiceSelect === 'function') populateVoiceSelect();
+                        if (typeof renderVoiceList === 'function') renderVoiceList('');
+                        overlay.classList.add('visible');
+                        setTimeout(() => {
+                            const vlmSection = document.getElementById('vlm-backend-row')
+                                ?? document.getElementById('select-vlm-backend');
+                            vlmSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 120);
+                    }
+
+                } else if (d.type === 'gallery-image-changed' && e.source === exhibitIframe?.contentWindow) {
+                    // Gallery reports an image change — relay to VLM panel
+                    _postToVlmIframe(d);
+
+                } else if (d.type === 'vlm-btn-state' && e.source === vlmIframe?.contentWindow) {
+                    // VLM model loading state changed — animate toggle button
+                    const btn = document.getElementById('vlm-toggle-btn');
+                    if (btn) btn.classList.toggle('vlm-loading', !!d.loading);
+                }
+            });
+        })();
 
         // --- DOM ELEMENTS ---
         const els = {
@@ -1696,6 +2073,11 @@
         // --- THREE.JS VARIABLES ---
         let scene, camera, renderer, controls;
         let camGroup, screenMesh, starSystem, uiTexture, uiCtx;
+        let composer, bloomPass;
+        let nebulaSystem, dustSystem, lightBeam, beamMaterial;
+        let cameraShake = { x: 0, y: 0, intensity: 0 };
+        let bodyTop, bodyBottom, topPlate, lensOuter;
+        let internalHotspots = [];
         let raycaster, mouse;
         let animationFrameId;
         let lastTime = performance.now();
@@ -1707,9 +2089,13 @@
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             loadPreferences();
-            init3D();
+            // 3D init failures (missing GL extension, broken CDN script, GPU
+            // quirks) must NEVER prevent the rest of the page from booting.
+            // Without this guard a thrown init3D() leaves the settings
+            // dropdown unwired and the user can't switch backends.
+            try { init3D(); } catch (e) { console.error('[init3D]', e); }
             setupEventListeners();
-            initSpaceIntro(); // Kick off the intro
+            try { initSpaceIntro(); } catch (e) { console.error('[intro]', e); }
 
 
 
@@ -1727,6 +2113,28 @@
         });
 
         function loadPreferences() {
+            // WebGL feature detection: if unavailable, force 2D
+            try {
+                const tc = document.createElement('canvas');
+                const gl = tc.getContext('webgl2') || tc.getContext('webgl');
+                if (!gl) {
+                    state.is3D = false;
+                    state.hasExplored = true;
+                    localStorage.setItem('webgl_unavailable', '1');
+                    return;
+                }
+            } catch (_) {
+                state.is3D = false;
+                state.hasExplored = true;
+                return;
+            }
+
+            // Reduced motion → prefer 2D fallback
+            if (matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                state.is3D = false;
+                state.hasExplored = true;
+            }
+
             // Priority: URL Param > LocalStorage > Default (True)
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
@@ -1745,7 +2153,9 @@
                     state.is3D = true; // Default
                 }
             }
-            state.hasExplored = false;
+            // Only reset hasExplored if 3D mode is active; otherwise keep the
+            // 2D-skip-intro flag set by feature-detect / reduced-motion / mode=2d.
+            if (state.is3D) state.hasExplored = false;
 
             // Saved Data Saver
             const savedSaver = localStorage.getItem('datasaver');
@@ -1887,6 +2297,16 @@
             window.addEventListener('resize', onResize);
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('click', onCanvasClick);
+
+            // Pause render loop when tab hidden; resume when shown
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    state.isAnimating = false;
+                } else if (state.is3D && !state.isPaused) {
+                    state.isAnimating = true;
+                    if (typeof animate === 'function') animate();
+                }
+            });
 
             // Touch support for mobile interaction
             let touchStartTime = 0;
@@ -2391,64 +2811,160 @@
 
 
         window.startExperience = function () {
+            if (state.hasExplored) return;
             state.hasExplored = true;
+
             els.welcome.classList.add('hidden');
             document.getElementById('ui-footer').classList.add('visible');
             sfx.shutter();
 
-            if (camera && controls) {
+            if (!camera || !controls) return;
 
-                // --- 1. SETUP THE ANIMATION OBJECTS ---
+            const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const isMobileFlow = window.innerWidth < 768 || matchMedia('(pointer: coarse)').matches;
 
-                // "dummy" object to hold our spherical coordinate values
-                // Angle 0 = Front, Angle Math.PI (3.14) = Back
-                const orbitData = {
-                    angle: 0,   // Start at the front
-                    radius: window.innerWidth < 768 ? 100 : 75, // Match initial camera position
-                    lift: 0     // Y height
-                };
+            const _onExploreReady = () => {
+                if (controls) {
+                    controls.minDistance = isMobileFlow ? 8 : 12;
+                    controls.maxDistance = 40;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 0.9;
+                    controls.enabled = true;
+                }
+                state.insideCamera = true;
+                if (sfx.drone) sfx.drone();
+                if (isMobileFlow) showMobileDrawer(); else showInsideHud();
+            };
 
-                // The specific point on the 3D model we want to end up looking at
-                // (The screen mesh is located roughly at z = -2, y = -0.5)
-                const targetLookAt = { x: 0, y: -0.5, z: -2 };
-
-                // --- 2. TWEEN THE ORBIT (The "Swing Around") ---
-
-                new TWEEN.Tween(orbitData)
-                    .to({
-                        angle: Math.PI, // Rotate 180 degrees to the back
-                        radius: window.innerWidth < 768 ? 40 : 25, // Final zoom distance
-                        lift: 0         // Keep vertically centered
-                    }, 1500)            // Duration
-                    .easing(TWEEN.Easing.Cubic.InOut) // Smooth acceleration/deceleration
-                    .onUpdate(() => {
-                        // MATH: Convert Polar Angle to Cartesian (X, Z) Position
-                        // This forces the camera to travel along the edge of a circle
-                        camera.position.x = orbitData.radius * Math.sin(orbitData.angle);
-                        camera.position.z = orbitData.radius * Math.cos(orbitData.angle);
-                        camera.position.y = orbitData.lift;
-
-                        // Essential: Tell the controls to recalculate vectors
-                        controls.update();
-                    })
-                    .start();
-
-                // --- 3. TWEEN THE FOCUS (The "Look At") ---
-
-                // Simultaneously shift the center of attention from the camera body to the screen
-                new TWEEN.Tween(controls.target)
-                    .to(targetLookAt, 3000)
-                    .easing(TWEEN.Easing.Cubic.InOut)
-                    .start();
+            if (reduceMotion) {
+                camera.position.set(5, 3, 20);
+                controls.target.set(0, 0, 0);
+                _onExploreReady();
+                return;
             }
+
+            if (controls) controls.enabled = false;
+
+            if (isMobileFlow) {
+                new TWEEN.Tween(camera.position)
+                    .to({ x: 0, y: 1, z: 22 }, 1800)
+                    .easing(TWEEN.Easing.Cubic.Out).start();
+                new TWEEN.Tween(controls.target)
+                    .to({ x: 0, y: 0, z: 0 }, 1800)
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .onComplete(() => { setTimeout(_onExploreReady, 400); }).start();
+                return;
+            }
+
+            // Desktop: cinematic dolly to three-quarter exterior view
+            cameraShake.intensity = 0.04;
+            new TWEEN.Tween(camera.position)
+                .to({ x: 5, y: 3, z: 20 }, 2200)
+                .easing(TWEEN.Easing.Cubic.Out).start();
+            new TWEEN.Tween(controls.target)
+                .to({ x: 0, y: 0, z: 0 }, 2200)
+                .easing(TWEEN.Easing.Cubic.Out).start();
+            new TWEEN.Tween(cameraShake)
+                .to({ intensity: 0 }, 2500)
+                .easing(TWEEN.Easing.Cubic.Out).start();
+
+            setTimeout(_onExploreReady, 2600);
         };
+
+        // ── Inside-camera HUD: persistent labels + click prompt ──
+        // Wires click handlers on the labels (so users can click the LABEL
+        // instead of the small 3D mesh), then fades the HUD in. Mobile uses
+        // its own bottom drawer instead — see showMobileDrawer().
+        function showInsideHud() {
+            const hud = document.getElementById('inside-hud');
+            if (!hud) return;
+            const isMobileFlow = window.innerWidth < 768 || matchMedia('(pointer: coarse)').matches;
+            if (isMobileFlow) return;  // mobile drawer covers this need
+
+            hud.classList.add('active');
+            hud.style.display = 'block';
+            // Wire click handlers (also a fallback CTA when the user can't
+            // pin a click on a tiny in-cavity mesh).
+            const urls = {
+                astronomy: './portfolios/astronomy/index.html',
+                landscape: './portfolios/landscape/index.html',
+                wildlife:  './portfolios/wildlife/index.html',
+                food:      './portfolios/food/index.html',
+                planes:    './portfolios/planes/index.html',
+            };
+            hud.querySelectorAll('.inside-label').forEach(el => {
+                if (el.dataset.wired) return;
+                el.dataset.wired = '1';
+                el.addEventListener('click', () => {
+                    sfx.shutter?.();
+                    const flash = document.getElementById('hyper-flash');
+                    if (flash) {
+                        flash.style.opacity = '1';
+                        setTimeout(() => { flash.style.opacity = '0'; }, 200);
+                    }
+                    const url = urls[el.dataset.portfolio];
+                    if (url && typeof handleNav === 'function') handleNav(url, true);
+                });
+            });
+            // Fade everything in once the camera settles
+            requestAnimationFrame(() => {
+                hud.querySelectorAll('.inside-label').forEach(el => el.classList.add('visible'));
+                document.getElementById('inside-prompt')?.classList.add('visible');
+            });
+        }
+        function hideInsideHud() {
+            const hud = document.getElementById('inside-hud');
+            if (!hud) return;
+            hud.querySelectorAll('.inside-label').forEach(el => el.classList.remove('visible'));
+            document.getElementById('inside-prompt')?.classList.remove('visible');
+            setTimeout(() => { hud.style.display = 'none'; hud.classList.remove('active'); }, 400);
+        }
+
+        // ── PROCEDURAL SPACE ENVIRONMENT ──
+        // Builds a clean 6-face cube environment — pure deep-space black with
+        // faint star points only. No nebula colours so camera reflections read
+        // as neutral steel/glass rather than sci-fi neon.
+        function buildSpaceEnvironment(rendererRef) {
+            const FACE = 256;
+            const faces = [];
+            for (let f = 0; f < 6; f++) {
+                const c = document.createElement('canvas');
+                c.width = c.height = FACE;
+                const x = c.getContext('2d');
+                // near-black base — very slightly warm so leather reads as brown, not grey
+                x.fillStyle = '#070708';
+                x.fillRect(0, 0, FACE, FACE);
+                // distant star sprinkle — white/cool only, no vivid hues
+                for (let i = 0; i < 120; i++) {
+                    const sx = Math.random() * FACE;
+                    const sy = Math.random() * FACE;
+                    const br = 0.2 + Math.random() * 0.5;
+                    const sz = Math.random() < 0.08 ? 1.4 : 0.7;
+                    const g = 230 + (Math.random() * 25) | 0;
+                    x.fillStyle = `rgba(${g}, ${g}, 255, ${br})`;
+                    x.fillRect(sx, sy, sz, sz);
+                }
+                faces.push(c);
+            }
+            const cubeTex = new THREE.CubeTexture(faces);
+            cubeTex.encoding = THREE.sRGBEncoding;
+            cubeTex.needsUpdate = true;
+            try {
+                const pmrem = new THREE.PMREMGenerator(rendererRef);
+                pmrem.compileCubemapShader();
+                const env = pmrem.fromCubemap(cubeTex).texture;
+                pmrem.dispose();
+                return env;
+            } catch (_) {
+                return cubeTex;
+            }
+        }
 
         // --- 3D SCENE SETUP ---
         function init3D() {
             scene = new THREE.Scene();
-            // FIX: Opaque background to prevent darkening
-            scene.background = new THREE.Color(0x050505);
-            scene.fog = new THREE.FogExp2(0x050505, 0.002);
+            scene.background = new THREE.Color(0x070708);
+            scene.fog = new THREE.FogExp2(0x070708, 0.0006);
 
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
 
@@ -2459,30 +2975,118 @@
                 camera.position.set(0, 0, window.innerWidth < 768 ? 100 : 75);
             }
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", stencil: false, depth: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            const isMobileInit = window.innerWidth < 768;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobileInit ? 1.5 : 2));
             renderer.outputEncoding = THREE.sRGBEncoding;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.0;
+            renderer.toneMappingExposure = 1.75;
             els.mode3d.appendChild(renderer.domElement);
 
-            // Lighting - More dramatic for space
-            const ambient = new THREE.AmbientLight(0xffffff, 0.2); // Low ambient for contrast
+            // ── PROCEDURAL HDR-LIKE ENVIRONMENT + POST-PROCESSING ──
+            // ALL of this is non-essential polish. If any of it throws (CDN
+            // hiccup, missing pass, GL precision quirk on a specific GPU), we
+            // MUST keep going — otherwise setupEventListeners() never runs and
+            // the user can't even change settings.
+            try {
+                scene.environment = buildSpaceEnvironment(renderer);
+            } catch (e) {
+                console.warn('[3D] env cubemap skipped:', e?.message || e);
+            }
+
+            try {
+                const ppEnabled = !isMobileInit
+                    && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+                    && typeof THREE.EffectComposer !== 'undefined'
+                    && typeof THREE.UnrealBloomPass !== 'undefined';
+                if (ppEnabled) {
+                    composer = new THREE.EffectComposer(renderer);
+                    composer.setPixelRatio(renderer.getPixelRatio());
+                    composer.setSize(window.innerWidth, window.innerHeight);
+
+                    const renderPass = new THREE.RenderPass(scene, camera);
+                    composer.addPass(renderPass);
+
+                    const bloom = new THREE.UnrealBloomPass(
+                        new THREE.Vector2(window.innerWidth, window.innerHeight),
+                        0.28, 0.45, 0.55
+                    );
+                    composer.addPass(bloom);
+                    bloomPass = bloom;
+
+                    const chromaShader = {
+                        uniforms: {
+                            tDiffuse: { value: null },
+                            amount:   { value: 0.0010 },
+                            vignette: { value: 0.70 }
+                        },
+                        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                        fragmentShader: `
+                            uniform sampler2D tDiffuse;
+                            uniform float amount;
+                            uniform float vignette;
+                            varying vec2 vUv;
+                            void main() {
+                                vec2 uv = vUv;
+                                vec2 c = uv - 0.5;
+                                float r = texture2D(tDiffuse, uv + c * amount).r;
+                                float g = texture2D(tDiffuse, uv).g;
+                                float b = texture2D(tDiffuse, uv - c * amount).b;
+                                float a = texture2D(tDiffuse, uv).a;
+                                float v = smoothstep(0.95, vignette, length(c));
+                                gl_FragColor = vec4(vec3(r, g, b) * (1.0 - v * 0.7), a);
+                            }
+                        `
+                    };
+                    const chromaPass = new THREE.ShaderPass(chromaShader);
+                    composer.addPass(chromaPass);
+
+                    if (typeof THREE.FilmPass !== 'undefined') {
+                        const film = new THREE.FilmPass(0.18, 0.0, 0.0, false);
+                        film.renderToScreen = true;
+                        composer.addPass(film);
+                    } else {
+                        chromaPass.renderToScreen = true;
+                    }
+                }
+            } catch (e) {
+                console.warn('[3D] post-processing disabled:', e?.message || e);
+                composer = null;
+                bloomPass = null;
+            }
+
+            // Lighting — soft studio-style: bright ambient base so the camera
+            // body reads clearly; gentle directional for shape definition only.
+            const ambient = new THREE.AmbientLight(0xffffff, 1.4);
             scene.add(ambient);
 
-            const keyLight = new THREE.DirectionalLight(0xffffff, 2);
-            keyLight.position.set(20, 20, 50);
+            // Soft key from front-right-above — lower intensity to avoid spec glare
+            const keyLight = new THREE.DirectionalLight(0xfff8f2, 1.5);
+            keyLight.position.set(12, 18, 60);
             scene.add(keyLight);
 
-            const rimLight = new THREE.SpotLight(0x00e5ff, 5); // Blue rim light
+            // Neutral cool rim from the left — just enough to define metal edges
+            const rimLight = new THREE.SpotLight(0xd0eeff, 0.7, 200, Math.PI / 4, 0.6, 1.2);
             rimLight.position.set(-30, 10, 0);
             rimLight.lookAt(0, 0, 0);
             scene.add(rimLight);
 
-            const fillLight = new THREE.PointLight(0xffaa00, 0.5); // Warm fill
+            // Subtle warm back-rim for depth without vivid colour cast
+            const accentRim = new THREE.SpotLight(0xffe8c8, 0.5, 200, Math.PI / 5, 0.7, 1.2);
+            accentRim.position.set(28, -12, -20);
+            accentRim.lookAt(0, 0, 0);
+            scene.add(accentRim);
+
+            // Soft under-fill to lift shadow on the grip/bottom
+            const fillLight = new THREE.PointLight(0xfff4e0, 0.7);
             fillLight.position.set(20, -10, 20);
             scene.add(fillLight);
+
+            // Second front-fill from below-left for even coverage
+            const fillLight2 = new THREE.PointLight(0xffffff, 0.5);
+            fillLight2.position.set(-15, -20, 30);
+            scene.add(fillLight2);
 
             // Objects
             createStarfield();
@@ -2582,8 +3186,9 @@
         function createStarfield() {
             if (starSystem) scene.remove(starSystem);
 
-            // Increased density for drama
-            const count = state.highDensityStars ? 40000 : 10000;
+            // Stars are purely a distant backdrop — kept far and dim so the
+            // camera model dominates. No vivid tints; mostly white/cool-white.
+            const count = state.highDensityStars ? 20000 : 6000;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(count * 3);
             const sizes = new Float32Array(count);
@@ -2591,36 +3196,35 @@
             const color = new THREE.Color();
 
             for (let i = 0; i < count; i++) {
-                // Spherical distribution
-                const r = 400 + Math.random() * 1000;
+                // Push stars into a far sphere so they never feel close
+                const r = 700 + Math.random() * 1300;
                 const theta = 2 * Math.PI * Math.random();
                 const phi = Math.acos(2 * Math.random() - 1);
 
-                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
                 positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
                 positions[i * 3 + 2] = r * Math.cos(phi);
 
-                sizes[i] = Math.random() * 2;
+                sizes[i] = Math.random() * 1.2;
 
-                // Slight blue/yellow tints
-                if (Math.random() > 0.9) color.setHex(0xaabfff);
-                else if (Math.random() > 0.9) color.setHex(0xffddaa);
+                // Mostly neutral white; very rare subtle blue tint only
+                if (Math.random() > 0.95) color.setHex(0xc8d8ff);
                 else color.setHex(0xffffff);
 
-                colors[i * 3] = color.r;
+                colors[i * 3]     = color.r;
                 colors[i * 3 + 1] = color.g;
                 colors[i * 3 + 2] = color.b;
             }
 
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size',     new THREE.BufferAttribute(sizes, 1));
+            geometry.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
 
             const material = new THREE.PointsMaterial({
-                size: 1.5,
+                size: 0.9,
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.9,
+                opacity: 0.65,
                 sizeAttenuation: true
             });
 
@@ -2641,8 +3245,8 @@
 
             const leatherMat = new THREE.MeshStandardMaterial({
                 map: leatherTex,
-                color: 0x333333,
-                roughness: 0.9,
+                color: 0x505058,
+                roughness: 0.85,
                 bumpMap: leatherTex,
                 bumpScale: 0.05
             });
@@ -2660,28 +3264,35 @@
                 roughness: 0.5
             });
 
-            // 1. Body
-            const body = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 4), leatherMat);
-            camGroup.add(body);
+            // 1. Camera body (single intact piece — exterior experience)
+            bodyBottom = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 4), leatherMat);
+            bodyBottom.position.y = 0;
+            camGroup.add(bodyBottom);
+            // bodyTop stays null — no disassembly in exterior mode
 
-            // 2. Grip
+            // 2. Grip — Wildlife entry point
             const grip = new THREE.Mesh(new THREE.BoxGeometry(3, 9, 5), leatherMat);
             grip.position.set(-7.5, -0.5, 1);
+            grip.userData = { portfolio: 'wildlife', label: 'Wildlife · Handgrip', url: './portfolios/wildlife/index.html' };
             camGroup.add(grip);
+            internalHotspots.push(grip);
 
-            // 3. Top Plate (Metal)
-            // INCREASED DIMENSIONS SLIGHTLY TO AVOID Z-FIGHTING (14.05 vs 14)
-            const topPlate = new THREE.Mesh(new THREE.BoxGeometry(14.05, 2, 4.05), metalMat);
+            // 3. Top Plate (Metal) — Planes entry point
+            topPlate = new THREE.Mesh(new THREE.BoxGeometry(14.05, 2, 4.05), metalMat);
             topPlate.position.set(0, 5, 0);
+            topPlate.userData = { portfolio: 'planes', label: 'Planes · Mode Dial', url: './portfolios/planes/index.html' };
             camGroup.add(topPlate);
+            internalHotspots.push(topPlate);
 
-            // 4. Shutter Button
+            // 4. Shutter Button — Food entry point
             const shutter = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16), metalMat);
             shutter.position.set(-7.5, 6, 1.5);
+            shutter.userData = { portfolio: 'food', label: 'Food · Shutter Button', url: './portfolios/food/index.html' };
             camGroup.add(shutter);
+            internalHotspots.push(shutter);
 
-            // 5. Lens Assembly
-            const lensOuter = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 2, 32), blackMat);
+            // 5. Lens Assembly — Astronomy entry point
+            lensOuter = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 2, 32), blackMat);
             lensOuter.rotation.x = Math.PI / 2;
             lensOuter.position.z = 3;
             camGroup.add(lensOuter);
@@ -2691,7 +3302,7 @@
             lensRing.position.z = 3.5;
             camGroup.add(lensRing);
 
-            // 6. Glass
+            // 6. Glass — Astronomy hit surface (frontmost, single source of truth for labels)
             const glassGeo = new THREE.CircleGeometry(3.5, 32);
             const glassMat = new THREE.MeshPhysicalMaterial({
                 color: 0x222244,
@@ -2703,16 +3314,87 @@
             });
             const glass = new THREE.Mesh(glassGeo, glassMat);
             glass.position.z = 4.01;
+            glass.userData = { portfolio: 'astronomy', label: 'Astronomy · Front Lens', url: './portfolios/astronomy/index.html' };
             camGroup.add(glass);
+            internalHotspots.push(glass);
 
-            // 7. Screen (Back)
+            // 7. Screen (Back) — Landscape entry point; UV click zones also show full menu
             createUIScreen();
             const screenGeo = new THREE.PlaneGeometry(12, 8);
-            const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture }); // Self-illuminated
+            const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture });
             screenMesh = new THREE.Mesh(screenGeo, screenMat);
             screenMesh.position.set(0, -0.5, -2.01);
-            screenMesh.rotation.y = Math.PI; // Face backwards
+            screenMesh.rotation.y = Math.PI;
+            screenMesh.userData = { portfolio: 'landscape', label: 'LCD Screen · All Portfolios', url: null };
             camGroup.add(screenMesh);
+            internalHotspots.push(screenMesh);
+        }
+
+        // ── Helper: stylized Bayer pattern for sensor active area ───────
+        function makeBayerTexture(size) {
+            const c = document.createElement('canvas');
+            c.width = c.height = size;
+            const x = c.getContext('2d');
+            x.fillStyle = '#001218';
+            x.fillRect(0, 0, size, size);
+            const cell = 6;
+            for (let y = 0; y < size; y += cell) {
+                for (let xx = 0; xx < size; xx += cell) {
+                    const isR = ((xx / cell) % 2 === 0) && ((y / cell) % 2 === 0);
+                    const isB = ((xx / cell) % 2 === 1) && ((y / cell) % 2 === 1);
+                    if (isR)      x.fillStyle = '#ff5060';
+                    else if (isB) x.fillStyle = '#5070ff';
+                    else          x.fillStyle = '#40d090';
+                    x.fillRect(xx + 0.5, y + 0.5, cell - 1, cell - 1);
+                }
+            }
+            // Subtle scanline shimmer
+            x.globalAlpha = 0.08;
+            x.fillStyle = '#ffffff';
+            for (let y = 0; y < size; y += 2) x.fillRect(0, y, size, 1);
+            x.globalAlpha = 1;
+            const t = new THREE.CanvasTexture(c);
+            t.encoding = THREE.sRGBEncoding;
+            t.minFilter = THREE.LinearFilter;
+            return t;
+        }
+        // ── Helper: PCB circuit-trace pattern for sensor substrate ──────
+        function makeCircuitTraceTexture(size) {
+            const c = document.createElement('canvas');
+            c.width = c.height = size;
+            const x = c.getContext('2d');
+            x.fillStyle = '#06140e';
+            x.fillRect(0, 0, size, size);
+            x.strokeStyle = 'rgba(0,200,180,0.5)';
+            x.lineWidth = 1.2;
+            for (let i = 0; i < 40; i++) {
+                let cx = Math.random() * size;
+                let cy = Math.random() * size;
+                x.beginPath();
+                x.moveTo(cx, cy);
+                for (let j = 0; j < 6; j++) {
+                    const dir = Math.floor(Math.random() * 4);
+                    const len = 8 + Math.random() * 40;
+                    if (dir === 0) cx += len;
+                    else if (dir === 1) cx -= len;
+                    else if (dir === 2) cy += len;
+                    else                 cy -= len;
+                    x.lineTo(cx, cy);
+                }
+                x.stroke();
+            }
+            // Solder pads
+            x.fillStyle = 'rgba(255,200,80,0.7)';
+            for (let i = 0; i < 60; i++) {
+                const cx = Math.random() * size;
+                const cy = Math.random() * size;
+                x.beginPath();
+                x.arc(cx, cy, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
+                x.fill();
+            }
+            const t = new THREE.CanvasTexture(c);
+            t.encoding = THREE.sRGBEncoding;
+            return t;
         }
 
         // --- VIRTUAL SCREEN UI ---
@@ -2874,6 +3556,9 @@
             if (renderer) {
                 renderer.setSize(width, height);
             }
+            if (composer) {
+                composer.setSize(width, height);
+            }
         }
 
         function onMouseMove(e) {
@@ -2882,11 +3567,57 @@
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
+            // Inside-the-camera: hover internal hotspots
+            if (state.insideCamera && internalHotspots.length && raycaster) {
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(internalHotspots, true);
+                const label = document.getElementById('hotspot-label');
+                if (hits.length > 0) {
+                    let g = hits[0].object;
+                    while (g && !(g.userData && g.userData.label)) g = g.parent;
+                    if (g && label) {
+                        label.textContent = g.userData.label;
+                        label.style.left = (e.clientX + 16) + 'px';
+                        label.style.top  = (e.clientY + 12) + 'px';
+                        label.style.opacity = '1';
+                    }
+                    document.body.style.cursor = 'pointer';
+                } else {
+                    if (label) label.style.opacity = '0';
+                    document.body.style.cursor = '';
+                }
+                return;
+            }
+
             checkIntersections(false);
         }
 
         function onCanvasClick(e) {
             if (!state.is3D || !state.hasExplored) return;
+
+            // Inside-the-camera: click internal hotspots
+            if (state.insideCamera && internalHotspots.length && raycaster) {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(internalHotspots, true);
+                if (hits.length > 0) {
+                    let g = hits[0].object;
+                    while (g && !(g.userData && g.userData.url)) g = g.parent;
+                    if (g && g.userData && g.userData.url) {
+                        sfx.shutter();
+                        const flash = document.getElementById('hyper-flash');
+                        if (flash) {
+                            flash.style.opacity = '1';
+                            flash.style.transition = 'opacity 0.4s ease';
+                            setTimeout(() => { flash.style.opacity = '0'; }, 200);
+                        }
+                        if (typeof handleNav === 'function') handleNav(g.userData.url, true);
+                        return;
+                    }
+                }
+            }
+
             checkIntersections(true);
         }
 
@@ -2954,6 +3685,18 @@
                 // 2. Slide it up
                 els.iframeOverlay.classList.add('active');
 
+                // Notify VLM panel iframe that a gallery opened and send current settings
+                _postToVlmIframe({ type: 'gallery-opened', url: finalUrl });
+                _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
+
+                // Show VLM toggle button (only when VLM is enabled in settings)
+                const vlmBtn = document.getElementById('vlm-toggle-btn');
+                if (vlmBtn && state.vlmEnabled) vlmBtn.style.display = 'flex';
+
+                // Hide mobile internals drawer + desktop HUD when entering an exhibit
+                if (typeof hideMobileDrawer === 'function') hideMobileDrawer();
+                if (typeof hideInsideHud === 'function') hideInsideHud();
+
                 // 3. Pause Animation Logic Immediately
                 state.isPaused = true;
                 state.isAnimating = false;
@@ -2978,8 +3721,33 @@
 
             // 2. Force a micro-repaint to ensure the canvas is ready
             if (state.is3D) {
-                renderer.render(scene, camera);
+                if (composer) composer.render();
+                else renderer.render(scene, camera);
             }
+
+            // Return to exterior three-quarter view; re-enable turntable rotation
+            if (state.is3D && state.insideCamera && camera) {
+                if (controls) {
+                    controls.maxDistance = 40;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 0.9;
+                }
+                new TWEEN.Tween(camera.position).to({ x: 5, y: 3, z: 20 }, 800)
+                    .easing(TWEEN.Easing.Cubic.Out).start();
+                new TWEEN.Tween(controls.target).to({ x: 0, y: 0, z: 0 }, 800)
+                    .easing(TWEEN.Easing.Cubic.Out).start();
+            }
+
+            // Stop the inside-camera drone if running
+            if (sfx.stopDrone) sfx.stopDrone();
+
+            // Notify VLM panel and hide toggle button
+            _postToVlmIframe({ type: 'gallery-closed' });
+            const vlmBtn = document.getElementById('vlm-toggle-btn');
+            if (vlmBtn) vlmBtn.style.display = 'none';
+            // Close VLM panel (slide it back out)
+            document.getElementById('vlm-iframe')?.classList.remove('vlm-pane-open');
+            document.documentElement.style.setProperty('--vlm-pane-width', '0px');
 
             // 3. Slide down
             els.iframeOverlay.classList.remove('active');
@@ -2995,12 +3763,39 @@
                     state.isAnimating = true;
                     animate();
                 }
+
+                // Re-show mobile drawer if user is still inside the camera
+                const isMobileFlow = window.innerWidth < 768 || matchMedia('(pointer: coarse)').matches;
+                if (state.insideCamera && isMobileFlow) showMobileDrawer();
             }, 500);
         };
 
+        // --- INSIDE-THE-CAMERA MOBILE DRAWER ---
+        function showMobileDrawer() {
+            const d = document.getElementById('mobile-internals-drawer');
+            if (!d) return;
+            d.style.display = 'flex';
+            d.querySelectorAll('button').forEach(btn => {
+                btn.onclick = () => {
+                    sfx.shutter();
+                    const flash = document.getElementById('hyper-flash');
+                    if (flash) {
+                        flash.style.opacity = '1';
+                        flash.style.transition = 'opacity 0.4s ease';
+                        setTimeout(() => { flash.style.opacity = '0'; }, 200);
+                    }
+                    if (typeof handleNav === 'function') handleNav(btn.dataset.url, true);
+                };
+            });
+        }
+        function hideMobileDrawer() {
+            const d = document.getElementById('mobile-internals-drawer');
+            if (d) d.style.display = 'none';
+        }
+
         // --- ANIMATION LOOP ---
         function animate() {
-            if (!state.isAnimating) return;
+            if (!state.isAnimating || document.hidden) return;
             animationFrameId = requestAnimationFrame(animate);
 
             const now = performance.now();
@@ -3014,16 +3809,49 @@
             TWEEN.update();
             if (controls) controls.update();
 
-            // Dramatic Cam Pulse & Float
+            // Camera model float — gentle bob pre-explore; minimal in explore mode
             if (camGroup) {
                 const isMobile = window.innerWidth < 768;
-                const baseScale = isMobile ? 1.0 : 1.4; // Smaller base scale for mobile
-                const pulseAmt = isMobile ? 0.05 : 0.2; // Subtler pulse for mobile
-                const pulse = Math.sin(now * 0.001) * pulseAmt;
+                const baseScale = isMobile ? 1.0 : 1.4;
+                if (!state.insideCamera) {
+                    const pulseAmt = isMobile ? 0.05 : 0.2;
+                    const pulse = Math.sin(now * 0.001) * pulseAmt;
+                    camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
+                    camGroup.rotation.z = Math.sin(now * 0.0002) * 0.02;
+                    camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
+                } else {
+                    // Explore mode: very subtle drift only, no tilt
+                    camGroup.position.y = Math.sin(now * 0.0003) * 0.08;
+                    camGroup.rotation.z = 0;
+                    camGroup.scale.set(baseScale, baseScale, baseScale);
+                }
+            }
 
-                camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
-                camGroup.rotation.z = Math.sin(now * 0.0002) * .02;
-                camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
+            // Project camera-part labels onto screen when in explore mode
+            if (state.insideCamera && internalHotspots.length) {
+                const hud = document.getElementById('inside-hud');
+                if (hud && hud.classList.contains('active')) {
+                    const w = window.innerWidth, h = window.innerHeight;
+                    const tmp = new THREE.Vector3();
+                    internalHotspots.forEach(g => {
+                        const portfolio = g.userData?.portfolio;
+                        if (!portfolio) return;
+                        const label = hud.querySelector(`.inside-label[data-portfolio="${portfolio}"]`);
+                        if (!label) return;
+                        g.getWorldPosition(tmp);
+                        tmp.project(camera);
+                        const onScreen = tmp.z > -1 && tmp.z < 1
+                            && tmp.x > -1.05 && tmp.x < 1.05
+                            && tmp.y > -1.05 && tmp.y < 1.05;
+                        if (onScreen) {
+                            label.style.left = `${(tmp.x * 0.5 + 0.5) * w}px`;
+                            label.style.top  = `${(-tmp.y * 0.5 + 0.5) * h - 54}px`;
+                            if (!label.classList.contains('visible')) label.classList.add('visible');
+                        } else {
+                            label.classList.remove('visible');
+                        }
+                    });
+                }
             }
 
             if (starSystem) {
@@ -3031,7 +3859,27 @@
                 starSystem.rotation.y += 0.0005;
             }
 
-            renderer.render(scene, camera);
+            // Cinematic camera shake (decays to zero after fly-in stage)
+            let shakeAppliedX = 0, shakeAppliedY = 0;
+            if (cameraShake.intensity > 0.001) {
+                shakeAppliedX = (Math.random() - 0.5) * cameraShake.intensity;
+                shakeAppliedY = (Math.random() - 0.5) * cameraShake.intensity;
+                camera.position.x += shakeAppliedX;
+                camera.position.y += shakeAppliedY;
+            }
+
+            // Render through the post-processing chain when available
+            if (composer) {
+                composer.render();
+            } else {
+                renderer.render(scene, camera);
+            }
+
+            // Undo shake so position tweens stay accurate
+            if (cameraShake.intensity > 0.001) {
+                camera.position.x -= shakeAppliedX;
+                camera.position.y -= shakeAppliedY;
+            }
         }
         // --- ADVANCED AUDIO ENGINE ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3117,6 +3965,54 @@
                 osc.start(t);
                 osc.stop(t + 0.05);
             }
+        };
+
+        // Inside-the-camera ambient drone (low triangle through lowpass)
+        sfx.drone = function () {
+            if (!audioCtx || state.muted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (sfx._droneOsc) try { sfx._droneOsc.stop(); } catch (_) {}
+            const osc = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = 55;
+            filter.type = 'lowpass';
+            filter.frequency.value = 200;
+            gain.gain.value = 0;
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.8);
+            osc.start();
+            sfx._droneOsc = osc;
+            sfx._droneGain = gain;
+        };
+        sfx.stopDrone = function () {
+            if (!audioCtx || !sfx._droneOsc) return;
+            try {
+                sfx._droneGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+            } catch (_) {}
+            setTimeout(() => {
+                try { sfx._droneOsc.stop(); } catch (_) {}
+                sfx._droneOsc = null;
+            }, 500);
+        };
+        // Soft "click_hi" for component reveal stagger
+        sfx.click_hi = function () {
+            if (!audioCtx || state.muted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 800;
+            gain.gain.value = 0;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.02);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.21);
         };
 
         function initSpaceIntro() {
@@ -3210,6 +4106,9 @@
                             if (watermark) {
                                 watermark.classList.add('revealing');
                             }
+                            // Activate cinematic vignette + letterbox framing
+                            const vig = document.getElementById('cinema-vignette');
+                            if (vig) vig.classList.add('active');
 
                         }, 800); // Matches CSS transition time for flash-in
                     }
@@ -3287,7 +4186,14 @@
             update();
         }
     </script>
-    <script type="module" src="vlm/GalleryVLMOverlay.js?v=11"></script>
+    <script>
+        // Service Worker registration (PWA install + offline)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 
 </html>
