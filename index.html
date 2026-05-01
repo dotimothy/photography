@@ -1239,33 +1239,34 @@
     }
 
     #exhibit-iframe {
-        flex: 1 1 100%;
-        width: 100%;
+        flex: 1 1 auto;
+        min-width: 0;
         height: 100%;
         border: none;
         display: block;
     }
 
+    /* Wrapper that transitions width — the iframe inside stays at 380px so
+       Chrome never sees a 0-width iframe and can't freeze its context. */
+    #vlm-pane {
+        flex: 0 0 0px;
+        width: 0;
+        height: 100%;
+        overflow: hidden;
+        transition: flex-basis 0.22s ease, width 0.22s ease;
+    }
+    #vlm-pane.vlm-pane-open {
+        flex: 0 0 380px;
+        width: 380px;
+    }
+
     #vlm-iframe {
-        /* Overlay approach: slides in from the right, never goes to 0-width.
-           A 0-width iframe lets Chrome freeze its browsing context; using transform
-           to show/hide keeps the VLM session alive across open/close cycles. */
-        position: absolute;
-        top: 0;
-        right: 0;
         width: 380px;
         height: 100%;
         border: none;
         border-left: 1px solid rgba(79, 195, 247, 0.15);
         background: #0a0a12;
-        overflow: hidden;
         display: block;
-        transform: translateX(100%);
-        transition: transform 0.22s ease;
-        will-change: transform;
-    }
-    #vlm-iframe.vlm-pane-open {
-        transform: translateX(0);
     }
 
     /* VLM toggle button — floats over gallery, shifts left when panel opens */
@@ -1898,7 +1899,9 @@
             <i class="fas fa-times"></i>
         </button>
         <iframe src="" id="exhibit-iframe" allowfullscreen></iframe>
-        <iframe src="./vlm/panel.html" id="vlm-iframe" title="TheDoInspector" allow="microphone"></iframe>
+        <div id="vlm-pane">
+            <iframe src="./vlm/panel.html" id="vlm-iframe" title="TheDoInspector" allow="microphone"></iframe>
+        </div>
     </div>
 
     <!-- VLM toggle button — shown when a gallery is open -->
@@ -1990,19 +1993,22 @@
             } catch (_) {}
         }
 
+        // --- VLM PANEL HELPERS (module-scoped so handleNav can call them) ---
+        function isVlmOpen() {
+            return document.getElementById('vlm-pane')?.classList.contains('vlm-pane-open') ?? false;
+        }
+        function setVlmOpen(open) {
+            const vlmPane = document.getElementById('vlm-pane');
+            if (!vlmPane) return;
+            vlmPane.classList.toggle('vlm-pane-open', open);
+            // Clear any inline width set by resize-handle dragging when closing
+            if (!open) { vlmPane.style.flex = ''; vlmPane.style.width = ''; }
+            document.documentElement.style.setProperty('--vlm-pane-width', open ? '380px' : '0px');
+        }
+        let _vlmPaneAutoOpened = false; // auto-open once per page load (matches old _watchIframe behavior)
+
         // --- VLM PANEL IFRAME MESSAGING ---
         (function () {
-            function isVlmOpen() {
-                return document.getElementById('vlm-iframe')?.classList.contains('vlm-pane-open') ?? false;
-            }
-            function setVlmOpen(open) {
-                const vlmIframe = document.getElementById('vlm-iframe');
-                if (!vlmIframe) return;
-                vlmIframe.classList.toggle('vlm-pane-open', open);
-                // Keep --vlm-pane-width in sync for the toggle button position calculation
-                document.documentElement.style.setProperty('--vlm-pane-width', open ? '380px' : '0px');
-            }
-
             // Toggle button click: slide the VLM panel in or out
             document.getElementById('vlm-toggle-btn')?.addEventListener('click', () => {
                 setVlmOpen(!isVlmOpen());
@@ -2021,8 +2027,10 @@
                     _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
 
                 } else if (d.type === 'vlm-resize' && e.source === vlmIframe?.contentWindow) {
-                    // User dragged the resize handle inside the VLM panel
+                    // User dragged the resize handle inside the VLM panel — update pane width
                     const w = Math.max(280, Math.min(window.innerWidth - 100, d.width));
+                    const vlmPane = document.getElementById('vlm-pane');
+                    if (vlmPane) { vlmPane.style.flex = `0 0 ${w}px`; vlmPane.style.width = `${w}px`; }
                     document.documentElement.style.setProperty('--vlm-pane-width', `${w}px`);
 
                 } else if (d.type === 'vlm-open-settings') {
@@ -3689,9 +3697,12 @@
                 _postToVlmIframe({ type: 'gallery-opened', url: finalUrl });
                 _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
 
-                // Show VLM toggle button (only when VLM is enabled in settings)
+                // Show VLM toggle button and auto-open panel on first gallery visit
                 const vlmBtn = document.getElementById('vlm-toggle-btn');
-                if (vlmBtn && state.vlmEnabled) vlmBtn.style.display = 'flex';
+                if (vlmBtn && state.vlmEnabled) {
+                    vlmBtn.style.display = 'flex';
+                    if (!_vlmPaneAutoOpened) { _vlmPaneAutoOpened = true; setVlmOpen(true); }
+                }
 
                 // Hide mobile internals drawer + desktop HUD when entering an exhibit
                 if (typeof hideMobileDrawer === 'function') hideMobileDrawer();
@@ -3745,9 +3756,8 @@
             _postToVlmIframe({ type: 'gallery-closed' });
             const vlmBtn = document.getElementById('vlm-toggle-btn');
             if (vlmBtn) vlmBtn.style.display = 'none';
-            // Close VLM panel (slide it back out)
-            document.getElementById('vlm-iframe')?.classList.remove('vlm-pane-open');
-            document.documentElement.style.setProperty('--vlm-pane-width', '0px');
+            // Close VLM panel (collapse the pane wrapper, clear any resize inline styles)
+            setVlmOpen(false);
 
             // 3. Slide down
             els.iframeOverlay.classList.remove('active');
