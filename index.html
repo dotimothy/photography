@@ -1246,8 +1246,8 @@
         display: block;
     }
 
-    /* Wrapper that transitions width — the iframe inside stays at 380px so
-       Chrome never sees a 0-width iframe and can't freeze its context. */
+    /* Wrapper that transitions width. panel.html is lazy-loaded on first open so
+       the iframe always has a non-zero viewport when its content renders. */
     #vlm-pane {
         flex: 0 0 0px;
         width: 0;
@@ -1261,7 +1261,7 @@
     }
 
     #vlm-iframe {
-        width: 380px;
+        width: 100%;
         height: 100%;
         border: none;
         border-left: 1px solid rgba(79, 195, 247, 0.15);
@@ -1900,7 +1900,7 @@
         </button>
         <iframe src="" id="exhibit-iframe" allowfullscreen></iframe>
         <div id="vlm-pane">
-            <iframe src="./vlm/panel.html" id="vlm-iframe" title="TheDoInspector" allow="microphone"></iframe>
+            <iframe src="" id="vlm-iframe" title="TheDoInspector" allow="microphone"></iframe>
         </div>
     </div>
 
@@ -1997,6 +1997,10 @@
         function isVlmOpen() {
             return document.getElementById('vlm-pane')?.classList.contains('vlm-pane-open') ?? false;
         }
+        let _vlmPanelLoaded    = false;  // true once panel.html has been lazy-loaded into the iframe
+        let _vlmPaneAutoOpened = false;  // auto-open once per page load
+        let _currentGalleryUrl = null;   // track open gallery for panel re-init after late load
+
         function setVlmOpen(open) {
             const vlmPane = document.getElementById('vlm-pane');
             if (!vlmPane) return;
@@ -2004,8 +2008,14 @@
             // Clear any inline width set by resize-handle dragging when closing
             if (!open) { vlmPane.style.flex = ''; vlmPane.style.width = ''; }
             document.documentElement.style.setProperty('--vlm-pane-width', open ? '380px' : '0px');
+            // Lazy-load panel.html the first time the pane opens, so the iframe viewport is
+            // already 380px when the content renders (avoids 0px viewport / blank panel issue).
+            if (open && !_vlmPanelLoaded) {
+                _vlmPanelLoaded = true;
+                const vlmIframe = document.getElementById('vlm-iframe');
+                if (vlmIframe) vlmIframe.src = './vlm/panel.html';
+            }
         }
-        let _vlmPaneAutoOpened = false; // auto-open once per page load (matches old _watchIframe behavior)
 
         // --- VLM PANEL IFRAME MESSAGING ---
         (function () {
@@ -2023,8 +2033,11 @@
                 const exhibitIframe = document.getElementById('exhibit-iframe');
 
                 if (d.type === 'vlm-iframe-ready') {
-                    // VLM panel finished loading — send current settings
+                    // VLM panel finished loading — send current settings + gallery state
                     _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
+                    if (_currentGalleryUrl) {
+                        _postToVlmIframe({ type: 'gallery-opened', url: _currentGalleryUrl });
+                    }
 
                 } else if (d.type === 'vlm-resize' && e.source === vlmIframe?.contentWindow) {
                     // User dragged the resize handle inside the VLM panel — update pane width
@@ -3693,7 +3706,8 @@
                 // 2. Slide it up
                 els.iframeOverlay.classList.add('active');
 
-                // Notify VLM panel iframe that a gallery opened and send current settings
+                // Track gallery + notify VLM panel if it's already loaded
+                _currentGalleryUrl = finalUrl;
                 _postToVlmIframe({ type: 'gallery-opened', url: finalUrl });
                 _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
 
@@ -3752,7 +3766,8 @@
             // Stop the inside-camera drone if running
             if (sfx.stopDrone) sfx.stopDrone();
 
-            // Notify VLM panel and hide toggle button
+            // Notify VLM panel, clear gallery tracker, hide toggle button
+            _currentGalleryUrl = null;
             _postToVlmIframe({ type: 'gallery-closed' });
             const vlmBtn = document.getElementById('vlm-toggle-btn');
             if (vlmBtn) vlmBtn.style.display = 'none';
