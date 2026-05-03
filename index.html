@@ -183,103 +183,6 @@
     }
     .cinema-vignette.active { opacity: 1; }
 
-    /* Inside-the-camera HUD: persistent labels + click prompt so users know
-       exactly what to interact with after the fly-in. */
-    #inside-hud {
-        position: fixed;
-        inset: 0;
-        z-index: 1500;
-        pointer-events: none;
-    }
-    #inside-hud.active { display: block !important; }
-    .inside-label {
-        position: absolute;
-        transform: translate(-50%, -100%);
-        padding: 10px 16px;
-        background: rgba(6, 8, 20, 0.88);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(0, 229, 255, 0.45);
-        border-radius: 8px;
-        font-family: 'Roboto', sans-serif;
-        font-size: 14px;
-        font-weight: 600;
-        color: #fff;
-        white-space: nowrap;
-        box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3), 0 0 0 1px rgba(0,229,255,0.18) inset;
-        opacity: 0;
-        transition: opacity 0.35s ease, transform 0.35s ease;
-        pointer-events: auto;
-        cursor: pointer;
-        animation: labelPulse 2.4s ease-in-out infinite;
-    }
-    /* Connector line from label down to the orb */
-    .inside-label::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: -28px;
-        transform: translateX(-50%);
-        width: 2px;
-        height: 22px;
-        background: linear-gradient(to bottom, rgba(0,229,255,0.6), rgba(0,229,255,0));
-        border-radius: 1px;
-    }
-    .inside-label span {
-        display: block;
-        font-size: 10px;
-        font-weight: 400;
-        opacity: 0.65;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-top: 2px;
-    }
-    .inside-label[data-portfolio="astronomy"] { border-color: rgba(120, 180, 255, 0.6); box-shadow: 0 4px 20px rgba(120, 180, 255, 0.4), 0 0 0 1px rgba(120, 180, 255, 0.25) inset; }
-    .inside-label[data-portfolio="astronomy"]::after { background: linear-gradient(to bottom, rgba(120,180,255,0.7), rgba(120,180,255,0)); }
-    .inside-label[data-portfolio="landscape"] { border-color: rgba(0, 230, 180, 0.6); box-shadow: 0 4px 20px rgba(0, 230, 180, 0.4), 0 0 0 1px rgba(0, 230, 180, 0.25) inset; }
-    .inside-label[data-portfolio="landscape"]::after { background: linear-gradient(to bottom, rgba(0,230,180,0.7), rgba(0,230,180,0)); }
-    .inside-label[data-portfolio="wildlife"]  { border-color: rgba(255, 170, 80, 0.6); box-shadow: 0 4px 20px rgba(255, 170, 80, 0.4), 0 0 0 1px rgba(255, 170, 80, 0.25) inset; }
-    .inside-label[data-portfolio="wildlife"]::after  { background: linear-gradient(to bottom, rgba(255,170,80,0.7), rgba(255,170,80,0)); }
-    .inside-label[data-portfolio="food"]      { border-color: rgba(255, 180, 110, 0.6); box-shadow: 0 4px 20px rgba(255, 180, 110, 0.4), 0 0 0 1px rgba(255, 180, 110, 0.25) inset; }
-    .inside-label[data-portfolio="food"]::after      { background: linear-gradient(to bottom, rgba(255,180,110,0.7), rgba(255,180,110,0)); }
-    .inside-label[data-portfolio="planes"]    { border-color: rgba(180, 200, 240, 0.6); box-shadow: 0 4px 20px rgba(180, 200, 240, 0.4), 0 0 0 1px rgba(180, 200, 240, 0.25) inset; }
-    .inside-label[data-portfolio="planes"]::after    { background: linear-gradient(to bottom, rgba(180,200,240,0.7), rgba(180,200,240,0)); }
-    .inside-label.visible { opacity: 1; transform: translate(-50%, -100%) translateY(0); }
-    .inside-label.visible:hover {
-        transform: translate(-50%, -100%) translateY(-3px);
-        background: rgba(12, 16, 30, 0.95);
-    }
-    @keyframes labelPulse {
-        0%, 100% { box-shadow: 0 4px 16px rgba(0, 229, 255, 0.25), 0 0 0 1px rgba(0,229,255,0.15) inset; }
-        50%      { box-shadow: 0 4px 22px rgba(0, 229, 255, 0.55), 0 0 0 1px rgba(0,229,255,0.35) inset; }
-    }
-    .inside-prompt {
-        position: absolute;
-        left: 50%;
-        bottom: 60px;
-        transform: translateX(-50%);
-        padding: 12px 28px;
-        background: rgba(8, 10, 22, 0.7);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 999px;
-        font-family: 'Roboto', sans-serif;
-        font-size: 14px;
-        font-weight: 400;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.85);
-        opacity: 0;
-        transition: opacity 0.6s ease;
-        pointer-events: none;
-        animation: promptBreath 3s ease-in-out infinite;
-    }
-    .inside-prompt.visible { opacity: 1; }
-    @keyframes promptBreath {
-        0%, 100% { letter-spacing: 1.5px; }
-        50%      { letter-spacing: 2.5px; }
-    }
-
     #mode-2d::before {
         content: "";
         position: fixed;
@@ -1216,7 +1119,7 @@
         position: fixed;
         top: 0;
         left: 0;
-        right: 0;
+        right: var(--vlm-pane-width, 0px);   /* shrinks left when VLM panel opens */
         height: 100%;
         background: #000;
         z-index: 4000;
@@ -1230,7 +1133,8 @@
         backface-visibility: hidden;
         perspective: 1000px;
 
-        transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+        transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1),
+                    right 0.22s ease;
     }
 
     .iframe-container.active {
@@ -1244,63 +1148,6 @@
         height: 100%;
         border: none;
         display: block;
-    }
-
-    /* Wrapper that transitions width. panel.html is lazy-loaded on first open so
-       the iframe always has a non-zero viewport when its content renders. */
-    #vlm-pane {
-        flex: 0 0 0px;
-        width: 0;
-        height: 100%;
-        overflow: hidden;
-        transition: flex-basis 0.22s ease, width 0.22s ease;
-    }
-    #vlm-pane.vlm-pane-open {
-        flex: 0 0 380px;
-        width: 380px;
-    }
-
-    #vlm-iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-        border-left: 1px solid rgba(79, 195, 247, 0.15);
-        background: #0a0a12;
-        display: block;
-    }
-
-    /* VLM toggle button — floats over gallery, shifts left when panel opens */
-    #vlm-toggle-btn {
-        position: fixed;
-        bottom: 20px;
-        right: calc(var(--vlm-pane-width) + 12px);
-        width: 46px;
-        height: 46px;
-        border-radius: 50%;
-        background: rgba(14, 14, 22, 0.92);
-        border: 1px solid rgba(79, 195, 247, 0.35);
-        color: #4fc3f7;
-        cursor: pointer;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 4500;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        box-shadow: 0 2px 14px rgba(0,0,0,0.6), 0 0 0 1px rgba(79,195,247,0.12);
-        transition: right 0.22s ease, transform 0.18s ease, background 0.18s ease;
-        padding: 0;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-    }
-    #vlm-toggle-btn:hover  { transform: scale(1.1); background: rgba(22, 22, 38, 0.98); }
-    #vlm-toggle-btn:active { transform: scale(0.96); }
-    #vlm-toggle-btn.vlm-loading {
-        animation: vlm-btn-pulse 1.8s ease-in-out infinite;
-    }
-    @keyframes vlm-btn-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(79,195,247,0.5); }
-        50%       { box-shadow: 0 0 0 9px rgba(79,195,247,0); }
     }
 
     .close-iframe {
@@ -1474,18 +1321,6 @@
     <!-- 3D MODE CONTAINER -->
     <div id="mode-3d"></div>
 
-    <!-- INSIDE-THE-CAMERA HOTSPOT LABEL (3D internals) -->
-    <div id="hotspot-label" style="position: fixed; padding: 6px 12px; background: rgba(10,10,18,0.92); color: #fff; border: 1px solid rgba(0,229,255,0.4); border-radius: 4px; font-family: Roboto, sans-serif; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.15s ease; z-index: 200; backdrop-filter: blur(8px); white-space: nowrap;"></div>
-
-    <!-- INSIDE-THE-CAMERA MOBILE DRAWER -->
-    <div id="mobile-internals-drawer" style="display: none; position: fixed; left: 0; right: 0; bottom: 0; padding: 12px max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right)); background: rgba(10, 10, 18, 0.92); backdrop-filter: blur(18px); border-top: 1px solid rgba(0, 229, 255, 0.3); z-index: 150; gap: 8px; flex-wrap: wrap; justify-content: center;">
-        <button data-portfolio="astronomy" data-url="./portfolios/astronomy/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(0,229,255,0.08); color: #fff; border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Astronomy<br><small style="opacity:0.6">Front Lens</small></button>
-        <button data-portfolio="food" data-url="./portfolios/food/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(255,170,102,0.08); color: #fff; border: 1px solid rgba(255,170,102,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Food<br><small style="opacity:0.6">Shutter Button</small></button>
-        <button data-portfolio="landscape" data-url="./portfolios/landscape/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(0,180,120,0.08); color: #fff; border: 1px solid rgba(0,180,120,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Landscape<br><small style="opacity:0.6">LCD Screen</small></button>
-        <button data-portfolio="planes" data-url="./portfolios/planes/index.html" style="flex: 1 1 calc(50% - 8px); min-width: 140px; padding: 10px 14px; background: rgba(160,160,200,0.08); color: #fff; border: 1px solid rgba(160,160,200,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Planes<br><small style="opacity:0.6">Mode Dial</small></button>
-        <button data-portfolio="wildlife" data-url="./portfolios/wildlife/index.html" style="flex: 1 1 100%; min-width: 140px; padding: 10px 14px; background: rgba(184,115,51,0.08); color: #fff; border: 1px solid rgba(184,115,51,0.3); border-radius: 6px; font-family: Roboto, sans-serif; font-size: 13px; cursor: pointer;">Wildlife<br><small style="opacity:0.6">Handgrip</small></button>
-    </div>
-
     <!-- 2D MODE CONTAINER -->
     <div id="mode-2d">
         <div class="aurora-layer aurora-layer-1"></div>
@@ -1564,19 +1399,6 @@
 
     <!-- Cinematic vignette + letterbox overlay (sits above 3D, below welcome) -->
     <div class="cinema-vignette" id="cinema-vignette"></div>
-
-    <!-- Inside-the-camera HUD: permanent component labels + center prompt.
-         Labels float above each clickable internal in 3D space (positions
-         updated each animate() tick). Center prompt fades in once the
-         fly-in finishes so users always know what to click. -->
-    <div id="inside-hud" style="display:none;">
-        <div class="inside-prompt" id="inside-prompt">Orbit to explore &middot; Click a glowing feature to enter</div>
-        <div class="inside-label" data-portfolio="astronomy">Astronomy<span>Front Lens</span></div>
-        <div class="inside-label" data-portfolio="landscape">Landscape<span>LCD Screen</span></div>
-        <div class="inside-label" data-portfolio="wildlife">Wildlife<span>Handgrip</span></div>
-        <div class="inside-label" data-portfolio="food">Food<span>Shutter Button</span></div>
-        <div class="inside-label" data-portfolio="planes">Planes<span>Mode Dial</span></div>
-    </div>
 
     <!-- UI LAYER -->
     <div class="ui-layer">
@@ -1899,20 +1721,7 @@
             <i class="fas fa-times"></i>
         </button>
         <iframe src="" id="exhibit-iframe" allowfullscreen></iframe>
-        <div id="vlm-pane">
-            <iframe src="" id="vlm-iframe" title="TheDoInspector" allow="microphone"></iframe>
-        </div>
     </div>
-
-    <!-- VLM toggle button — shown when a gallery is open -->
-    <button id="vlm-toggle-btn" title="Toggle TheDoInspector" aria-label="Toggle TheDoInspector panel">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            <line x1="11" y1="8" x2="11" y2="14"/>
-            <line x1="8" y1="11" x2="14" y2="11"/>
-        </svg>
-    </button>
 
     <script>
         // --- GLOBAL STATE ---
@@ -1931,7 +1740,6 @@
             isPaused: false,
             muted: true,
             isFullscreen: false,
-            insideCamera: false,
             vlmEnabled:       true,
             vlmModel:         'onnx-community/FastVLM-0.5B-ONNX',
             vlmType:          'local',
@@ -1944,7 +1752,7 @@
             vlmSystemPrompt:  '',
         };
 
-        // Shared VLM settings object — forwarded to vlm/panel.html iframe via postMessage
+        // Shared VLM settings object — read by GalleryVLMOverlay.js (same page context)
         window.VLM_SETTINGS = {
             enabled:        state.vlmEnabled,
             model:          state.vlmModel,
@@ -1983,96 +1791,7 @@
                     systemPrompt:   state.vlmSystemPrompt,
                 }
             }));
-            // Forward settings to VLM panel iframe
-            _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
         }
-
-        function _postToVlmIframe(msg) {
-            try {
-                document.getElementById('vlm-iframe')?.contentWindow?.postMessage(msg, '*');
-            } catch (_) {}
-        }
-
-        // --- VLM PANEL HELPERS (module-scoped so handleNav can call them) ---
-        function isVlmOpen() {
-            return document.getElementById('vlm-pane')?.classList.contains('vlm-pane-open') ?? false;
-        }
-        let _vlmPanelLoaded    = false;  // true once panel.html has been lazy-loaded into the iframe
-        let _vlmPaneAutoOpened = false;  // auto-open once per page load
-        let _currentGalleryUrl = null;   // track open gallery for panel re-init after late load
-
-        function setVlmOpen(open) {
-            const vlmPane = document.getElementById('vlm-pane');
-            if (!vlmPane) return;
-            vlmPane.classList.toggle('vlm-pane-open', open);
-            // Clear any inline width set by resize-handle dragging when closing
-            if (!open) { vlmPane.style.flex = ''; vlmPane.style.width = ''; }
-            document.documentElement.style.setProperty('--vlm-pane-width', open ? '380px' : '0px');
-            // Lazy-load panel.html the first time the pane opens, so the iframe viewport is
-            // already 380px when the content renders (avoids 0px viewport / blank panel issue).
-            if (open && !_vlmPanelLoaded) {
-                _vlmPanelLoaded = true;
-                const vlmIframe = document.getElementById('vlm-iframe');
-                if (vlmIframe) vlmIframe.src = './vlm/panel.html';
-            }
-        }
-
-        // --- VLM PANEL IFRAME MESSAGING ---
-        (function () {
-            // Toggle button click: slide the VLM panel in or out
-            document.getElementById('vlm-toggle-btn')?.addEventListener('click', () => {
-                setVlmOpen(!isVlmOpen());
-            });
-
-            // Messages from VLM iframe (resize handle drag, settings request, readiness)
-            // and from gallery iframe (image changes relayed to VLM)
-            window.addEventListener('message', (e) => {
-                if (!e.data?.type) return;
-                const d = e.data;
-                const vlmIframe = document.getElementById('vlm-iframe');
-                const exhibitIframe = document.getElementById('exhibit-iframe');
-
-                if (d.type === 'vlm-iframe-ready') {
-                    // VLM panel finished loading — send current settings + gallery state
-                    _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
-                    if (_currentGalleryUrl) {
-                        _postToVlmIframe({ type: 'gallery-opened', url: _currentGalleryUrl });
-                    }
-
-                } else if (d.type === 'vlm-resize' && e.source === vlmIframe?.contentWindow) {
-                    // User dragged the resize handle inside the VLM panel — update pane width
-                    const w = Math.max(280, Math.min(window.innerWidth - 100, d.width));
-                    const vlmPane = document.getElementById('vlm-pane');
-                    if (vlmPane) { vlmPane.style.flex = `0 0 ${w}px`; vlmPane.style.width = `${w}px`; }
-                    document.documentElement.style.setProperty('--vlm-pane-width', `${w}px`);
-
-                } else if (d.type === 'vlm-open-settings') {
-                    // VLM panel requests to open the settings modal — directly show overlay
-                    const overlay = document.getElementById('settings-overlay');
-                    if (overlay) {
-                        const _vf = document.getElementById('vlm-voice-filter');
-                        if (_vf) _vf.value = '';
-                        if (typeof populateVoiceSelect === 'function') populateVoiceSelect();
-                        if (typeof renderVoiceList === 'function') renderVoiceList('');
-                        overlay.classList.add('visible');
-                        setTimeout(() => {
-                            const vlmSection = document.getElementById('vlm-backend-row')
-                                ?? document.getElementById('select-vlm-backend');
-                            vlmSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }, 120);
-                    }
-
-                } else if (d.type === 'gallery-image-changed' && e.source === exhibitIframe?.contentWindow) {
-                    // Gallery reports an image change — relay to VLM panel
-                    _postToVlmIframe(d);
-
-                } else if (d.type === 'vlm-btn-state' && e.source === vlmIframe?.contentWindow) {
-                    // VLM model loading state changed — animate toggle button
-                    const btn = document.getElementById('vlm-toggle-btn');
-                    if (btn) btn.classList.toggle('vlm-loading', !!d.loading);
-                }
-            });
-        })();
 
         // --- DOM ELEMENTS ---
         const els = {
@@ -2097,8 +1816,6 @@
         let composer, bloomPass;
         let nebulaSystem, dustSystem, lightBeam, beamMaterial;
         let cameraShake = { x: 0, y: 0, intensity: 0 };
-        let bodyTop, bodyBottom, topPlate, lensOuter;
-        let internalHotspots = [];
         let raycaster, mouse;
         let animationFrameId;
         let lastTime = performance.now();
@@ -2832,114 +2549,40 @@
 
 
         window.startExperience = function () {
-            if (state.hasExplored) return;
             state.hasExplored = true;
-
             els.welcome.classList.add('hidden');
             document.getElementById('ui-footer').classList.add('visible');
             sfx.shutter();
 
-            if (!camera || !controls) return;
+            if (camera && controls) {
+                const orbitData = {
+                    angle: 0,
+                    radius: window.innerWidth < 768 ? 100 : 75,
+                    lift: 0
+                };
+                const targetLookAt = { x: 0, y: -0.5, z: -2 };
 
-            const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const isMobileFlow = window.innerWidth < 768 || matchMedia('(pointer: coarse)').matches;
+                new TWEEN.Tween(orbitData)
+                    .to({
+                        angle: Math.PI,
+                        radius: window.innerWidth < 768 ? 40 : 25,
+                        lift: 0
+                    }, 1500)
+                    .easing(TWEEN.Easing.Cubic.InOut)
+                    .onUpdate(() => {
+                        camera.position.x = orbitData.radius * Math.sin(orbitData.angle);
+                        camera.position.z = orbitData.radius * Math.cos(orbitData.angle);
+                        camera.position.y = orbitData.lift;
+                        controls.update();
+                    })
+                    .start();
 
-            const _onExploreReady = () => {
-                if (controls) {
-                    controls.minDistance = isMobileFlow ? 8 : 12;
-                    controls.maxDistance = 40;
-                    controls.autoRotate = true;
-                    controls.autoRotateSpeed = 0.9;
-                    controls.enabled = true;
-                }
-                state.insideCamera = true;
-                if (sfx.drone) sfx.drone();
-                if (isMobileFlow) showMobileDrawer(); else showInsideHud();
-            };
-
-            if (reduceMotion) {
-                camera.position.set(5, 3, 20);
-                controls.target.set(0, 0, 0);
-                _onExploreReady();
-                return;
-            }
-
-            if (controls) controls.enabled = false;
-
-            if (isMobileFlow) {
-                new TWEEN.Tween(camera.position)
-                    .to({ x: 0, y: 1, z: 22 }, 1800)
-                    .easing(TWEEN.Easing.Cubic.Out).start();
                 new TWEEN.Tween(controls.target)
-                    .to({ x: 0, y: 0, z: 0 }, 1800)
-                    .easing(TWEEN.Easing.Cubic.Out)
-                    .onComplete(() => { setTimeout(_onExploreReady, 400); }).start();
-                return;
+                    .to(targetLookAt, 3000)
+                    .easing(TWEEN.Easing.Cubic.InOut)
+                    .start();
             }
-
-            // Desktop: cinematic dolly to three-quarter exterior view
-            cameraShake.intensity = 0.04;
-            new TWEEN.Tween(camera.position)
-                .to({ x: 5, y: 3, z: 20 }, 2200)
-                .easing(TWEEN.Easing.Cubic.Out).start();
-            new TWEEN.Tween(controls.target)
-                .to({ x: 0, y: 0, z: 0 }, 2200)
-                .easing(TWEEN.Easing.Cubic.Out).start();
-            new TWEEN.Tween(cameraShake)
-                .to({ intensity: 0 }, 2500)
-                .easing(TWEEN.Easing.Cubic.Out).start();
-
-            setTimeout(_onExploreReady, 2600);
         };
-
-        // ── Inside-camera HUD: persistent labels + click prompt ──
-        // Wires click handlers on the labels (so users can click the LABEL
-        // instead of the small 3D mesh), then fades the HUD in. Mobile uses
-        // its own bottom drawer instead — see showMobileDrawer().
-        function showInsideHud() {
-            const hud = document.getElementById('inside-hud');
-            if (!hud) return;
-            const isMobileFlow = window.innerWidth < 768 || matchMedia('(pointer: coarse)').matches;
-            if (isMobileFlow) return;  // mobile drawer covers this need
-
-            hud.classList.add('active');
-            hud.style.display = 'block';
-            // Wire click handlers (also a fallback CTA when the user can't
-            // pin a click on a tiny in-cavity mesh).
-            const urls = {
-                astronomy: './portfolios/astronomy/index.html',
-                landscape: './portfolios/landscape/index.html',
-                wildlife:  './portfolios/wildlife/index.html',
-                food:      './portfolios/food/index.html',
-                planes:    './portfolios/planes/index.html',
-            };
-            hud.querySelectorAll('.inside-label').forEach(el => {
-                if (el.dataset.wired) return;
-                el.dataset.wired = '1';
-                el.addEventListener('click', () => {
-                    sfx.shutter?.();
-                    const flash = document.getElementById('hyper-flash');
-                    if (flash) {
-                        flash.style.opacity = '1';
-                        setTimeout(() => { flash.style.opacity = '0'; }, 200);
-                    }
-                    const url = urls[el.dataset.portfolio];
-                    if (url && typeof handleNav === 'function') handleNav(url, true);
-                });
-            });
-            // Fade everything in once the camera settles
-            requestAnimationFrame(() => {
-                hud.querySelectorAll('.inside-label').forEach(el => el.classList.add('visible'));
-                document.getElementById('inside-prompt')?.classList.add('visible');
-            });
-        }
-        function hideInsideHud() {
-            const hud = document.getElementById('inside-hud');
-            if (!hud) return;
-            hud.querySelectorAll('.inside-label').forEach(el => el.classList.remove('visible'));
-            document.getElementById('inside-prompt')?.classList.remove('visible');
-            setTimeout(() => { hud.style.display = 'none'; hud.classList.remove('active'); }, 400);
-        }
 
         // ── PROCEDURAL SPACE ENVIRONMENT ──
         // Builds a clean 6-face cube environment — pure deep-space black with
@@ -2984,8 +2627,8 @@
         // --- 3D SCENE SETUP ---
         function init3D() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x070708);
-            scene.fog = new THREE.FogExp2(0x070708, 0.0006);
+            scene.background = new THREE.Color(0x050505);
+            scene.fog = new THREE.FogExp2(0x050505, 0.00022);
 
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
 
@@ -3002,7 +2645,7 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobileInit ? 1.5 : 2));
             renderer.outputEncoding = THREE.sRGBEncoding;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.75;
+            renderer.toneMappingExposure = 1.5;
             els.mode3d.appendChild(renderer.domElement);
 
             // ── PROCEDURAL HDR-LIKE ENVIRONMENT + POST-PROCESSING ──
@@ -3077,37 +2720,25 @@
                 bloomPass = null;
             }
 
-            // Lighting — soft studio-style: bright ambient base so the camera
-            // body reads clearly; gentle directional for shape definition only.
-            const ambient = new THREE.AmbientLight(0xffffff, 1.4);
+            // Lighting — high-contrast: low ambient lets the rim/key punch through
+            const ambient = new THREE.AmbientLight(0xffffff, 0.25);
             scene.add(ambient);
 
-            // Soft key from front-right-above — lower intensity to avoid spec glare
-            const keyLight = new THREE.DirectionalLight(0xfff8f2, 1.5);
-            keyLight.position.set(12, 18, 60);
+            // Strong warm key from front-right-above
+            const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+            keyLight.position.set(20, 20, 50);
             scene.add(keyLight);
 
-            // Neutral cool rim from the left — just enough to define metal edges
-            const rimLight = new THREE.SpotLight(0xd0eeff, 0.7, 200, Math.PI / 4, 0.6, 1.2);
+            // Signature cyan rim from the left — defines metal edges dramatically
+            const rimLight = new THREE.SpotLight(0x00e5ff, 5);
             rimLight.position.set(-30, 10, 0);
             rimLight.lookAt(0, 0, 0);
             scene.add(rimLight);
 
-            // Subtle warm back-rim for depth without vivid colour cast
-            const accentRim = new THREE.SpotLight(0xffe8c8, 0.5, 200, Math.PI / 5, 0.7, 1.2);
-            accentRim.position.set(28, -12, -20);
-            accentRim.lookAt(0, 0, 0);
-            scene.add(accentRim);
-
-            // Soft under-fill to lift shadow on the grip/bottom
-            const fillLight = new THREE.PointLight(0xfff4e0, 0.7);
+            // Warm fill from below-right for depth
+            const fillLight = new THREE.PointLight(0xffaa00, 0.6);
             fillLight.position.set(20, -10, 20);
             scene.add(fillLight);
-
-            // Second front-fill from below-left for even coverage
-            const fillLight2 = new THREE.PointLight(0xffffff, 0.5);
-            fillLight2.position.set(-15, -20, 30);
-            scene.add(fillLight2);
 
             // Objects
             createStarfield();
@@ -3207,9 +2838,7 @@
         function createStarfield() {
             if (starSystem) scene.remove(starSystem);
 
-            // Stars are purely a distant backdrop — kept far and dim so the
-            // camera model dominates. No vivid tints; mostly white/cool-white.
-            const count = state.highDensityStars ? 20000 : 6000;
+            const count = state.highDensityStars ? 25000 : 8000;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(count * 3);
             const sizes = new Float32Array(count);
@@ -3217,20 +2846,17 @@
             const color = new THREE.Color();
 
             for (let i = 0; i < count; i++) {
-                // Push stars into a far sphere so they never feel close
-                const r = 700 + Math.random() * 1300;
-                const theta = 2 * Math.PI * Math.random();
-                const phi = Math.acos(2 * Math.random() - 1);
+                positions[i * 3]     = (Math.random() - 0.5) * 2000;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
 
-                positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
-                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-                positions[i * 3 + 2] = r * Math.cos(phi);
+                sizes[i] = Math.random() * 2 + 0.5;
 
-                sizes[i] = Math.random() * 1.2;
-
-                // Mostly neutral white; very rare subtle blue tint only
-                if (Math.random() > 0.95) color.setHex(0xc8d8ff);
-                else color.setHex(0xffffff);
+                const rand = Math.random();
+                if      (rand < 0.10) color.setHex(0xaabfff);  // blue-white
+                else if (rand < 0.20) color.setHex(0xffffff);   // pure white
+                else if (rand < 0.70) color.setHex(0xfff4e8);   // warm white
+                else                  color.setHex(0xffcc99);    // orange-yellow
 
                 colors[i * 3]     = color.r;
                 colors[i * 3 + 1] = color.g;
@@ -3242,10 +2868,10 @@
             geometry.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
 
             const material = new THREE.PointsMaterial({
-                size: 0.9,
+                size: 1.5,
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.65,
+                opacity: 0.9,
                 sizeAttenuation: true
             });
 
@@ -3255,10 +2881,7 @@
 
         function createCameraModel() {
             camGroup = new THREE.Group();
-
-            // --- SCALING UPDATE: Make camera bigger ---
             camGroup.scale.set(1.4, 1.4, 1.4);
-
             scene.add(camGroup);
 
             const leatherTex = generateLeatherTexture();
@@ -3266,8 +2889,8 @@
 
             const leatherMat = new THREE.MeshStandardMaterial({
                 map: leatherTex,
-                color: 0x505058,
-                roughness: 0.85,
+                color: 0x444444,
+                roughness: 0.9,
                 bumpMap: leatherTex,
                 bumpScale: 0.05
             });
@@ -3285,35 +2908,27 @@
                 roughness: 0.5
             });
 
-            // 1. Camera body (single intact piece — exterior experience)
-            bodyBottom = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 4), leatherMat);
-            bodyBottom.position.y = 0;
-            camGroup.add(bodyBottom);
-            // bodyTop stays null — no disassembly in exterior mode
+            // 1. Body
+            const body = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 4), leatherMat);
+            camGroup.add(body);
 
-            // 2. Grip — Wildlife entry point
+            // 2. Grip
             const grip = new THREE.Mesh(new THREE.BoxGeometry(3, 9, 5), leatherMat);
             grip.position.set(-7.5, -0.5, 1);
-            grip.userData = { portfolio: 'wildlife', label: 'Wildlife · Handgrip', url: './portfolios/wildlife/index.html' };
             camGroup.add(grip);
-            internalHotspots.push(grip);
 
-            // 3. Top Plate (Metal) — Planes entry point
-            topPlate = new THREE.Mesh(new THREE.BoxGeometry(14.05, 2, 4.05), metalMat);
+            // 3. Top Plate (Metal)
+            const topPlate = new THREE.Mesh(new THREE.BoxGeometry(14.05, 2, 4.05), metalMat);
             topPlate.position.set(0, 5, 0);
-            topPlate.userData = { portfolio: 'planes', label: 'Planes · Mode Dial', url: './portfolios/planes/index.html' };
             camGroup.add(topPlate);
-            internalHotspots.push(topPlate);
 
-            // 4. Shutter Button — Food entry point
+            // 4. Shutter Button
             const shutter = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16), metalMat);
             shutter.position.set(-7.5, 6, 1.5);
-            shutter.userData = { portfolio: 'food', label: 'Food · Shutter Button', url: './portfolios/food/index.html' };
             camGroup.add(shutter);
-            internalHotspots.push(shutter);
 
-            // 5. Lens Assembly — Astronomy entry point
-            lensOuter = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 2, 32), blackMat);
+            // 5. Lens Assembly
+            const lensOuter = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 2, 32), blackMat);
             lensOuter.rotation.x = Math.PI / 2;
             lensOuter.position.z = 3;
             camGroup.add(lensOuter);
@@ -3323,7 +2938,7 @@
             lensRing.position.z = 3.5;
             camGroup.add(lensRing);
 
-            // 6. Glass — Astronomy hit surface (frontmost, single source of truth for labels)
+            // 6. Glass
             const glassGeo = new THREE.CircleGeometry(3.5, 32);
             const glassMat = new THREE.MeshPhysicalMaterial({
                 color: 0x222244,
@@ -3335,20 +2950,16 @@
             });
             const glass = new THREE.Mesh(glassGeo, glassMat);
             glass.position.z = 4.01;
-            glass.userData = { portfolio: 'astronomy', label: 'Astronomy · Front Lens', url: './portfolios/astronomy/index.html' };
             camGroup.add(glass);
-            internalHotspots.push(glass);
 
-            // 7. Screen (Back) — Landscape entry point; UV click zones also show full menu
+            // 7. Screen (Back)
             createUIScreen();
             const screenGeo = new THREE.PlaneGeometry(12, 8);
             const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture });
             screenMesh = new THREE.Mesh(screenGeo, screenMat);
             screenMesh.position.set(0, -0.5, -2.01);
             screenMesh.rotation.y = Math.PI;
-            screenMesh.userData = { portfolio: 'landscape', label: 'LCD Screen · All Portfolios', url: null };
             camGroup.add(screenMesh);
-            internalHotspots.push(screenMesh);
         }
 
         // ── Helper: stylized Bayer pattern for sensor active area ───────
@@ -3584,61 +3195,17 @@
 
         function onMouseMove(e) {
             if (!state.is3D) return;
-
+            if (els.settingsOverlay?.classList.contains('visible')) return;
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-            // Inside-the-camera: hover internal hotspots
-            if (state.insideCamera && internalHotspots.length && raycaster) {
-                raycaster.setFromCamera(mouse, camera);
-                const hits = raycaster.intersectObjects(internalHotspots, true);
-                const label = document.getElementById('hotspot-label');
-                if (hits.length > 0) {
-                    let g = hits[0].object;
-                    while (g && !(g.userData && g.userData.label)) g = g.parent;
-                    if (g && label) {
-                        label.textContent = g.userData.label;
-                        label.style.left = (e.clientX + 16) + 'px';
-                        label.style.top  = (e.clientY + 12) + 'px';
-                        label.style.opacity = '1';
-                    }
-                    document.body.style.cursor = 'pointer';
-                } else {
-                    if (label) label.style.opacity = '0';
-                    document.body.style.cursor = '';
-                }
-                return;
-            }
-
             checkIntersections(false);
         }
 
         function onCanvasClick(e) {
             if (!state.is3D || !state.hasExplored) return;
-
-            // Inside-the-camera: click internal hotspots
-            if (state.insideCamera && internalHotspots.length && raycaster) {
-                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(mouse, camera);
-                const hits = raycaster.intersectObjects(internalHotspots, true);
-                if (hits.length > 0) {
-                    let g = hits[0].object;
-                    while (g && !(g.userData && g.userData.url)) g = g.parent;
-                    if (g && g.userData && g.userData.url) {
-                        sfx.shutter();
-                        const flash = document.getElementById('hyper-flash');
-                        if (flash) {
-                            flash.style.opacity = '1';
-                            flash.style.transition = 'opacity 0.4s ease';
-                            setTimeout(() => { flash.style.opacity = '0'; }, 200);
-                        }
-                        if (typeof handleNav === 'function') handleNav(g.userData.url, true);
-                        return;
-                    }
-                }
-            }
-
+            // Ignore clicks that originated outside the 3D canvas (e.g. settings modal close button)
+            if (els.settingsOverlay?.classList.contains('visible')) return;
+            if (e.target && !els.mode3d.contains(e.target)) return;
             checkIntersections(true);
         }
 
@@ -3706,22 +3273,6 @@
                 // 2. Slide it up
                 els.iframeOverlay.classList.add('active');
 
-                // Track gallery + notify VLM panel if it's already loaded
-                _currentGalleryUrl = finalUrl;
-                _postToVlmIframe({ type: 'gallery-opened', url: finalUrl });
-                _postToVlmIframe({ type: 'vlm-config', config: window.VLM_SETTINGS });
-
-                // Show VLM toggle button and auto-open panel on first gallery visit
-                const vlmBtn = document.getElementById('vlm-toggle-btn');
-                if (vlmBtn && state.vlmEnabled) {
-                    vlmBtn.style.display = 'flex';
-                    if (!_vlmPaneAutoOpened) { _vlmPaneAutoOpened = true; setVlmOpen(true); }
-                }
-
-                // Hide mobile internals drawer + desktop HUD when entering an exhibit
-                if (typeof hideMobileDrawer === 'function') hideMobileDrawer();
-                if (typeof hideInsideHud === 'function') hideInsideHud();
-
                 // 3. Pause Animation Logic Immediately
                 state.isPaused = true;
                 state.isAnimating = false;
@@ -3750,30 +3301,6 @@
                 else renderer.render(scene, camera);
             }
 
-            // Return to exterior three-quarter view; re-enable turntable rotation
-            if (state.is3D && state.insideCamera && camera) {
-                if (controls) {
-                    controls.maxDistance = 40;
-                    controls.autoRotate = true;
-                    controls.autoRotateSpeed = 0.9;
-                }
-                new TWEEN.Tween(camera.position).to({ x: 5, y: 3, z: 20 }, 800)
-                    .easing(TWEEN.Easing.Cubic.Out).start();
-                new TWEEN.Tween(controls.target).to({ x: 0, y: 0, z: 0 }, 800)
-                    .easing(TWEEN.Easing.Cubic.Out).start();
-            }
-
-            // Stop the inside-camera drone if running
-            if (sfx.stopDrone) sfx.stopDrone();
-
-            // Notify VLM panel, clear gallery tracker, hide toggle button
-            _currentGalleryUrl = null;
-            _postToVlmIframe({ type: 'gallery-closed' });
-            const vlmBtn = document.getElementById('vlm-toggle-btn');
-            if (vlmBtn) vlmBtn.style.display = 'none';
-            // Close VLM panel (collapse the pane wrapper, clear any resize inline styles)
-            setVlmOpen(false);
-
             // 3. Slide down
             els.iframeOverlay.classList.remove('active');
             sfx.click();
@@ -3788,35 +3315,8 @@
                     state.isAnimating = true;
                     animate();
                 }
-
-                // Re-show mobile drawer if user is still inside the camera
-                const isMobileFlow = window.innerWidth < 768 || matchMedia('(pointer: coarse)').matches;
-                if (state.insideCamera && isMobileFlow) showMobileDrawer();
             }, 500);
         };
-
-        // --- INSIDE-THE-CAMERA MOBILE DRAWER ---
-        function showMobileDrawer() {
-            const d = document.getElementById('mobile-internals-drawer');
-            if (!d) return;
-            d.style.display = 'flex';
-            d.querySelectorAll('button').forEach(btn => {
-                btn.onclick = () => {
-                    sfx.shutter();
-                    const flash = document.getElementById('hyper-flash');
-                    if (flash) {
-                        flash.style.opacity = '1';
-                        flash.style.transition = 'opacity 0.4s ease';
-                        setTimeout(() => { flash.style.opacity = '0'; }, 200);
-                    }
-                    if (typeof handleNav === 'function') handleNav(btn.dataset.url, true);
-                };
-            });
-        }
-        function hideMobileDrawer() {
-            const d = document.getElementById('mobile-internals-drawer');
-            if (d) d.style.display = 'none';
-        }
 
         // --- ANIMATION LOOP ---
         function animate() {
@@ -3834,49 +3334,15 @@
             TWEEN.update();
             if (controls) controls.update();
 
-            // Camera model float — gentle bob pre-explore; minimal in explore mode
+            // Camera model float — gentle bob + scale pulse
             if (camGroup) {
                 const isMobile = window.innerWidth < 768;
                 const baseScale = isMobile ? 1.0 : 1.4;
-                if (!state.insideCamera) {
-                    const pulseAmt = isMobile ? 0.05 : 0.2;
-                    const pulse = Math.sin(now * 0.001) * pulseAmt;
-                    camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
-                    camGroup.rotation.z = Math.sin(now * 0.0002) * 0.02;
-                    camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
-                } else {
-                    // Explore mode: very subtle drift only, no tilt
-                    camGroup.position.y = Math.sin(now * 0.0003) * 0.08;
-                    camGroup.rotation.z = 0;
-                    camGroup.scale.set(baseScale, baseScale, baseScale);
-                }
-            }
-
-            // Project camera-part labels onto screen when in explore mode
-            if (state.insideCamera && internalHotspots.length) {
-                const hud = document.getElementById('inside-hud');
-                if (hud && hud.classList.contains('active')) {
-                    const w = window.innerWidth, h = window.innerHeight;
-                    const tmp = new THREE.Vector3();
-                    internalHotspots.forEach(g => {
-                        const portfolio = g.userData?.portfolio;
-                        if (!portfolio) return;
-                        const label = hud.querySelector(`.inside-label[data-portfolio="${portfolio}"]`);
-                        if (!label) return;
-                        g.getWorldPosition(tmp);
-                        tmp.project(camera);
-                        const onScreen = tmp.z > -1 && tmp.z < 1
-                            && tmp.x > -1.05 && tmp.x < 1.05
-                            && tmp.y > -1.05 && tmp.y < 1.05;
-                        if (onScreen) {
-                            label.style.left = `${(tmp.x * 0.5 + 0.5) * w}px`;
-                            label.style.top  = `${(-tmp.y * 0.5 + 0.5) * h - 54}px`;
-                            if (!label.classList.contains('visible')) label.classList.add('visible');
-                        } else {
-                            label.classList.remove('visible');
-                        }
-                    });
-                }
+                const pulseAmt = isMobile ? 0.05 : 0.2;
+                const pulse = Math.sin(now * 0.001) * pulseAmt;
+                camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
+                camGroup.rotation.z = Math.sin(now * 0.0002) * 0.02;
+                camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
             }
 
             if (starSystem) {
@@ -3992,53 +3458,6 @@
             }
         };
 
-        // Inside-the-camera ambient drone (low triangle through lowpass)
-        sfx.drone = function () {
-            if (!audioCtx || state.muted) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            if (sfx._droneOsc) try { sfx._droneOsc.stop(); } catch (_) {}
-            const osc = audioCtx.createOscillator();
-            const filter = audioCtx.createBiquadFilter();
-            const gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.value = 55;
-            filter.type = 'lowpass';
-            filter.frequency.value = 200;
-            gain.gain.value = 0;
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioCtx.destination);
-            gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.8);
-            osc.start();
-            sfx._droneOsc = osc;
-            sfx._droneGain = gain;
-        };
-        sfx.stopDrone = function () {
-            if (!audioCtx || !sfx._droneOsc) return;
-            try {
-                sfx._droneGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
-            } catch (_) {}
-            setTimeout(() => {
-                try { sfx._droneOsc.stop(); } catch (_) {}
-                sfx._droneOsc = null;
-            }, 500);
-        };
-        // Soft "click_hi" for component reveal stagger
-        sfx.click_hi = function () {
-            if (!audioCtx || state.muted) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 800;
-            gain.gain.value = 0;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.02);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.21);
-        };
 
         function initSpaceIntro() {
             const canvas = document.getElementById('space-canvas');
@@ -4211,6 +3630,7 @@
             update();
         }
     </script>
+    <script type="module" src="vlm/GalleryVLMOverlay.js"></script>
     <script>
         // Service Worker registration (PWA install + offline)
         if ('serviceWorker' in navigator) {

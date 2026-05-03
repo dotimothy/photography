@@ -962,6 +962,8 @@ function injectCSS() {
     position: fixed;
     inset: 0;
     width: 100% !important;
+    height: 100dvh !important;
+    max-height: none !important;
     transform: none !important;
     opacity: 1 !important;
     pointer-events: auto !important;
@@ -1615,10 +1617,11 @@ class GalleryVLMOverlay {
         this._q('-mic').addEventListener('click',  () => this._toggleSTT());
         this._q('-tts').addEventListener('click',  () => this._toggleTTS());
         this._q('-live').addEventListener('click', () => this._toggleLiveMode());
-        // Show mic/live buttons only when SpeechRecognition is available
-        if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+        // In iframe-panel mode the host page passes allow="microphone"; show buttons unconditionally.
+        // For non-iframe mode, require runtime API availability.
+        if (this._iframeMode || window.SpeechRecognition || window.webkitSpeechRecognition) {
             this._q('-mic').style.display = '';
-            if (window.speechSynthesis) this._q('-live').style.display = '';
+            if (this._iframeMode || window.speechSynthesis) this._q('-live').style.display = '';
         }
         // Restore TTS button state
         if (this._ttsEnabled) {
@@ -1697,10 +1700,22 @@ class GalleryVLMOverlay {
             this._btn.style.right = '';
             return;
         }
-        const w = open ? this._panel.offsetWidth : 0;
-        // Shift the toggle button to sit just outside the panel's left edge
+        const w = open ? (this._panel.offsetWidth || 360) : 0;
+        // Shift the toggle button to sit just outside the panel's left edge.
+        // When the button lives inside #iframe-container (which has perspective:1000px
+        // making it a containing block for position:fixed), `right` is measured from
+        // the CONTAINER's right edge — not the viewport. As the container narrows by
+        // `w` px, `right: 12px` keeps the button 12px inside the container's new right
+        // edge, which is exactly at the left border of the VLM panel.
+        // Outside the container (about / direct-gallery), `right` is viewport-relative
+        // so we still use `w + 12`.
         this._btn.style.transition = 'right 0.22s ease';
-        this._btn.style.right = open ? `${w + 12}px` : '';
+        if (this._iframeEl) {
+            // Button is inside #iframe-container (perspective containing block)
+            this._btn.style.right = open ? '12px' : '20px';
+        } else {
+            this._btn.style.right = open ? `${w + 12}px` : '';
+        }
         // Parent doc only — drives .iframe-container's `right: var(...)` so
         // the iframe element flexes to (viewport - panel) width. The gallery
         // INSIDE the iframe stays unchanged: its own `window.innerWidth`
@@ -1749,19 +1764,23 @@ class GalleryVLMOverlay {
         }
     }
 
-    /** Open the main settings modal and scroll to the VLM section. */
+    /** Open the main settings modal, expand the Advanced/AI section, and scroll to VLM. */
     _openSettings() {
         const settingsBtn = document.getElementById('btn-open-settings')
             ?? document.getElementById('settings-btn')
             ?? document.querySelector('.settings-toggle, [data-target="settings"]');
         if (!settingsBtn) return;
         settingsBtn.click();
-        // Scroll the VLM section into view after the modal animates in
         setTimeout(() => {
-            const vlmSection = document.getElementById('select-vlm-backend')
-                ?? document.getElementById('vlm-backend-row')
+            // Expand the collapsible "Advanced / AI Backend" section if collapsed
+            const advancedSection = document.getElementById('settings-advanced');
+            if (advancedSection && advancedSection.style.display === 'none') {
+                advancedSection.style.display = '';
+            }
+            const vlmSection = document.getElementById('vlm-backend-row')
+                ?? document.getElementById('select-vlm-backend')
                 ?? document.querySelector('[id^="vlm-"]');
-            vlmSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            vlmSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 120);
     }
 
@@ -1994,18 +2013,18 @@ class GalleryVLMOverlay {
         this._iframeEl = iframeEl;
 
         // ── Critical mobile fix ────────────────────────────────────────────
-        // The button and panel are created in document.body, but #iframe-container
-        // has `transform: translateY() translateZ(0)` which creates a GPU
-        // compositing layer. On iOS Safari and some Android browsers, position:fixed
-        // elements that live OUTSIDE that layer get buried underneath it regardless
-        // of z-index. Moving the button and panel INTO the container guarantees they
-        // are composited above the gallery iframe on every browser.
-        // (#iframe-container is position:fixed covering 100% viewport, so fixed
-        // children positioned relative to it land in the same visual location.)
+        // The toggle button is hoisted into #iframe-container so it composites above
+        // the gallery iframe on iOS Safari (which buries position:fixed siblings
+        // behind transformed compositing layers regardless of z-index).
+        // The PANEL must stay in document.body: #iframe-container has perspective:1000px
+        // which makes it a containing block for position:fixed children, causing the
+        // panel to be positioned relative to the container instead of the viewport.
+        // The panel's own will-change:transform creates its own compositing layer so it
+        // renders above #iframe-container (z-index 4500 > 4000).
         const container = document.getElementById('iframe-container') ?? iframeEl.parentElement;
         if (container) {
-            container.appendChild(this._btn);
-            container.appendChild(this._panel);
+            container.appendChild(this._btn);  // button inside container (iOS safe)
+            // panel stays in document.body — positioned relative to true viewport
         }
 
         // Fullscreen fix: when the gallery inside the iframe requests browser fullscreen,
@@ -2093,8 +2112,11 @@ class GalleryVLMOverlay {
             if (window.VLM_SETTINGS) window.VLM_SETTINGS._workerStarted = true;
         }
 
-        // On the very first gallery open, auto-open the panel
-        if (firstLoad) this._panel.classList.add('vlm-open');
+        // On the very first gallery open, auto-open the panel and push the container left
+        if (firstLoad) {
+            this._panel.classList.add('vlm-open');
+            this._setPush(true);
+        }
 
         // iframe load fires after all scripts have run, so readyState is 'complete'.
         // DOMContentLoaded branch is a safety net for edge cases.
