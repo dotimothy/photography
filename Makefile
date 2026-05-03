@@ -9,7 +9,7 @@ VENV_PYTHON = $(VENV)/bin/python
 quality ?= 80
 jobs ?= 0
 
-.PHONY: all build clean install help fast exif deepclean
+.PHONY: all build clean install help fast exif deepclean icons
 
 default: build
 
@@ -36,6 +36,11 @@ web: install
 
 exif: install
 	$(VENV_PYTHON) $(SCRIPT) --exif
+
+# Regenerate PWA icons from a 1024x1024 source (assets/source-icon.png) if
+# present, otherwise emit a stylized camera silhouette as a fallback.
+icons: install
+	$(VENV_PYTHON) modules/make_icons.py
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -155,9 +155,12 @@ def process_image_worker(task):
         metadata['__dt'] = os.path.getmtime(source_path)
 
     # 3. Safety Incremental Check
+    thumb_480_path = thumb_out_path.replace(os.sep + 'thumbs' + os.sep, os.sep + 'thumbs' + os.sep + '480' + os.sep)
+    thumb_800_path = thumb_out_path.replace(os.sep + 'thumbs' + os.sep, os.sep + 'thumbs' + os.sep + '800' + os.sep)
     if (os.path.exists(full_out_path) and os.path.exists(thumb_out_path) and
+        os.path.exists(thumb_480_path) and os.path.exists(thumb_800_path) and
         os.path.getmtime(full_out_path) > os.path.getmtime(source_path)):
-        
+
         if 'Image Width' not in metadata:
              img = cv.imread(full_out_path)
              if img is not None:
@@ -226,6 +229,16 @@ def process_image_worker(task):
     new_w, new_h = int(w * scale), int(h * scale)
     thumb = cv.resize(processed_img, (new_w, new_h), interpolation=cv.INTER_AREA)
     cv.imwrite(thumb_out_path, thumb, [cv.IMWRITE_JPEG_QUALITY, min(quality, 85), cv.IMWRITE_JPEG_PROGRESSIVE, 1])
+
+    # 7b. Generate & Save Responsive Thumb Variants (480w, 800w)
+    for target_w in (800, 480):
+        target_h = int(target_w * 0.75)  # 4:3 aspect to match 1200x900
+        out = thumb_out_path.replace(os.sep + 'thumbs' + os.sep, os.sep + 'thumbs' + os.sep + str(target_w) + os.sep)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        s = min(target_w / w, target_h / h)
+        nw, nh = max(1, int(w * s)), max(1, int(h * s))
+        small = cv.resize(processed_img, (nw, nh), interpolation=cv.INTER_AREA)
+        cv.imwrite(out, small, [cv.IMWRITE_JPEG_QUALITY, 82, cv.IMWRITE_JPEG_PROGRESSIVE, 1])
 
     return (gallery_name, name_no_ext, metadata)
 
@@ -412,16 +425,22 @@ def main():
             full_path = os.path.join(g_root, 'fulls', fname)
             thumb_path = os.path.join(g_root, 'thumbs', fname)
             
+            thumb_480_path = os.path.join(g_root, 'thumbs', '480', fname)
+            thumb_800_path = os.path.join(g_root, 'thumbs', '800', fname)
+
             os.makedirs(os.path.join(g_root, 'fulls'), exist_ok=True)
             os.makedirs(os.path.join(g_root, 'thumbs'), exist_ok=True)
+            os.makedirs(os.path.join(g_root, 'thumbs', '480'), exist_ok=True)
+            os.makedirs(os.path.join(g_root, 'thumbs', '800'), exist_ok=True)
             os.makedirs(os.path.join(g_root, 'metadata'), exist_ok=True)
 
             name_no_ext = os.path.splitext(fname)[0]
             gallery_map[gallery].append(fname)
-            
+
             # --- SMART CHECK ---
             is_fully_cached = False
-            if (os.path.exists(full_path) and os.path.exists(thumb_path) and 
+            if (os.path.exists(full_path) and os.path.exists(thumb_path) and
+                os.path.exists(thumb_480_path) and os.path.exists(thumb_800_path) and
                 os.path.getmtime(full_path) > os.path.getmtime(cache_path)):
                 
                 if gallery in existing_metadata and name_no_ext in existing_metadata[gallery]:
@@ -489,6 +508,7 @@ def main():
     profiler.start('Deployment Prep')
     
     deploy_assets = ['index.html', 'about.html', 'license.html', 'assets', 'vlm', 'LICENSE']
+    # manifest.json + sw.js are handled inside prepare_deployment (sw.js needs build-time stamping)
     build_module.prepare_deployment(deploy_assets)
             
     profiler.stop('Deployment Prep')
