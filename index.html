@@ -6,7 +6,8 @@
 <head>
     <title>TheDoShoots</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="theme-color" content="#00e5ff" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#050505">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,10 +15,8 @@
     <meta name="apple-mobile-web-app-title" content="TheDoShoots">
     <meta name="description" content="Portfolio of Timothy Do — Photographer, Engineer, Explorer">
     <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./assets/icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
     <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
 
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -27,14 +26,6 @@
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/FilmPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FilmShader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 </head>
 
@@ -65,12 +56,10 @@
     body {
         margin: 0;
         padding: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: #000000;
         overflow: hidden;
-        color: var(--primary-color);
-        touch-action: none;
+        background: linear-gradient(to bottom, #020111, #000000);
+        color: #fff;
+        font-family: 'Roboto', sans-serif;
     }
 
     /* --- 2D MODE (Northern Lights Style) --- */
@@ -82,106 +71,46 @@
         height: 100%;
         display: none;
         flex-direction: column;
-        background: linear-gradient(to bottom, #020111, #000000);
         overflow-y: auto;
         z-index: 10;
     }
 
     .aurora-layer {
         position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         pointer-events: none;
         z-index: 0;
         will-change: transform;
     }
+
     .aurora-layer-1 {
         background:
             radial-gradient(ellipse at 30% 20%, rgba(0, 229, 255, 0.18), transparent 55%),
             radial-gradient(ellipse at 70% 70%, rgba(120, 0, 255, 0.12), transparent 50%);
         animation: auroraBreath 12s ease-in-out infinite alternate;
     }
+
     .aurora-layer-2 {
         background:
             radial-gradient(ellipse at 65% 10%, rgba(0, 255, 136, 0.12), transparent 50%),
             radial-gradient(ellipse at 20% 80%, rgba(50, 100, 255, 0.10), transparent 45%);
         animation: auroraBreath 18s ease-in-out infinite alternate-reverse;
     }
+
     @keyframes auroraBreath {
-        from { transform: scale(1);    opacity: 0.75; }
-        to   { transform: scale(1.08); opacity: 1; }
-    }
+        from {
+            transform: scale(1);
+            opacity: 0.75;
+        }
 
-    /* Animated CSS starfield for the 2D fallback — three layers of dots
-       parallax-drifting at different speeds. Pure CSS, no canvas, GPU-composited. */
-    .stars-layer {
-        position: fixed;
-        top: 0; left: 0;
-        width: 200%; height: 200%;
-        pointer-events: none;
-        z-index: 0;
-        will-change: transform;
+        to {
+            transform: scale(1.08);
+            opacity: 1;
+        }
     }
-    .stars-back {
-        background-image:
-            radial-gradient(1px 1px at 12% 23%, #fff 100%, transparent),
-            radial-gradient(1px 1px at 47% 71%, #fff 100%, transparent),
-            radial-gradient(1px 1px at 83% 12%, #b6e3ff 100%, transparent),
-            radial-gradient(1.5px 1.5px at 27% 88%, #fff 100%, transparent),
-            radial-gradient(1px 1px at 64% 41%, #d4f3ff 100%, transparent),
-            radial-gradient(1px 1px at 91% 67%, #fff 100%, transparent),
-            radial-gradient(1px 1px at 33% 5%, #fff 100%, transparent),
-            radial-gradient(1px 1px at 5% 49%, #b6e3ff 100%, transparent),
-            radial-gradient(1px 1px at 73% 83%, #fff 100%, transparent),
-            radial-gradient(1.2px 1.2px at 18% 60%, #fff 100%, transparent);
-        background-size: 600px 600px;
-        opacity: 0.5;
-        animation: starsDrift 240s linear infinite;
-    }
-    .stars-mid {
-        background-image:
-            radial-gradient(1.5px 1.5px at 22% 13%, #fff, transparent),
-            radial-gradient(2px 2px at 58% 41%, #fff, transparent),
-            radial-gradient(1.2px 1.2px at 12% 78%, #b6e3ff, transparent),
-            radial-gradient(1.8px 1.8px at 78% 22%, #fff, transparent),
-            radial-gradient(1.4px 1.4px at 88% 79%, #d4f3ff, transparent);
-        background-size: 900px 900px;
-        opacity: 0.7;
-        animation: starsDrift 160s linear infinite reverse;
-    }
-    .stars-front {
-        background-image:
-            radial-gradient(2.5px 2.5px at 14% 29%, #fff, transparent),
-            radial-gradient(2px 2px at 71% 64%, #00e5ff, transparent),
-            radial-gradient(2.5px 2.5px at 86% 14%, #ff8aff, transparent);
-        background-size: 1500px 1500px;
-        opacity: 0.95;
-        animation: starsDrift 90s linear infinite, starTwinkle 4s ease-in-out infinite alternate;
-    }
-    @keyframes starsDrift {
-        from { transform: translate(0, 0); }
-        to   { transform: translate(-50%, -50%); }
-    }
-    @keyframes starTwinkle {
-        from { filter: brightness(0.85); }
-        to   { filter: brightness(1.4) drop-shadow(0 0 4px rgba(0,229,255,0.6)); }
-    }
-
-    /* Cinematic atmosphere overlay sitting above the 3D canvas, below the
-       welcome content — adds a soft global vignette + a top-and-bottom
-       letterbox ramp for "cinema" framing. */
-    .cinema-vignette {
-        position: fixed;
-        inset: 0;
-        z-index: 1999;
-        pointer-events: none;
-        background:
-            radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%),
-            linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 12%, transparent 88%, rgba(0,0,0,0.5) 100%);
-        opacity: 0;
-        transition: opacity 1s ease-in-out;
-    }
-    .cinema-vignette.active { opacity: 1; }
 
     #mode-2d::before {
         content: "";
@@ -898,13 +827,18 @@
     }
 
     @media (max-width: 599px) {
-        .settings-body { flex-direction: column; gap: 0; }
+        .settings-body {
+            flex-direction: column;
+            gap: 0;
+        }
+
         .settings-overlay {
             align-items: flex-start;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 16px 0 32px;
         }
+
         .settings-modal {
             width: 94vw;
             max-height: none;
@@ -995,7 +929,10 @@
         padding-bottom: 5px;
         border-bottom: 1px solid rgba(0, 229, 255, 0.18);
     }
-    .setting-category:first-child { margin-top: 0; }
+
+    .setting-category:first-child {
+        margin-top: 0;
+    }
 
     .setting-select {
         background: #1a1a1a;
@@ -1008,8 +945,15 @@
         cursor: pointer;
         max-width: 200px;
     }
-    .setting-select:focus { outline: none; border-color: var(--accent-color); }
-    .setting-select option { background: #1a1a1a; }
+
+    .setting-select:focus {
+        outline: none;
+        border-color: var(--accent-color);
+    }
+
+    .setting-select option {
+        background: #1a1a1a;
+    }
 
     .setting-input {
         background: #1a1a1a;
@@ -1022,8 +966,15 @@
         width: 200px;
         min-width: 0;
     }
-    .setting-input:focus { outline: none; border-color: var(--accent-color); }
-    .setting-input::placeholder { color: #666; }
+
+    .setting-input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+    }
+
+    .setting-input::placeholder {
+        color: #666;
+    }
 
     .setting-note {
         font-size: 0.78rem;
@@ -1044,8 +995,17 @@
         margin-bottom: 6px;
         transition: border-color 0.2s;
     }
-    .vlm-voice-search-wrap:focus-within { border-color: var(--accent-color); }
-    .vlm-voice-search-icon { font-size: 13px; opacity: 0.5; flex-shrink: 0; }
+
+    .vlm-voice-search-wrap:focus-within {
+        border-color: var(--accent-color);
+    }
+
+    .vlm-voice-search-icon {
+        font-size: 13px;
+        opacity: 0.5;
+        flex-shrink: 0;
+    }
+
     .vlm-voice-search-wrap input {
         flex: 1;
         background: none;
@@ -1055,7 +1015,11 @@
         font-size: 0.82rem;
         font-family: inherit;
     }
-    .vlm-voice-search-wrap input::placeholder { color: #555; }
+
+    .vlm-voice-search-wrap input::placeholder {
+        color: #555;
+    }
+
     #vlm-voice-filter-clear {
         background: none;
         border: none;
@@ -1066,8 +1030,16 @@
         line-height: 1;
         display: none;
     }
-    #vlm-voice-filter-clear.visible { display: block; color: #aaa; }
-    #vlm-voice-filter-clear:hover { color: #fff; }
+
+    #vlm-voice-filter-clear.visible {
+        display: block;
+        color: #aaa;
+    }
+
+    #vlm-voice-filter-clear:hover {
+        color: #fff;
+    }
+
     #vlm-voice-list {
         max-height: 160px;
         overflow-y: auto;
@@ -1075,9 +1047,20 @@
         border-radius: 6px;
         background: #141414;
     }
-    #vlm-voice-list::-webkit-scrollbar { width: 4px; }
-    #vlm-voice-list::-webkit-scrollbar-track { background: transparent; }
-    #vlm-voice-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+    #vlm-voice-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    #vlm-voice-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    #vlm-voice-list::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 2px;
+    }
+
     .vlm-voice-item {
         display: flex;
         justify-content: space-between;
@@ -1088,9 +1071,19 @@
         transition: background 0.15s;
         gap: 8px;
     }
-    .vlm-voice-item:last-child { border-bottom: none; }
-    .vlm-voice-item:hover { background: #1e2a35; }
-    .vlm-voice-item.selected { background: rgba(79,195,247,0.25); }
+
+    .vlm-voice-item:last-child {
+        border-bottom: none;
+    }
+
+    .vlm-voice-item:hover {
+        background: #1e2a35;
+    }
+
+    .vlm-voice-item.selected {
+        background: rgba(79, 195, 247, 0.25);
+    }
+
     .vlm-voice-item-name {
         font-size: 0.82rem;
         color: #fff;
@@ -1098,14 +1091,24 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .vlm-voice-item.selected .vlm-voice-item-name { color: #fff !important; font-weight: 500; }
+
+    .vlm-voice-item.selected .vlm-voice-item-name {
+        color: #fff !important;
+        font-weight: 500;
+    }
+
     .vlm-voice-item-lang {
         font-size: 0.72rem;
         color: #555;
         flex-shrink: 0;
         font-family: monospace;
     }
-    .vlm-voice-item.selected .vlm-voice-item-lang { color: rgba(255,255,255,0.7); opacity: 1; }
+
+    .vlm-voice-item.selected .vlm-voice-item-lang {
+        color: rgba(255, 255, 255, 0.7);
+        opacity: 1;
+    }
+
     .vlm-voice-empty {
         padding: 12px;
         text-align: center;
@@ -1119,7 +1122,8 @@
         position: fixed;
         top: 0;
         left: 0;
-        right: var(--vlm-pane-width, 0px);   /* shrinks left when VLM panel opens */
+        right: var(--vlm-pane-width, 0px);
+        /* shrinks left when VLM panel opens */
         height: 100%;
         background: #000;
         z-index: 4000;
@@ -1134,7 +1138,7 @@
         perspective: 1000px;
 
         transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1),
-                    right 0.22s ease;
+            right 0.22s ease;
     }
 
     .iframe-container.active {
@@ -1300,19 +1304,41 @@
     }
 
     #btn-skip-intro:hover {
-        border-color: rgba(255,255,255,0.8);
+        border-color: rgba(255, 255, 255, 0.8);
         color: #fff;
     }
 
     @media (prefers-reduced-motion: reduce) {
-        #space-intro          { display: none !important; }
-        .aurora-layer         { animation: none !important; }
-        .glitch-title         { animation: none !important; }
-        .warp-text            { animation: none !important; opacity: 1 !important;
-                                letter-spacing: 20px !important; }
-        .warp-sub             { animation: none !important; opacity: 1 !important; }
-        .nav-card             { animation: none !important; }
-        .profile-pic-2d       { animation: none !important; }
+        #space-intro {
+            display: none !important;
+        }
+
+        .aurora-layer {
+            animation: none !important;
+        }
+
+        .glitch-title {
+            animation: none !important;
+        }
+
+        .warp-text {
+            animation: none !important;
+            opacity: 1 !important;
+            letter-spacing: 20px !important;
+        }
+
+        .warp-sub {
+            animation: none !important;
+            opacity: 1 !important;
+        }
+
+        .nav-card {
+            animation: none !important;
+        }
+
+        .profile-pic-2d {
+            animation: none !important;
+        }
     }
 </style>
 
@@ -1325,17 +1351,6 @@
     <div id="mode-2d">
         <div class="aurora-layer aurora-layer-1"></div>
         <div class="aurora-layer aurora-layer-2"></div>
-        <div class="stars-layer stars-back"></div>
-        <div class="stars-layer stars-mid"></div>
-        <div class="stars-layer stars-front"></div>
-        <svg viewBox="0 0 200 150" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 60vw; max-width: 600px; opacity: 0.06; pointer-events: none; z-index: 0;">
-            <rect x="10" y="40" width="180" height="80" rx="8" fill="none" stroke="#00e5ff" stroke-width="2"/>
-            <rect x="50" y="25" width="50" height="20" rx="4" fill="none" stroke="#00e5ff" stroke-width="2"/>
-            <circle cx="100" cy="80" r="30" fill="none" stroke="#00e5ff" stroke-width="2"/>
-            <circle cx="100" cy="80" r="22" fill="none" stroke="#00e5ff" stroke-width="1.5"/>
-            <circle cx="100" cy="80" r="14" fill="none" stroke="#00e5ff" stroke-width="1"/>
-            <circle cx="160" cy="55" r="3" fill="#00e5ff"/>
-        </svg>
         <div class="hero-container">
             <img src="./assets/photographer.jpg" alt="Profile" class="profile-pic-2d">
 
@@ -1397,9 +1412,6 @@
         </div>
     </div>
 
-    <!-- Cinematic vignette + letterbox overlay (sits above 3D, below welcome) -->
-    <div class="cinema-vignette" id="cinema-vignette"></div>
-
     <!-- UI LAYER -->
     <div class="ui-layer">
         <div id="fps-counter">FPS: 60</div>
@@ -1414,7 +1426,7 @@
                 <div class="warp-sub">SYSTEM INITIALIZING</div>
             </div>
             <button id="btn-skip-intro"
-                onclick="document.getElementById('space-intro').style.display='none'; var w=document.getElementById('welcome-watermark'); if(w) w.classList.add('revealing'); var v=document.getElementById('cinema-vignette'); if(v) v.classList.add('active');"
+                onclick="document.getElementById('space-intro').style.display='none'; var w=document.getElementById('welcome-watermark'); if(w) w.classList.add('revealing');"
                 style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
                        background:transparent;border:1px solid rgba(255,255,255,0.35);
                        color:rgba(255,255,255,0.6);padding:10px 36px;font-family:inherit;
@@ -1527,191 +1539,204 @@
             </div>
 
             <div class="settings-body">
-            <div class="settings-col">
-            <div class="setting-category">General & Performance</div>
-            <div class="setting-row">
-                <span class="setting-label">3D Immersive Mode (?mode=2d)</span>
-                <div class="toggle-switch active" id="toggle-3d-mode">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-            <div class="setting-row">
-                <span class="setting-label">High Density Stars</span>
-                <div class="toggle-switch active" id="toggle-stars">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-            <div class="setting-row">
-                <span class="setting-label">Data Saver (Low Res) (?datasaver)</span>
-                <div class="toggle-switch" id="toggle-saver">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-            <div class="setting-row">
-                <span class="setting-label">Debug Mode (?debug)</span>
-                <div class="toggle-switch" id="toggle-debug">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
+                <div class="settings-col">
+                    <div class="setting-category">General & Performance</div>
+                    <div class="setting-row">
+                        <span class="setting-label">3D Immersive Mode (?mode=2d)</span>
+                        <div class="toggle-switch active" id="toggle-3d-mode">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">High Density Stars</span>
+                        <div class="toggle-switch active" id="toggle-stars">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Data Saver (Low Res) (?datasaver)</span>
+                        <div class="toggle-switch" id="toggle-saver">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Debug Mode (?debug)</span>
+                        <div class="toggle-switch" id="toggle-debug">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
 
-            <div class="setting-category">Gallery Experience</div>
-            <div class="setting-row">
-                <span class="setting-label">Auto Slideshow (?slideshow)</span>
-                <div class="toggle-switch" id="toggle-slideshow">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-            <div class="setting-row">
-                <span class="setting-label">Interval (ms) (?interval=)</span>
-                <input type="number" id="input-interval" value="3000" step="500"
-                    style="width: 80px; background: #222; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px;">
-            </div>
-            <div class="setting-row">
-                <span class="setting-label">Auto Fullscreen Viewer (?fullscreen)</span>
-                <div class="toggle-switch" id="toggle-viewer-fs">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
+                    <div class="setting-category">Gallery Experience</div>
+                    <div class="setting-row">
+                        <span class="setting-label">Auto Slideshow (?slideshow)</span>
+                        <div class="toggle-switch" id="toggle-slideshow">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Interval (ms) (?interval=)</span>
+                        <input type="number" id="input-interval" value="3000" step="500"
+                            style="width: 80px; background: #222; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Auto Fullscreen Viewer (?fullscreen)</span>
+                        <div class="toggle-switch" id="toggle-viewer-fs">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
 
-            <div class="setting-row">
-                <span class="setting-label">Direct Links (No iFrame)</span>
-                <div class="toggle-switch" id="toggle-direct">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Direct Links (No iFrame)</span>
+                        <div class="toggle-switch" id="toggle-direct">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
 
-            </div><!-- /.settings-col (left) -->
-            <div class="settings-col">
-            <div class="setting-category">TheDoInspector (AI Vision)</div>
-            <div class="setting-row">
-                <span class="setting-label">Enable TheDoInspector</span>
-                <div class="toggle-switch active" id="toggle-vlm">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-            <!-- Advanced / AI Backend (collapsible) -->
-            <div class="setting-category" style="cursor:pointer;user-select:none;"
-                 onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
-                ▸ Advanced / AI Backend
-            </div>
-            <div id="settings-advanced" style="display:none;">
-            <!-- Backend selector (shown when enabled) -->
-            <div class="setting-row" id="vlm-backend-row">
-                <span class="setting-label">Backend</span>
-                <select class="setting-select" id="select-vlm-backend">
-                    <option value="local">Local (via WebGPU)</option>
-                    <option value="api">OpenAI-compatible API</option>
-                    <option value="ollama">Ollama API</option>
-                </select>
-            </div>
-            <!-- Local model settings -->
-            <div id="vlm-local-settings">
-                <div class="setting-row">
-                    <span class="setting-label">Model</span>
-                    <select class="setting-select" id="select-vlm-model">
-                        <option value="onnx-community/FastVLM-0.5B-ONNX" selected>Apple FastVLM 0.5B (~500 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM 256M (~300 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM 500M (~500 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM2-256M-Instruct">SmolVLM2 256M (~300 MB)</option>
-                        <option value="HuggingFaceTB/SmolVLM2-500M-Instruct">SmolVLM2 500M (~500 MB)</option>
-                    </select>
-                </div>
-                <div class="setting-row" id="vlm-model-note" style="display:none;">
-                    <span class="setting-note">⚠ Model change takes effect immediately — current chat will reset.</span>
-                </div>
-            </div>
-            <!-- API settings (shown when backend = api) -->
-            <div id="vlm-api-settings" style="display:none">
-                <div class="setting-row">
-                    <span class="setting-label">Endpoint</span>
-                    <input type="text" class="setting-input" id="vlm-api-endpoint"
-                           placeholder="https://api.openai.com/v1">
-                </div>
-                <div class="setting-row">
-                    <span class="setting-label">Model</span>
-                    <input type="text" class="setting-input" id="vlm-api-model"
-                           placeholder="gpt-4o">
-                </div>
-                <div class="setting-row">
-                    <span class="setting-label">API Key</span>
-                    <input type="password" class="setting-input" id="vlm-api-key"
-                           placeholder="sk-… (leave blank for local servers)">
-                </div>
-                <div class="setting-row">
-                    <span class="setting-note">Key is stored only in your browser's localStorage.</span>
-                </div>
-            </div>
-            <!-- Ollama settings (shown when backend = ollama) -->
-            <div id="vlm-ollama-settings" style="display:none">
-                <div class="setting-row">
-                    <span class="setting-label">Endpoint</span>
-                    <input type="text" class="setting-input" id="vlm-ollama-endpoint"
-                           placeholder="http://localhost:11434">
-                </div>
-                <div class="setting-row">
-                    <span class="setting-label">Model</span>
-                    <input type="text" class="setting-input" id="vlm-ollama-model"
-                           placeholder="gemma3">
-                </div>
-                <div class="setting-row">
-                    <span class="setting-label">Thinking</span>
-                    <select class="setting-select" id="vlm-ollama-think">
-                        <option value="null">Auto</option>
-                        <option value="true">Think</option>
-                        <option value="false">No Think</option>
-                    </select>
-                </div>
-                <div class="setting-row">
-                    <button id="vlm-ollama-fetch-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Fetch Models</button>
-                </div>
-                <div class="setting-row" id="vlm-ollama-model-row" style="display:none">
-                    <span class="setting-label">Select</span>
-                    <select class="setting-select" id="vlm-ollama-model-select"></select>
-                </div>
-                <div class="setting-row">
-                    <span class="setting-note" id="vlm-ollama-note">Requires Ollama running locally with a vision model (e.g. llava, bakllava).</span>
-                </div>
-                <!-- Running models / load-unload -->
-                <div class="setting-row" style="gap:6px;flex-wrap:wrap">
-                    <button id="vlm-ollama-ps-btn"     style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Active Models</button>
-                    <button id="vlm-ollama-load-btn"   style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Load</button>
-                    <button id="vlm-ollama-unload-btn" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Unload</button>
-                </div>
-                <div id="vlm-ollama-running-list" style="display:none;padding:4px 0;font-size:11px;color:#fff"></div>
-            </div>
-            <!-- TTS Voice (shown when browser supports speechSynthesis) -->
-            <div id="vlm-voice-settings" style="display:none">
-                <div class="setting-row" style="margin-bottom:6px">
-                    <span class="setting-label">Voice</span>
-                </div>
-                <div class="vlm-voice-search-wrap">
-                    <span class="vlm-voice-search-icon">&#128269;</span>
-                    <input type="text" id="vlm-voice-filter" placeholder="Search voices or language…"
-                           autocomplete="off" spellcheck="false">
-                    <button id="vlm-voice-filter-clear" title="Clear">&#10005;</button>
-                </div>
-                <div id="vlm-voice-list"></div>
-                <div class="setting-row" style="margin-top:10px">
-                    <span class="setting-label">Speed</span>
-                    <input type="range" id="vlm-voice-speed" min="0.5" max="2" step="0.1" value="1"
-                           style="flex:1;accent-color:#4fc3f7;cursor:pointer">
-                    <span id="vlm-voice-speed-val" style="font-size:11px;color:#fff;min-width:28px;text-align:right">1.0×</span>
-                </div>
-            </div>
-            <!-- System Prompt (shown when backend = api or ollama) -->
-            <div id="vlm-systemprompt-settings" style="display:none">
-                <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-                    <span class="setting-label">System Prompt</span>
-                    <textarea class="setting-input" id="vlm-system-prompt" rows="5"
-                              placeholder="Leave blank to use the built-in default…"
-                              style="width:100%;resize:vertical;font-size:11px;padding:5px 7px;font-family:monospace;line-height:1.4"></textarea>
-                </div>
-                <div class="setting-row">
-                    <button id="vlm-system-prompt-reset" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Reset to Default</button>
-                </div>
-            </div>
-            </div><!-- /#settings-advanced -->
-            </div><!-- /.settings-col (right) -->
+                </div><!-- /.settings-col (left) -->
+                <div class="settings-col">
+                    <div class="setting-category">TheDoInspector (AI Vision)</div>
+                    <div class="setting-row">
+                        <span class="setting-label">Enable TheDoInspector</span>
+                        <div class="toggle-switch active" id="toggle-vlm">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <!-- Advanced / AI Backend (collapsible) -->
+                    <div class="setting-category" style="cursor:pointer;user-select:none;"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
+                        ▸ Advanced / AI Backend
+                    </div>
+                    <div id="settings-advanced" style="display:none;">
+                        <!-- Backend selector (shown when enabled) -->
+                        <div class="setting-row" id="vlm-backend-row">
+                            <span class="setting-label">Backend</span>
+                            <select class="setting-select" id="select-vlm-backend">
+                                <option value="local">Local (via WebGPU)</option>
+                                <option value="api">OpenAI-compatible API</option>
+                                <option value="ollama">Ollama API</option>
+                            </select>
+                        </div>
+                        <!-- Local model settings -->
+                        <div id="vlm-local-settings">
+                            <div class="setting-row">
+                                <span class="setting-label">Model</span>
+                                <select class="setting-select" id="select-vlm-model">
+                                    <option value="onnx-community/FastVLM-0.5B-ONNX" selected>Apple FastVLM 0.5B (~500
+                                        MB)</option>
+                                    <option value="HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM 256M (~300 MB)</option>
+                                    <option value="HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM 500M (~500 MB)</option>
+                                    <option value="HuggingFaceTB/SmolVLM2-256M-Instruct">SmolVLM2 256M (~300 MB)
+                                    </option>
+                                    <option value="HuggingFaceTB/SmolVLM2-500M-Instruct">SmolVLM2 500M (~500 MB)
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="setting-row" id="vlm-model-note" style="display:none;">
+                                <span class="setting-note">⚠ Model change takes effect immediately — current chat will
+                                    reset.</span>
+                            </div>
+                        </div>
+                        <!-- API settings (shown when backend = api) -->
+                        <div id="vlm-api-settings" style="display:none">
+                            <div class="setting-row">
+                                <span class="setting-label">Endpoint</span>
+                                <input type="text" class="setting-input" id="vlm-api-endpoint"
+                                    placeholder="https://api.openai.com/v1">
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Model</span>
+                                <input type="text" class="setting-input" id="vlm-api-model" placeholder="gpt-4o">
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">API Key</span>
+                                <input type="password" class="setting-input" id="vlm-api-key"
+                                    placeholder="sk-… (leave blank for local servers)">
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-note">Key is stored only in your browser's localStorage.</span>
+                            </div>
+                        </div>
+                        <!-- Ollama settings (shown when backend = ollama) -->
+                        <div id="vlm-ollama-settings" style="display:none">
+                            <div class="setting-row">
+                                <span class="setting-label">Endpoint</span>
+                                <input type="text" class="setting-input" id="vlm-ollama-endpoint"
+                                    placeholder="http://localhost:11434">
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Model</span>
+                                <input type="text" class="setting-input" id="vlm-ollama-model" placeholder="gemma3">
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Thinking</span>
+                                <select class="setting-select" id="vlm-ollama-think">
+                                    <option value="null">Auto</option>
+                                    <option value="true">Think</option>
+                                    <option value="false">No Think</option>
+                                </select>
+                            </div>
+                            <div class="setting-row">
+                                <button id="vlm-ollama-fetch-btn"
+                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Fetch
+                                    Models</button>
+                            </div>
+                            <div class="setting-row" id="vlm-ollama-model-row" style="display:none">
+                                <span class="setting-label">Select</span>
+                                <select class="setting-select" id="vlm-ollama-model-select"></select>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-note" id="vlm-ollama-note">Requires Ollama running locally with a
+                                    vision model (e.g. llava, bakllava).</span>
+                            </div>
+                            <!-- Running models / load-unload -->
+                            <div class="setting-row" style="gap:6px;flex-wrap:wrap">
+                                <button id="vlm-ollama-ps-btn"
+                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Active
+                                    Models</button>
+                                <button id="vlm-ollama-load-btn"
+                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Load</button>
+                                <button id="vlm-ollama-unload-btn"
+                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Unload</button>
+                            </div>
+                            <div id="vlm-ollama-running-list"
+                                style="display:none;padding:4px 0;font-size:11px;color:#fff"></div>
+                        </div>
+                        <!-- TTS Voice (shown when browser supports speechSynthesis) -->
+                        <div id="vlm-voice-settings" style="display:none">
+                            <div class="setting-row" style="margin-bottom:6px">
+                                <span class="setting-label">Voice</span>
+                            </div>
+                            <div class="vlm-voice-search-wrap">
+                                <span class="vlm-voice-search-icon">&#128269;</span>
+                                <input type="text" id="vlm-voice-filter" placeholder="Search voices or language…"
+                                    autocomplete="off" spellcheck="false">
+                                <button id="vlm-voice-filter-clear" title="Clear">&#10005;</button>
+                            </div>
+                            <div id="vlm-voice-list"></div>
+                            <div class="setting-row" style="margin-top:10px">
+                                <span class="setting-label">Speed</span>
+                                <input type="range" id="vlm-voice-speed" min="0.5" max="2" step="0.1" value="1"
+                                    style="flex:1;accent-color:#4fc3f7;cursor:pointer">
+                                <span id="vlm-voice-speed-val"
+                                    style="font-size:11px;color:#fff;min-width:28px;text-align:right">1.0×</span>
+                            </div>
+                        </div>
+                        <!-- System Prompt (shown when backend = api or ollama) -->
+                        <div id="vlm-systemprompt-settings" style="display:none">
+                            <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+                                <span class="setting-label">System Prompt</span>
+                                <textarea class="setting-input" id="vlm-system-prompt" rows="5"
+                                    placeholder="Leave blank to use the built-in default…"
+                                    style="width:100%;resize:vertical;font-size:11px;padding:5px 7px;font-family:monospace;line-height:1.4"></textarea>
+                            </div>
+                            <div class="setting-row">
+                                <button id="vlm-system-prompt-reset"
+                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Reset
+                                    to Default</button>
+                            </div>
+                        </div>
+                    </div><!-- /#settings-advanced -->
+                </div><!-- /.settings-col (right) -->
             </div><!-- /.settings-body -->
         </div>
     </div>
@@ -1740,55 +1765,55 @@
             isPaused: false,
             muted: true,
             isFullscreen: false,
-            vlmEnabled:       true,
-            vlmModel:         'onnx-community/FastVLM-0.5B-ONNX',
-            vlmType:          'local',
-            vlmApiEndpoint:   'https://api.openai.com/v1',
-            vlmApiKey:        '',
-            vlmApiModel:      'gpt-4o',
+            vlmEnabled: true,
+            vlmModel: 'onnx-community/FastVLM-0.5B-ONNX',
+            vlmType: 'local',
+            vlmApiEndpoint: 'https://api.openai.com/v1',
+            vlmApiKey: '',
+            vlmApiModel: 'gpt-4o',
             vlmOllamaEndpoint: 'http://localhost:11434',
-            vlmOllamaModel:   'gemma3',
-            vlmOllamaThink:   null,
-            vlmSystemPrompt:  '',
+            vlmOllamaModel: 'gemma3',
+            vlmOllamaThink: null,
+            vlmSystemPrompt: '',
         };
 
         // Shared VLM settings object — read by GalleryVLMOverlay.js (same page context)
         window.VLM_SETTINGS = {
-            enabled:        state.vlmEnabled,
-            model:          state.vlmModel,
-            type:           state.vlmType,
-            apiEndpoint:    state.vlmApiEndpoint,
-            apiKey:         state.vlmApiKey,
-            apiModel:       state.vlmApiModel,
+            enabled: state.vlmEnabled,
+            model: state.vlmModel,
+            type: state.vlmType,
+            apiEndpoint: state.vlmApiEndpoint,
+            apiKey: state.vlmApiKey,
+            apiModel: state.vlmApiModel,
             ollamaEndpoint: state.vlmOllamaEndpoint,
-            ollamaModel:    state.vlmOllamaModel,
-            ollamaThink:    state.vlmOllamaThink,
-            systemPrompt:   state.vlmSystemPrompt,
+            ollamaModel: state.vlmOllamaModel,
+            ollamaThink: state.vlmOllamaThink,
+            systemPrompt: state.vlmSystemPrompt,
         };
 
         function syncVLMSettings() {
-            window.VLM_SETTINGS.enabled        = state.vlmEnabled;
-            window.VLM_SETTINGS.model          = state.vlmModel;
-            window.VLM_SETTINGS.type           = state.vlmType;
-            window.VLM_SETTINGS.apiEndpoint    = state.vlmApiEndpoint;
-            window.VLM_SETTINGS.apiKey         = state.vlmApiKey;
-            window.VLM_SETTINGS.apiModel       = state.vlmApiModel;
+            window.VLM_SETTINGS.enabled = state.vlmEnabled;
+            window.VLM_SETTINGS.model = state.vlmModel;
+            window.VLM_SETTINGS.type = state.vlmType;
+            window.VLM_SETTINGS.apiEndpoint = state.vlmApiEndpoint;
+            window.VLM_SETTINGS.apiKey = state.vlmApiKey;
+            window.VLM_SETTINGS.apiModel = state.vlmApiModel;
             window.VLM_SETTINGS.ollamaEndpoint = state.vlmOllamaEndpoint;
-            window.VLM_SETTINGS.ollamaModel    = state.vlmOllamaModel;
-            window.VLM_SETTINGS.ollamaThink    = state.vlmOllamaThink;
-            window.VLM_SETTINGS.systemPrompt   = state.vlmSystemPrompt;
+            window.VLM_SETTINGS.ollamaModel = state.vlmOllamaModel;
+            window.VLM_SETTINGS.ollamaThink = state.vlmOllamaThink;
+            window.VLM_SETTINGS.systemPrompt = state.vlmSystemPrompt;
             window.dispatchEvent(new CustomEvent('vlmsettingschanged', {
                 detail: {
-                    enabled:        state.vlmEnabled,
-                    model:          state.vlmModel,
-                    type:           state.vlmType,
-                    apiEndpoint:    state.vlmApiEndpoint,
-                    apiKey:         state.vlmApiKey,
-                    apiModel:       state.vlmApiModel,
+                    enabled: state.vlmEnabled,
+                    model: state.vlmModel,
+                    type: state.vlmType,
+                    apiEndpoint: state.vlmApiEndpoint,
+                    apiKey: state.vlmApiKey,
+                    apiModel: state.vlmApiModel,
                     ollamaEndpoint: state.vlmOllamaEndpoint,
-                    ollamaModel:    state.vlmOllamaModel,
-                    ollamaThink:    state.vlmOllamaThink,
-                    systemPrompt:   state.vlmSystemPrompt,
+                    ollamaModel: state.vlmOllamaModel,
+                    ollamaThink: state.vlmOllamaThink,
+                    systemPrompt: state.vlmSystemPrompt,
                 }
             }));
         }
@@ -1813,9 +1838,6 @@
         // --- THREE.JS VARIABLES ---
         let scene, camera, renderer, controls;
         let camGroup, screenMesh, starSystem, uiTexture, uiCtx;
-        let composer, bloomPass;
-        let nebulaSystem, dustSystem, lightBeam, beamMaterial;
-        let cameraShake = { x: 0, y: 0, intensity: 0 };
         let raycaster, mouse;
         let animationFrameId;
         let lastTime = performance.now();
@@ -1925,40 +1947,40 @@
             const savedVlmSystemPrompt = localStorage.getItem('vlmSystemPrompt');
             if (savedVlmSystemPrompt !== null) state.vlmSystemPrompt = savedVlmSystemPrompt;
             window.VLM_SETTINGS = {
-                enabled:        state.vlmEnabled,
-                model:          state.vlmModel,
-                type:           state.vlmType,
-                apiEndpoint:    state.vlmApiEndpoint,
-                apiKey:         state.vlmApiKey,
-                apiModel:       state.vlmApiModel,
+                enabled: state.vlmEnabled,
+                model: state.vlmModel,
+                type: state.vlmType,
+                apiEndpoint: state.vlmApiEndpoint,
+                apiKey: state.vlmApiKey,
+                apiModel: state.vlmApiModel,
                 ollamaEndpoint: state.vlmOllamaEndpoint,
-                ollamaModel:    state.vlmOllamaModel,
-                ollamaThink:    state.vlmOllamaThink,
-                systemPrompt:   state.vlmSystemPrompt,
+                ollamaModel: state.vlmOllamaModel,
+                ollamaThink: state.vlmOllamaThink,
+                systemPrompt: state.vlmSystemPrompt,
             };
 
             // Sync UI Toggles
             updateToggleUI(els.toggles.mode3d, state.is3D);
             updateToggleUI(els.toggles.saver, state.dataSaver);
             updateToggleUI(document.getElementById('toggle-vlm'), state.vlmEnabled);
-            document.getElementById('select-vlm-model').value       = state.vlmModel;
-            document.getElementById('select-vlm-backend').value     = state.vlmType;
-            document.getElementById('vlm-api-endpoint').value       = state.vlmApiEndpoint;
-            document.getElementById('vlm-api-model').value          = state.vlmApiModel;
-            document.getElementById('vlm-api-key').value            = state.vlmApiKey;
-            document.getElementById('vlm-ollama-endpoint').value    = state.vlmOllamaEndpoint;
-            document.getElementById('vlm-ollama-model').value       = state.vlmOllamaModel;
-            document.getElementById('vlm-ollama-think').value       = state.vlmOllamaThink === null ? 'null' : String(state.vlmOllamaThink);
-            document.getElementById('vlm-system-prompt').value      = state.vlmSystemPrompt;
-            const _vlmOn     = state.vlmEnabled;
-            const _vlmApi    = state.vlmType === 'api';
+            document.getElementById('select-vlm-model').value = state.vlmModel;
+            document.getElementById('select-vlm-backend').value = state.vlmType;
+            document.getElementById('vlm-api-endpoint').value = state.vlmApiEndpoint;
+            document.getElementById('vlm-api-model').value = state.vlmApiModel;
+            document.getElementById('vlm-api-key').value = state.vlmApiKey;
+            document.getElementById('vlm-ollama-endpoint').value = state.vlmOllamaEndpoint;
+            document.getElementById('vlm-ollama-model').value = state.vlmOllamaModel;
+            document.getElementById('vlm-ollama-think').value = state.vlmOllamaThink === null ? 'null' : String(state.vlmOllamaThink);
+            document.getElementById('vlm-system-prompt').value = state.vlmSystemPrompt;
+            const _vlmOn = state.vlmEnabled;
+            const _vlmApi = state.vlmType === 'api';
             const _vlmOllama = state.vlmType === 'ollama';
-            document.getElementById('vlm-backend-row').style.display             = _vlmOn ? '' : 'none';
-            document.getElementById('vlm-local-settings').style.display          = (_vlmOn && !_vlmApi && !_vlmOllama) ? '' : 'none';
-            document.getElementById('vlm-api-settings').style.display            = (_vlmOn && _vlmApi)    ? '' : 'none';
-            document.getElementById('vlm-ollama-settings').style.display         = (_vlmOn && _vlmOllama) ? '' : 'none';
-            document.getElementById('vlm-systemprompt-settings').style.display   = (_vlmOn && (_vlmApi || _vlmOllama)) ? '' : 'none';
-            document.getElementById('vlm-voice-settings').style.display          = (_vlmOn && !!window.speechSynthesis) ? '' : 'none';
+            document.getElementById('vlm-backend-row').style.display = _vlmOn ? '' : 'none';
+            document.getElementById('vlm-local-settings').style.display = (_vlmOn && !_vlmApi && !_vlmOllama) ? '' : 'none';
+            document.getElementById('vlm-api-settings').style.display = (_vlmOn && _vlmApi) ? '' : 'none';
+            document.getElementById('vlm-ollama-settings').style.display = (_vlmOn && _vlmOllama) ? '' : 'none';
+            document.getElementById('vlm-systemprompt-settings').style.display = (_vlmOn && (_vlmApi || _vlmOllama)) ? '' : 'none';
+            document.getElementById('vlm-voice-settings').style.display = (_vlmOn && !!window.speechSynthesis) ? '' : 'none';
         }
 
         function setupEventListeners() {
@@ -2135,13 +2157,13 @@
             setupToggle(document.getElementById('toggle-vlm'), (val) => {
                 state.vlmEnabled = val;
                 localStorage.setItem('vlmEnabled', val);
-                const isApi    = state.vlmType === 'api';
+                const isApi = state.vlmType === 'api';
                 const isOllama = state.vlmType === 'ollama';
-                document.getElementById('vlm-backend-row').style.display             = val ? '' : 'none';
-                document.getElementById('vlm-local-settings').style.display          = (val && !isApi && !isOllama) ? '' : 'none';
-                document.getElementById('vlm-api-settings').style.display            = (val && isApi)    ? '' : 'none';
-                document.getElementById('vlm-ollama-settings').style.display         = (val && isOllama) ? '' : 'none';
-                document.getElementById('vlm-systemprompt-settings').style.display   = (val && (isApi || isOllama)) ? '' : 'none';
+                document.getElementById('vlm-backend-row').style.display = val ? '' : 'none';
+                document.getElementById('vlm-local-settings').style.display = (val && !isApi && !isOllama) ? '' : 'none';
+                document.getElementById('vlm-api-settings').style.display = (val && isApi) ? '' : 'none';
+                document.getElementById('vlm-ollama-settings').style.display = (val && isOllama) ? '' : 'none';
+                document.getElementById('vlm-systemprompt-settings').style.display = (val && (isApi || isOllama)) ? '' : 'none';
                 document.getElementById('vlm-model-note').style.display = 'none';
                 syncVLMSettings();
             });
@@ -2150,12 +2172,12 @@
             document.getElementById('select-vlm-backend').addEventListener('change', (e) => {
                 state.vlmType = e.target.value;
                 localStorage.setItem('vlmType', state.vlmType);
-                const isApi    = state.vlmType === 'api';
+                const isApi = state.vlmType === 'api';
                 const isOllama = state.vlmType === 'ollama';
-                document.getElementById('vlm-local-settings').style.display          = (!isApi && !isOllama) ? '' : 'none';
-                document.getElementById('vlm-api-settings').style.display            = isApi    ? '' : 'none';
-                document.getElementById('vlm-ollama-settings').style.display         = isOllama ? '' : 'none';
-                document.getElementById('vlm-systemprompt-settings').style.display   = (isApi || isOllama) ? '' : 'none';
+                document.getElementById('vlm-local-settings').style.display = (!isApi && !isOllama) ? '' : 'none';
+                document.getElementById('vlm-api-settings').style.display = isApi ? '' : 'none';
+                document.getElementById('vlm-ollama-settings').style.display = isOllama ? '' : 'none';
+                document.getElementById('vlm-systemprompt-settings').style.display = (isApi || isOllama) ? '' : 'none';
                 document.getElementById('vlm-model-note').style.display = 'none';
                 syncVLMSettings();
             });
@@ -2211,50 +2233,50 @@
             // TTS Voice selector — custom styled list with search
             const _EXTRA_VOICES = [
                 // European
-                { voiceURI: 'lang:de-DE', name: 'Google Deutsch',          lang: 'de-DE' },
-                { voiceURI: 'lang:fr-FR', name: 'Google français',         lang: 'fr-FR' },
-                { voiceURI: 'lang:es-ES', name: 'Google español',          lang: 'es-ES' },
-                { voiceURI: 'lang:es-US', name: 'Google español (US)',     lang: 'es-US' },
-                { voiceURI: 'lang:it-IT', name: 'Google italiano',         lang: 'it-IT' },
-                { voiceURI: 'lang:pt-BR', name: 'Google português (BR)',   lang: 'pt-BR' },
-                { voiceURI: 'lang:pt-PT', name: 'Google português (PT)',   lang: 'pt-PT' },
-                { voiceURI: 'lang:nl-NL', name: 'Google Nederlands',       lang: 'nl-NL' },
-                { voiceURI: 'lang:pl-PL', name: 'Google polski',           lang: 'pl-PL' },
-                { voiceURI: 'lang:ru-RU', name: 'Google русский',          lang: 'ru-RU' },
-                { voiceURI: 'lang:sv-SE', name: 'Google svenska',          lang: 'sv-SE' },
-                { voiceURI: 'lang:nb-NO', name: 'Google norsk',            lang: 'nb-NO' },
-                { voiceURI: 'lang:da-DK', name: 'Google dansk',            lang: 'da-DK' },
-                { voiceURI: 'lang:fi-FI', name: 'Google suomi',            lang: 'fi-FI' },
-                { voiceURI: 'lang:cs-CZ', name: 'Google čeština',          lang: 'cs-CZ' },
-                { voiceURI: 'lang:ro-RO', name: 'Google română',           lang: 'ro-RO' },
-                { voiceURI: 'lang:hu-HU', name: 'Google magyar',           lang: 'hu-HU' },
-                { voiceURI: 'lang:el-GR', name: 'Google ελληνικά',         lang: 'el-GR' },
-                { voiceURI: 'lang:uk-UA', name: 'Google українська',       lang: 'uk-UA' },
+                { voiceURI: 'lang:de-DE', name: 'Google Deutsch', lang: 'de-DE' },
+                { voiceURI: 'lang:fr-FR', name: 'Google français', lang: 'fr-FR' },
+                { voiceURI: 'lang:es-ES', name: 'Google español', lang: 'es-ES' },
+                { voiceURI: 'lang:es-US', name: 'Google español (US)', lang: 'es-US' },
+                { voiceURI: 'lang:it-IT', name: 'Google italiano', lang: 'it-IT' },
+                { voiceURI: 'lang:pt-BR', name: 'Google português (BR)', lang: 'pt-BR' },
+                { voiceURI: 'lang:pt-PT', name: 'Google português (PT)', lang: 'pt-PT' },
+                { voiceURI: 'lang:nl-NL', name: 'Google Nederlands', lang: 'nl-NL' },
+                { voiceURI: 'lang:pl-PL', name: 'Google polski', lang: 'pl-PL' },
+                { voiceURI: 'lang:ru-RU', name: 'Google русский', lang: 'ru-RU' },
+                { voiceURI: 'lang:sv-SE', name: 'Google svenska', lang: 'sv-SE' },
+                { voiceURI: 'lang:nb-NO', name: 'Google norsk', lang: 'nb-NO' },
+                { voiceURI: 'lang:da-DK', name: 'Google dansk', lang: 'da-DK' },
+                { voiceURI: 'lang:fi-FI', name: 'Google suomi', lang: 'fi-FI' },
+                { voiceURI: 'lang:cs-CZ', name: 'Google čeština', lang: 'cs-CZ' },
+                { voiceURI: 'lang:ro-RO', name: 'Google română', lang: 'ro-RO' },
+                { voiceURI: 'lang:hu-HU', name: 'Google magyar', lang: 'hu-HU' },
+                { voiceURI: 'lang:el-GR', name: 'Google ελληνικά', lang: 'el-GR' },
+                { voiceURI: 'lang:uk-UA', name: 'Google українська', lang: 'uk-UA' },
                 // Middle East & Africa
-                { voiceURI: 'lang:ar-XA', name: 'Google العربية',          lang: 'ar-XA' },
-                { voiceURI: 'lang:he-IL', name: 'Google עברית',            lang: 'he-IL' },
-                { voiceURI: 'lang:tr-TR', name: 'Google Türkçe',           lang: 'tr-TR' },
+                { voiceURI: 'lang:ar-XA', name: 'Google العربية', lang: 'ar-XA' },
+                { voiceURI: 'lang:he-IL', name: 'Google עברית', lang: 'he-IL' },
+                { voiceURI: 'lang:tr-TR', name: 'Google Türkçe', lang: 'tr-TR' },
                 // South Asia
-                { voiceURI: 'lang:hi-IN', name: 'Google Hindi',            lang: 'hi-IN' },
-                { voiceURI: 'lang:ta-IN', name: 'Google Tamil',            lang: 'ta-IN' },
-                { voiceURI: 'lang:te-IN', name: 'Google Telugu',           lang: 'te-IN' },
-                { voiceURI: 'lang:bn-IN', name: 'Google বাংলা',            lang: 'bn-IN' },
-                { voiceURI: 'lang:ml-IN', name: 'Google മലയാളം',           lang: 'ml-IN' },
-                { voiceURI: 'lang:kn-IN', name: 'Google ಕನ್ನಡ',            lang: 'kn-IN' },
-                { voiceURI: 'lang:mr-IN', name: 'Google मराठी',            lang: 'mr-IN' },
-                { voiceURI: 'lang:gu-IN', name: 'Google ગુજરાતી',          lang: 'gu-IN' },
-                { voiceURI: 'lang:ur-PK', name: 'Google اردو',             lang: 'ur-PK' },
+                { voiceURI: 'lang:hi-IN', name: 'Google Hindi', lang: 'hi-IN' },
+                { voiceURI: 'lang:ta-IN', name: 'Google Tamil', lang: 'ta-IN' },
+                { voiceURI: 'lang:te-IN', name: 'Google Telugu', lang: 'te-IN' },
+                { voiceURI: 'lang:bn-IN', name: 'Google বাংলা', lang: 'bn-IN' },
+                { voiceURI: 'lang:ml-IN', name: 'Google മലയാളം', lang: 'ml-IN' },
+                { voiceURI: 'lang:kn-IN', name: 'Google ಕನ್ನಡ', lang: 'kn-IN' },
+                { voiceURI: 'lang:mr-IN', name: 'Google मराठी', lang: 'mr-IN' },
+                { voiceURI: 'lang:gu-IN', name: 'Google ગુજરાતી', lang: 'gu-IN' },
+                { voiceURI: 'lang:ur-PK', name: 'Google اردو', lang: 'ur-PK' },
                 // East & Southeast Asia
-                { voiceURI: 'lang:zh-CN', name: 'Google 普通话 (CN)',       lang: 'zh-CN' },
-                { voiceURI: 'lang:zh-TW', name: 'Google 國語 (TW)',         lang: 'zh-TW' },
-                { voiceURI: 'lang:zh-HK', name: 'Google 粵語 (HK)',         lang: 'zh-HK' },
-                { voiceURI: 'lang:ja-JP', name: 'Google 日本語',            lang: 'ja-JP' },
-                { voiceURI: 'lang:ko-KR', name: 'Google 한국어',            lang: 'ko-KR' },
-                { voiceURI: 'lang:vi-VN', name: 'Google Vietnamese',       lang: 'vi-VN' },
-                { voiceURI: 'lang:th-TH', name: 'Google ภาษาไทย',          lang: 'th-TH' },
-                { voiceURI: 'lang:id-ID', name: 'Google Bahasa Indonesia',  lang: 'id-ID' },
-                { voiceURI: 'lang:ms-MY', name: 'Google Bahasa Melayu',    lang: 'ms-MY' },
-                { voiceURI: 'lang:fil-PH', name: 'Google Filipino',        lang: 'fil-PH' },
+                { voiceURI: 'lang:zh-CN', name: 'Google 普通话 (CN)', lang: 'zh-CN' },
+                { voiceURI: 'lang:zh-TW', name: 'Google 國語 (TW)', lang: 'zh-TW' },
+                { voiceURI: 'lang:zh-HK', name: 'Google 粵語 (HK)', lang: 'zh-HK' },
+                { voiceURI: 'lang:ja-JP', name: 'Google 日本語', lang: 'ja-JP' },
+                { voiceURI: 'lang:ko-KR', name: 'Google 한국어', lang: 'ko-KR' },
+                { voiceURI: 'lang:vi-VN', name: 'Google Vietnamese', lang: 'vi-VN' },
+                { voiceURI: 'lang:th-TH', name: 'Google ภาษาไทย', lang: 'th-TH' },
+                { voiceURI: 'lang:id-ID', name: 'Google Bahasa Indonesia', lang: 'id-ID' },
+                { voiceURI: 'lang:ms-MY', name: 'Google Bahasa Melayu', lang: 'ms-MY' },
+                { voiceURI: 'lang:fil-PH', name: 'Google Filipino', lang: 'fil-PH' },
             ];
             let _allVoices = [];
             function populateVoiceSelect() {
@@ -2268,7 +2290,7 @@
                 renderVoiceList(document.getElementById('vlm-voice-filter')?.value ?? '');
             }
             function renderVoiceList(filter) {
-                const list  = document.getElementById('vlm-voice-list');
+                const list = document.getElementById('vlm-voice-list');
                 const clear = document.getElementById('vlm-voice-filter-clear');
                 if (!list) return;
                 const saved = localStorage.getItem('vlm-voice-uri') ?? '';
@@ -2286,7 +2308,7 @@
                     v.name.toLowerCase().includes(q) || v.lang.toLowerCase().includes(q)
                 ) : _allVoices).map(v => {
                     const sel = v.voiceURI === saved;
-                    const nameHl = q ? v.name.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
+                    const nameHl = q ? v.name.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
                         '<mark style="background:rgba(79,195,247,0.25);color:#fff;border-radius:2px">$1</mark>') : v.name;
                     return `<div class="vlm-voice-item${sel ? ' selected' : ''}" data-uri="${v.voiceURI}">
                         <span class="vlm-voice-item-name">${nameHl}</span>
@@ -2325,10 +2347,10 @@
             });
             // TTS Speed slider
             const _speedSlider = document.getElementById('vlm-voice-speed');
-            const _speedVal    = document.getElementById('vlm-voice-speed-val');
-            const _savedSpeed  = parseFloat(localStorage.getItem('vlm-voice-speed') ?? '1');
-            _speedSlider.value     = _savedSpeed;
-            _speedVal.textContent  = _savedSpeed.toFixed(1) + '×';
+            const _speedVal = document.getElementById('vlm-voice-speed-val');
+            const _savedSpeed = parseFloat(localStorage.getItem('vlm-voice-speed') ?? '1');
+            _speedSlider.value = _savedSpeed;
+            _speedVal.textContent = _savedSpeed.toFixed(1) + '×';
             _speedSlider.addEventListener('input', (e) => {
                 const v = parseFloat(e.target.value);
                 _speedVal.textContent = v.toFixed(1) + '×';
@@ -2349,7 +2371,7 @@
             document.getElementById('vlm-ollama-fetch-btn').addEventListener('click', async () => {
                 const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
                     .replace(/\/$/, '').replace(/\/v1$/, '');
-                const btn  = document.getElementById('vlm-ollama-fetch-btn');
+                const btn = document.getElementById('vlm-ollama-fetch-btn');
                 const note = document.getElementById('vlm-ollama-note');
                 btn.textContent = 'Fetching…';
                 btn.disabled = true;
@@ -2362,7 +2384,7 @@
                     const visionNames = new Set(
                         (data.models ?? [])
                             .filter(m => {
-                                const fam  = m.details?.families ?? [];
+                                const fam = m.details?.families ?? [];
                                 const name = (m.name ?? '').toLowerCase();
                                 return fam.includes('clip') || fam.includes('vision') ||
                                     name.includes('llava') || name.includes('bakllava') ||
@@ -2405,7 +2427,7 @@
             document.getElementById('vlm-ollama-ps-btn').addEventListener('click', async () => {
                 const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
                     .replace(/\/$/, '').replace(/\/v1$/, '');
-                const btn  = document.getElementById('vlm-ollama-ps-btn');
+                const btn = document.getElementById('vlm-ollama-ps-btn');
                 const list = document.getElementById('vlm-ollama-running-list');
                 btn.textContent = 'Checking…';
                 btn.disabled = true;
@@ -2418,7 +2440,7 @@
                     } else {
                         list.innerHTML = running.map(m => {
                             const vram = m.size_vram ? ` · ${(m.size_vram / 1e9).toFixed(1)} GB VRAM` : '';
-                            const exp  = m.expires_at ? ` · expires ${new Date(m.expires_at).toLocaleTimeString()}` : '';
+                            const exp = m.expires_at ? ` · expires ${new Date(m.expires_at).toLocaleTimeString()}` : '';
                             return `<div style="padding:2px 0">▶ <strong style="color:#e0f7fa">${m.name}</strong>${vram}${exp}</div>`;
                         }).join('');
                     }
@@ -2436,8 +2458,8 @@
                 const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
                     .replace(/\/$/, '').replace(/\/v1$/, '');
                 const model = document.getElementById('vlm-ollama-model').value.trim();
-                const note  = document.getElementById('vlm-ollama-note');
-                const btn   = document.getElementById('vlm-ollama-load-btn');
+                const note = document.getElementById('vlm-ollama-note');
+                const btn = document.getElementById('vlm-ollama-load-btn');
                 if (!model) { note.textContent = 'Enter a model name first.'; return; }
                 btn.textContent = 'Loading…';
                 btn.disabled = true;
@@ -2458,8 +2480,8 @@
                 const endpoint = (document.getElementById('vlm-ollama-endpoint').value || 'http://localhost:11434')
                     .replace(/\/$/, '').replace(/\/v1$/, '');
                 const model = document.getElementById('vlm-ollama-model').value.trim();
-                const note  = document.getElementById('vlm-ollama-note');
-                const btn   = document.getElementById('vlm-ollama-unload-btn');
+                const note = document.getElementById('vlm-ollama-note');
+                const btn = document.getElementById('vlm-ollama-unload-btn');
                 if (!model) { note.textContent = 'Enter a model name first.'; return; }
                 btn.textContent = 'Unloading…';
                 btn.disabled = true;
@@ -2627,8 +2649,9 @@
         // --- 3D SCENE SETUP ---
         function init3D() {
             scene = new THREE.Scene();
+            // FIX: Opaque background to prevent darkening
             scene.background = new THREE.Color(0x050505);
-            scene.fog = new THREE.FogExp2(0x050505, 0.00022);
+            scene.fog = new THREE.FogExp2(0x050505, 0.002);
 
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
 
@@ -2639,104 +2662,28 @@
                 camera.position.set(0, 0, window.innerWidth < 768 ? 100 : 75);
             }
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", stencil: false, depth: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            const isMobileInit = window.innerWidth < 768;
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobileInit ? 1.5 : 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.outputEncoding = THREE.sRGBEncoding;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.5;
+            renderer.toneMappingExposure = 1.0;
             els.mode3d.appendChild(renderer.domElement);
 
-            // ── PROCEDURAL HDR-LIKE ENVIRONMENT + POST-PROCESSING ──
-            // ALL of this is non-essential polish. If any of it throws (CDN
-            // hiccup, missing pass, GL precision quirk on a specific GPU), we
-            // MUST keep going — otherwise setupEventListeners() never runs and
-            // the user can't even change settings.
-            try {
-                scene.environment = buildSpaceEnvironment(renderer);
-            } catch (e) {
-                console.warn('[3D] env cubemap skipped:', e?.message || e);
-            }
-
-            try {
-                const ppEnabled = !isMobileInit
-                    && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-                    && typeof THREE.EffectComposer !== 'undefined'
-                    && typeof THREE.UnrealBloomPass !== 'undefined';
-                if (ppEnabled) {
-                    composer = new THREE.EffectComposer(renderer);
-                    composer.setPixelRatio(renderer.getPixelRatio());
-                    composer.setSize(window.innerWidth, window.innerHeight);
-
-                    const renderPass = new THREE.RenderPass(scene, camera);
-                    composer.addPass(renderPass);
-
-                    const bloom = new THREE.UnrealBloomPass(
-                        new THREE.Vector2(window.innerWidth, window.innerHeight),
-                        0.28, 0.45, 0.55
-                    );
-                    composer.addPass(bloom);
-                    bloomPass = bloom;
-
-                    const chromaShader = {
-                        uniforms: {
-                            tDiffuse: { value: null },
-                            amount:   { value: 0.0010 },
-                            vignette: { value: 0.70 }
-                        },
-                        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-                        fragmentShader: `
-                            uniform sampler2D tDiffuse;
-                            uniform float amount;
-                            uniform float vignette;
-                            varying vec2 vUv;
-                            void main() {
-                                vec2 uv = vUv;
-                                vec2 c = uv - 0.5;
-                                float r = texture2D(tDiffuse, uv + c * amount).r;
-                                float g = texture2D(tDiffuse, uv).g;
-                                float b = texture2D(tDiffuse, uv - c * amount).b;
-                                float a = texture2D(tDiffuse, uv).a;
-                                float v = smoothstep(0.95, vignette, length(c));
-                                gl_FragColor = vec4(vec3(r, g, b) * (1.0 - v * 0.7), a);
-                            }
-                        `
-                    };
-                    const chromaPass = new THREE.ShaderPass(chromaShader);
-                    composer.addPass(chromaPass);
-
-                    if (typeof THREE.FilmPass !== 'undefined') {
-                        const film = new THREE.FilmPass(0.18, 0.0, 0.0, false);
-                        film.renderToScreen = true;
-                        composer.addPass(film);
-                    } else {
-                        chromaPass.renderToScreen = true;
-                    }
-                }
-            } catch (e) {
-                console.warn('[3D] post-processing disabled:', e?.message || e);
-                composer = null;
-                bloomPass = null;
-            }
-
-            // Lighting — high-contrast: low ambient lets the rim/key punch through
-            const ambient = new THREE.AmbientLight(0xffffff, 0.25);
+            // Lighting - More dramatic for space
+            const ambient = new THREE.AmbientLight(0xffffff, 0.2); // Low ambient for contrast
             scene.add(ambient);
 
-            // Strong warm key from front-right-above
-            const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+            const keyLight = new THREE.DirectionalLight(0xffffff, 2);
             keyLight.position.set(20, 20, 50);
             scene.add(keyLight);
 
-            // Signature cyan rim from the left — defines metal edges dramatically
-            const rimLight = new THREE.SpotLight(0x00e5ff, 5);
+            const rimLight = new THREE.SpotLight(0x00e5ff, 5); // Blue rim light
             rimLight.position.set(-30, 10, 0);
             rimLight.lookAt(0, 0, 0);
             scene.add(rimLight);
 
-            // Warm fill from below-right for depth
-            const fillLight = new THREE.PointLight(0xffaa00, 0.6);
+            const fillLight = new THREE.PointLight(0xffaa00, 0.5); // Warm fill
             fillLight.position.set(20, -10, 20);
             scene.add(fillLight);
 
@@ -2838,7 +2785,8 @@
         function createStarfield() {
             if (starSystem) scene.remove(starSystem);
 
-            const count = state.highDensityStars ? 25000 : 8000;
+            // Increased density for drama
+            const count = state.highDensityStars ? 40000 : 10000;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(count * 3);
             const sizes = new Float32Array(count);
@@ -2846,26 +2794,30 @@
             const color = new THREE.Color();
 
             for (let i = 0; i < count; i++) {
-                positions[i * 3]     = (Math.random() - 0.5) * 2000;
-                positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
-                positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
+                // Spherical distribution
+                const r = 400 + Math.random() * 1000;
+                const theta = 2 * Math.PI * Math.random();
+                const phi = Math.acos(2 * Math.random() - 1);
 
-                sizes[i] = Math.random() * 2 + 0.5;
+                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = r * Math.cos(phi);
 
-                const rand = Math.random();
-                if      (rand < 0.10) color.setHex(0xaabfff);  // blue-white
-                else if (rand < 0.20) color.setHex(0xffffff);   // pure white
-                else if (rand < 0.70) color.setHex(0xfff4e8);   // warm white
-                else                  color.setHex(0xffcc99);    // orange-yellow
+                sizes[i] = Math.random() * 2;
 
-                colors[i * 3]     = color.r;
+                // Slight blue/yellow tints
+                if (Math.random() > 0.9) color.setHex(0xaabfff);
+                else if (Math.random() > 0.9) color.setHex(0xffddaa);
+                else color.setHex(0xffffff);
+
+                colors[i * 3] = color.r;
                 colors[i * 3 + 1] = color.g;
                 colors[i * 3 + 2] = color.b;
             }
 
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('size',     new THREE.BufferAttribute(sizes, 1));
-            geometry.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
             const material = new THREE.PointsMaterial({
                 size: 1.5,
@@ -2881,7 +2833,10 @@
 
         function createCameraModel() {
             camGroup = new THREE.Group();
+
+            // --- SCALING UPDATE: Make camera bigger ---
             camGroup.scale.set(1.4, 1.4, 1.4);
+
             scene.add(camGroup);
 
             const leatherTex = generateLeatherTexture();
@@ -2889,7 +2844,7 @@
 
             const leatherMat = new THREE.MeshStandardMaterial({
                 map: leatherTex,
-                color: 0x444444,
+                color: 0x333333,
                 roughness: 0.9,
                 bumpMap: leatherTex,
                 bumpScale: 0.05
@@ -2918,6 +2873,7 @@
             camGroup.add(grip);
 
             // 3. Top Plate (Metal)
+            // INCREASED DIMENSIONS SLIGHTLY TO AVOID Z-FIGHTING (14.05 vs 14)
             const topPlate = new THREE.Mesh(new THREE.BoxGeometry(14.05, 2, 4.05), metalMat);
             topPlate.position.set(0, 5, 0);
             camGroup.add(topPlate);
@@ -2955,78 +2911,11 @@
             // 7. Screen (Back)
             createUIScreen();
             const screenGeo = new THREE.PlaneGeometry(12, 8);
-            const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture });
+            const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture }); // Self-illuminated
             screenMesh = new THREE.Mesh(screenGeo, screenMat);
             screenMesh.position.set(0, -0.5, -2.01);
-            screenMesh.rotation.y = Math.PI;
+            screenMesh.rotation.y = Math.PI; // Face backwards
             camGroup.add(screenMesh);
-        }
-
-        // ── Helper: stylized Bayer pattern for sensor active area ───────
-        function makeBayerTexture(size) {
-            const c = document.createElement('canvas');
-            c.width = c.height = size;
-            const x = c.getContext('2d');
-            x.fillStyle = '#001218';
-            x.fillRect(0, 0, size, size);
-            const cell = 6;
-            for (let y = 0; y < size; y += cell) {
-                for (let xx = 0; xx < size; xx += cell) {
-                    const isR = ((xx / cell) % 2 === 0) && ((y / cell) % 2 === 0);
-                    const isB = ((xx / cell) % 2 === 1) && ((y / cell) % 2 === 1);
-                    if (isR)      x.fillStyle = '#ff5060';
-                    else if (isB) x.fillStyle = '#5070ff';
-                    else          x.fillStyle = '#40d090';
-                    x.fillRect(xx + 0.5, y + 0.5, cell - 1, cell - 1);
-                }
-            }
-            // Subtle scanline shimmer
-            x.globalAlpha = 0.08;
-            x.fillStyle = '#ffffff';
-            for (let y = 0; y < size; y += 2) x.fillRect(0, y, size, 1);
-            x.globalAlpha = 1;
-            const t = new THREE.CanvasTexture(c);
-            t.encoding = THREE.sRGBEncoding;
-            t.minFilter = THREE.LinearFilter;
-            return t;
-        }
-        // ── Helper: PCB circuit-trace pattern for sensor substrate ──────
-        function makeCircuitTraceTexture(size) {
-            const c = document.createElement('canvas');
-            c.width = c.height = size;
-            const x = c.getContext('2d');
-            x.fillStyle = '#06140e';
-            x.fillRect(0, 0, size, size);
-            x.strokeStyle = 'rgba(0,200,180,0.5)';
-            x.lineWidth = 1.2;
-            for (let i = 0; i < 40; i++) {
-                let cx = Math.random() * size;
-                let cy = Math.random() * size;
-                x.beginPath();
-                x.moveTo(cx, cy);
-                for (let j = 0; j < 6; j++) {
-                    const dir = Math.floor(Math.random() * 4);
-                    const len = 8 + Math.random() * 40;
-                    if (dir === 0) cx += len;
-                    else if (dir === 1) cx -= len;
-                    else if (dir === 2) cy += len;
-                    else                 cy -= len;
-                    x.lineTo(cx, cy);
-                }
-                x.stroke();
-            }
-            // Solder pads
-            x.fillStyle = 'rgba(255,200,80,0.7)';
-            for (let i = 0; i < 60; i++) {
-                const cx = Math.random() * size;
-                const cy = Math.random() * size;
-                x.beginPath();
-                x.arc(cx, cy, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
-                x.fill();
-            }
-            const t = new THREE.CanvasTexture(c);
-            t.encoding = THREE.sRGBEncoding;
-            return t;
         }
 
         // --- VIRTUAL SCREEN UI ---
@@ -3188,24 +3077,19 @@
             if (renderer) {
                 renderer.setSize(width, height);
             }
-            if (composer) {
-                composer.setSize(width, height);
-            }
         }
 
         function onMouseMove(e) {
             if (!state.is3D) return;
-            if (els.settingsOverlay?.classList.contains('visible')) return;
+
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
             checkIntersections(false);
         }
 
         function onCanvasClick(e) {
             if (!state.is3D || !state.hasExplored) return;
-            // Ignore clicks that originated outside the 3D canvas (e.g. settings modal close button)
-            if (els.settingsOverlay?.classList.contains('visible')) return;
-            if (e.target && !els.mode3d.contains(e.target)) return;
             checkIntersections(true);
         }
 
@@ -3297,8 +3181,7 @@
 
             // 2. Force a micro-repaint to ensure the canvas is ready
             if (state.is3D) {
-                if (composer) composer.render();
-                else renderer.render(scene, camera);
+                renderer.render(scene, camera);
             }
 
             // 3. Slide down
@@ -3320,7 +3203,7 @@
 
         // --- ANIMATION LOOP ---
         function animate() {
-            if (!state.isAnimating || document.hidden) return;
+            if (!state.isAnimating) return;
             animationFrameId = requestAnimationFrame(animate);
 
             const now = performance.now();
@@ -3334,14 +3217,15 @@
             TWEEN.update();
             if (controls) controls.update();
 
-            // Camera model float — gentle bob + scale pulse
+            // Dramatic Cam Pulse & Float
             if (camGroup) {
                 const isMobile = window.innerWidth < 768;
-                const baseScale = isMobile ? 1.0 : 1.4;
-                const pulseAmt = isMobile ? 0.05 : 0.2;
+                const baseScale = isMobile ? 1.0 : 1.4; // Smaller base scale for mobile
+                const pulseAmt = isMobile ? 0.05 : 0.2; // Subtler pulse for mobile
                 const pulse = Math.sin(now * 0.001) * pulseAmt;
+
                 camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
-                camGroup.rotation.z = Math.sin(now * 0.0002) * 0.02;
+                camGroup.rotation.z = Math.sin(now * 0.0002) * .02;
                 camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
             }
 
@@ -3350,27 +3234,7 @@
                 starSystem.rotation.y += 0.0005;
             }
 
-            // Cinematic camera shake (decays to zero after fly-in stage)
-            let shakeAppliedX = 0, shakeAppliedY = 0;
-            if (cameraShake.intensity > 0.001) {
-                shakeAppliedX = (Math.random() - 0.5) * cameraShake.intensity;
-                shakeAppliedY = (Math.random() - 0.5) * cameraShake.intensity;
-                camera.position.x += shakeAppliedX;
-                camera.position.y += shakeAppliedY;
-            }
-
-            // Render through the post-processing chain when available
-            if (composer) {
-                composer.render();
-            } else {
-                renderer.render(scene, camera);
-            }
-
-            // Undo shake so position tweens stay accurate
-            if (cameraShake.intensity > 0.001) {
-                camera.position.x -= shakeAppliedX;
-                camera.position.y -= shakeAppliedY;
-            }
+            renderer.render(scene, camera);
         }
         // --- ADVANCED AUDIO ENGINE ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3550,9 +3414,7 @@
                             if (watermark) {
                                 watermark.classList.add('revealing');
                             }
-                            // Activate cinematic vignette + letterbox framing
-                            const vig = document.getElementById('cinema-vignette');
-                            if (vig) vig.classList.add('active');
+
 
                         }, 800); // Matches CSS transition time for flash-in
                     }
@@ -3635,7 +3497,7 @@
         // Service Worker registration (PWA install + offline)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {});
+                navigator.serviceWorker.register('./sw.js').catch(() => { });
             });
         }
     </script>
