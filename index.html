@@ -63,6 +63,30 @@
     }
 
     /* --- 2D MODE (Northern Lights Style) --- */
+    @keyframes aurora-base {
+        0%   { background-position: 0% 50%; }
+        20%  { background-position: 40% 80%; }
+        40%  { background-position: 100% 50%; }
+        60%  { background-position: 60% 20%; }
+        80%  { background-position: 20% 60%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    @keyframes aurora-glow-1 {
+        0%   { opacity: 0.5; transform: scale(1)    translate(0px,   0px); }
+        25%  { opacity: 0.9; transform: scale(1.12) translate(30px, -20px); }
+        50%  { opacity: 0.6; transform: scale(0.95) translate(-20px, 30px); }
+        75%  { opacity: 1.0; transform: scale(1.08) translate(10px,  20px); }
+        100% { opacity: 0.5; transform: scale(1)    translate(0px,   0px); }
+    }
+
+    @keyframes aurora-glow-2 {
+        0%   { opacity: 0.6; transform: scale(1.05) translate(0px,   0px); }
+        33%  { opacity: 0.3; transform: scale(0.92) translate(-40px, 15px); }
+        66%  { opacity: 0.8; transform: scale(1.15) translate(25px, -30px); }
+        100% { opacity: 0.6; transform: scale(1.05) translate(0px,   0px); }
+    }
+
     #mode-2d {
         position: fixed;
         top: 0;
@@ -73,6 +97,22 @@
         flex-direction: column;
         overflow-y: auto;
         z-index: 10;
+        /* Animated night-sky aurora base */
+        background: linear-gradient(
+            125deg,
+            #010c16 0%,
+            #021e1a 12%,
+            #032a1e 24%,
+            #053828 36%,
+            #074040 48%,
+            #082040 58%,
+            #0f0545 68%,
+            #1c0535 78%,
+            #090318 88%,
+            #010c16 100%
+        );
+        background-size: 400% 400%;
+        animation: aurora-base 22s ease infinite;
     }
 
     .aurora-layer {
@@ -83,33 +123,23 @@
         height: 100%;
         pointer-events: none;
         z-index: 0;
-        will-change: transform;
+        will-change: transform, opacity;
     }
 
     .aurora-layer-1 {
         background:
-            radial-gradient(ellipse at 30% 20%, rgba(0, 229, 255, 0.18), transparent 55%),
-            radial-gradient(ellipse at 70% 70%, rgba(120, 0, 255, 0.12), transparent 50%);
-        animation: auroraBreath 12s ease-in-out infinite alternate;
+            radial-gradient(ellipse 80% 40% at 30% 20%, rgba(0, 229, 255, 0.22), transparent 60%),
+            radial-gradient(ellipse 60% 50% at 70% 65%, rgba(100, 0, 255, 0.16), transparent 55%),
+            radial-gradient(ellipse 50% 30% at 55% 80%, rgba(0, 200, 120, 0.14), transparent 50%);
+        animation: aurora-glow-1 14s ease-in-out infinite;
     }
 
     .aurora-layer-2 {
         background:
-            radial-gradient(ellipse at 65% 10%, rgba(0, 255, 136, 0.12), transparent 50%),
-            radial-gradient(ellipse at 20% 80%, rgba(50, 100, 255, 0.10), transparent 45%);
-        animation: auroraBreath 18s ease-in-out infinite alternate-reverse;
-    }
-
-    @keyframes auroraBreath {
-        from {
-            transform: scale(1);
-            opacity: 0.75;
-        }
-
-        to {
-            transform: scale(1.08);
-            opacity: 1;
-        }
+            radial-gradient(ellipse 70% 35% at 65% 15%, rgba(0, 255, 140, 0.18), transparent 55%),
+            radial-gradient(ellipse 55% 45% at 20% 75%, rgba(60, 80, 255, 0.14), transparent 50%),
+            radial-gradient(ellipse 40% 35% at 80% 50%, rgba(180, 0, 255, 0.12), transparent 45%);
+        animation: aurora-glow-2 19s ease-in-out infinite;
     }
 
     #mode-2d::before {
