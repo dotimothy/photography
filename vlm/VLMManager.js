@@ -245,6 +245,13 @@ class VLMManager {
         const id = ++this._nextId;
         this._callbacks.set(id, callbacks);
         this._worker.postMessage({ type: 'generate', id, imageSrc, prompt, chatHistory });
+
+        // Forward abort signal to the worker so local inference can stop mid-stream
+        if (callbacks.signal) {
+            const onAbort = () => this._worker?.postMessage({ type: 'abort', id });
+            if (callbacks.signal.aborted) onAbort();
+            else callbacks.signal.addEventListener('abort', onAbort, { once: true });
+        }
         return id;
     }
 

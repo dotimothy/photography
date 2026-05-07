@@ -1060,12 +1060,20 @@ function injectCSS() {
     font-size: 10px;
     font-family: monospace;
     color: #ffa726;
-    letter-spacing: 0.2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 10px;
 }
-.vlm-gen-stats.vlm-gen-stats-done { color: #546e7a; }
+.vlm-gen-stats-done { color: #546e7a; }
+.vlm-stat-ttft  { color: #4dd0e1; }
+.vlm-stat-tps   { color: #ffa726; }
+.vlm-stat-tok   { color: #90a4ae; }
+.vlm-stat-back  { color: #78909c; }
+.vlm-gen-stats-done .vlm-stat-ttft { color: #4dd0e1; }
+.vlm-gen-stats-done .vlm-stat-tps  { color: #78909c; }
+.vlm-gen-stats-done .vlm-stat-tok  { color: #546e7a; }
     `;
     document.head.appendChild(style);
 }
@@ -2590,10 +2598,27 @@ class GalleryVLMOverlay {
         let pendingThinkFlush = false;
         const textEl  = Object.assign(document.createElement('span'), { className: 'vlm-msg-text' });
         this._activeTTSTextEl = textEl;  // expose to _speakChunk for inline highlighting
-        const statsEl = Object.assign(document.createElement('div'),  { className: 'vlm-gen-stats' });
-        statsEl.textContent = 'Generating…';
+        const statsEl = Object.assign(document.createElement('div'), { className: 'vlm-gen-stats' });
+        statsEl.innerHTML = '<span class="vlm-stat-tps">Generating…</span>';
         assistantEl.appendChild(textEl);
         assistantEl.appendChild(statsEl);
+
+        const sendTime = performance.now();
+        let   ttftMs   = null;   // set on first token
+
+        function _renderStats({ ttft, tps, tokenCount, avgTps, backend, done }) {
+            const parts = [];
+            if (ttft   != null) parts.push(`<span class="vlm-stat-ttft">TTFT ${ttft}s</span>`);
+            if (done) {
+                if (tokenCount) parts.push(`<span class="vlm-stat-tok">${tokenCount} tok</span>`);
+                if (avgTps)     parts.push(`<span class="vlm-stat-tps">avg ${avgTps} tok/s</span>`);
+            } else {
+                if (tokenCount) parts.push(`<span class="vlm-stat-tok">${tokenCount} tok</span>`);
+                if (tps)        parts.push(`<span class="vlm-stat-tps">${tps} tok/s</span>`);
+            }
+            if (backend)    parts.push(`<span class="vlm-stat-back">${backend}</span>`);
+            statsEl.innerHTML = parts.length ? parts.join('') : '<span class="vlm-stat-tps">Generating…</span>';
+        }
 
         // Pre-load markdown BEFORE manager.query so the prefix of the streaming
         // buffer never renders as plain textContent (would otherwise produce a
@@ -2663,10 +2688,12 @@ class GalleryVLMOverlay {
                 },
                 onToken: (tok, tps, tokenCount) => {
                     if (this._generation !== gen) return;
+                    if (ttftMs === null) ttftMs = performance.now() - sendTime;
                     fullText += tok;
-                    if (tps != null) {
-                        statsEl.textContent = `${tokenCount} tok · ${tps} tok/s · ${this._backend}`;
-                    }
+                    _renderStats({
+                        ttft: parseFloat((ttftMs / 1000).toFixed(1)),
+                        tps, tokenCount, backend: this._backend, done: false,
+                    });
                     this._feedTTS(tok);
                     if (!pendingTokenFlush) {
                         pendingTokenFlush = true;
@@ -2712,11 +2739,10 @@ class GalleryVLMOverlay {
                     }
 
                     // Freeze final stats
-                    const parts = [];
-                    if (tokenCount) parts.push(`${tokenCount} tok`);
-                    if (avgTps)     parts.push(`avg ${avgTps} tok/s`);
-                    if (this._backend) parts.push(this._backend);
-                    statsEl.textContent = parts.join(' · ');
+                    _renderStats({
+                        ttft: ttftMs != null ? parseFloat((ttftMs / 1000).toFixed(1)) : null,
+                        tokenCount, avgTps, backend: this._backend, done: true,
+                    });
                     statsEl.classList.add('vlm-gen-stats-done');
 
                     this._history.push({ role: 'user',      content: prompt    });
@@ -2811,30 +2837,25 @@ class GalleryVLMOverlay {
                     break;
 
                 case 'download': {
-                    // Advance the top progress bar monotonically — never go backwards.
-                    // pct from the worker is per-file (resets to ~10% each new file).
-                    if (pct != null && pct > this._dlMaxPct) {
-                        this._dlMaxPct = pct;
-                        this._q('-prog').style.width = `${pct}%`;
+                    // Worker now sends true cumulative pct — update directly.
+                    if (pct != null) {
+                        this._dlMaxPct = Math.max(this._dlMaxPct, pct);
+                        this._q('-prog').style.width = `${this._dlMaxPct}%`;
                     }
 
-                    // Stable header: overall MB + percentage, not the filename
                     const mbLabel  = downloadedMB ? `${downloadedMB} MB` : '';
                     const pctLabel = this._dlMaxPct ? `${this._dlMaxPct}%` : '';
                     this._q('-status').textContent =
                         `Downloading model… ${[mbLabel, pctLabel].filter(Boolean).join(' · ')}`;
 
-                    // Activate the download track on the first download event
                     this._q('-dltrack')?.classList.add('vlm-dl-active');
                     this._setStage(1, 'done', '');
-                    this._setStage(2, 'active', '');   // clear detail — track shows the info
+                    this._setStage(2, 'active', '');
 
-                    // Download track: bar fill, totals row, current file
                     if (this._q('-dlbar'))  this._q('-dlbar').style.width = `${this._dlMaxPct}%`;
                     if (this._q('-dlmb'))   this._q('-dlmb').textContent  = downloadedMB ? `↓ ${downloadedMB} MB` : '';
                     if (this._q('-dlpct'))  this._q('-dlpct').textContent  = pctLabel;
                     if (this._q('-dlfile')) {
-                        // Show filename + its own progress; this line is expected to change
                         const fileInfo = [file, fileMB ? `${fileMB} MB` : null].filter(Boolean).join(' — ');
                         this._q('-dlfile').textContent = fileInfo;
                     }
@@ -2876,9 +2897,13 @@ class GalleryVLMOverlay {
                 this._setStage(3, 'done', readyDetail);
 
                 const prog = this._q('-prog');
+                // Width transition is 0.5s — wait long enough for the bar to
+                // visibly *reach* 100% and pause briefly before fading. Going
+                // straight from e.g. 88%/96% to 100% then to 0% in 800ms hid
+                // the 100% state behind the transition.
                 prog.style.width = '100%';
-                setTimeout(() => { prog.style.width = '0%'; }, 800);
-                setTimeout(() => { this._q('-loading')?.classList.add('vlm-stages-done'); }, 1800);
+                setTimeout(() => { prog.style.width = '0%'; }, 1300);
+                setTimeout(() => { this._q('-loading')?.classList.add('vlm-stages-done'); }, 2300);
             }
 
             this._refreshSendBtn();
