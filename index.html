@@ -964,6 +964,114 @@
         margin-top: 0;
     }
 
+    /* ── Tabs ───────────────────────────────────────────────── */
+    .settings-tabs {
+        display: flex;
+        gap: 2px;
+        border-bottom: 1px solid #2a2a2a;
+        margin-bottom: 16px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+    }
+    .settings-tabs::-webkit-scrollbar { display: none; }
+    .settings-tab {
+        background: transparent;
+        border: none;
+        padding: 9px 14px;
+        color: #888;
+        cursor: pointer;
+        font-size: 0.78rem;
+        font-weight: 500;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border-bottom: 2px solid transparent;
+        transition: color 0.2s, border-color 0.2s;
+        white-space: nowrap;
+        font-family: inherit;
+        margin-bottom: -1px;
+    }
+    .settings-tab:hover { color: #ccc; }
+    .settings-tab.active {
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
+    }
+    .settings-pane { display: none; }
+    .settings-pane.active { display: block; }
+
+    /* ── Model search list (mirrors voice search) ────────── */
+    .vlm-model-search-wrap {
+        display: flex;
+        align-items: center;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 6px;
+        padding: 6px 10px;
+        margin-bottom: 6px;
+    }
+    .vlm-model-search-wrap input {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        color: #fff;
+        font-size: 0.82rem;
+        font-family: inherit;
+    }
+    .vlm-model-search-wrap input::placeholder { color: #555; }
+    #vlm-model-filter-clear {
+        background: none; border: none; color: #555;
+        cursor: pointer; font-size: 11px; padding: 0 2px;
+        line-height: 1; display: none;
+    }
+    #vlm-model-filter-clear.visible { display: block; color: #aaa; }
+    #vlm-model-filter-clear:hover { color: #fff; }
+    #vlm-model-list {
+        max-height: 240px;
+        overflow-y: auto;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        background: #141414;
+    }
+    #vlm-model-list::-webkit-scrollbar { width: 4px; }
+    #vlm-model-list::-webkit-scrollbar-track { background: transparent; }
+    #vlm-model-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    .vlm-model-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #1e1e1e;
+        transition: background 0.15s;
+    }
+    .vlm-model-item:last-child { border-bottom: none; }
+    .vlm-model-item:hover { background: #1e2a35; }
+    .vlm-model-item.selected { background: rgba(79, 195, 247, 0.22); }
+    .vlm-model-item-name {
+        font-size: 0.85rem; color: #fff;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .vlm-model-item.selected .vlm-model-item-name { font-weight: 500; }
+    .vlm-model-item-meta {
+        font-size: 0.7rem; color: #777; font-family: monospace;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .vlm-model-tag {
+        display: inline-block; font-size: 0.6rem;
+        padding: 1px 6px; border-radius: 8px; margin-left: 6px;
+        text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle;
+        font-weight: 600;
+    }
+    .vlm-model-tag.recommended { background: rgba(186, 104, 200, 0.22); color: #ce93d8; }
+    .vlm-model-tag.small { background: rgba(129, 199, 132, 0.22); color: #a5d6a7; }
+    .vlm-model-tag.webgpu { background: rgba(79, 195, 247, 0.22); color: #81d4fa; }
+    .vlm-model-tag.large { background: rgba(255, 167, 38, 0.22); color: #ffb74d; }
+    .vlm-model-empty {
+        padding: 14px; text-align: center; color: #444;
+        font-size: 0.8rem; font-style: italic;
+    }
+
     .setting-select {
         background: #1a1a1a;
         color: #fff;
@@ -1568,40 +1676,40 @@
                 <button class="close-settings" id="btn-close-settings">&times;</button>
             </div>
 
-            <div class="settings-body">
-                <div class="settings-col">
-                    <div class="setting-category">General & Performance</div>
+            <div class="settings-body" style="display:block;">
+                <!-- Tab strip -->
+                <div class="settings-tabs">
+                    <button class="settings-tab active" type="button" data-tab="general">General</button>
+                    <button class="settings-tab" type="button" data-tab="gallery">Gallery</button>
+                    <button class="settings-tab" type="button" data-tab="ai">AI Inspector</button>
+                    <button class="settings-tab" type="button" data-tab="voice">Voice</button>
+                </div>
+
+                <!-- ── Pane: General ─────────────────────────────────────── -->
+                <div class="settings-pane active" id="settings-pane-general">
                     <div class="setting-row">
                         <span class="setting-label">3D Immersive Mode (?mode=2d)</span>
-                        <div class="toggle-switch active" id="toggle-3d-mode">
-                            <div class="toggle-knob"></div>
-                        </div>
+                        <div class="toggle-switch active" id="toggle-3d-mode"><div class="toggle-knob"></div></div>
                     </div>
                     <div class="setting-row">
                         <span class="setting-label">High Density Stars</span>
-                        <div class="toggle-switch active" id="toggle-stars">
-                            <div class="toggle-knob"></div>
-                        </div>
+                        <div class="toggle-switch active" id="toggle-stars"><div class="toggle-knob"></div></div>
                     </div>
                     <div class="setting-row">
                         <span class="setting-label">Data Saver (Low Res) (?datasaver)</span>
-                        <div class="toggle-switch" id="toggle-saver">
-                            <div class="toggle-knob"></div>
-                        </div>
+                        <div class="toggle-switch" id="toggle-saver"><div class="toggle-knob"></div></div>
                     </div>
                     <div class="setting-row">
                         <span class="setting-label">Debug Mode (?debug)</span>
-                        <div class="toggle-switch" id="toggle-debug">
-                            <div class="toggle-knob"></div>
-                        </div>
+                        <div class="toggle-switch" id="toggle-debug"><div class="toggle-knob"></div></div>
                     </div>
+                </div>
 
-                    <div class="setting-category">Gallery Experience</div>
+                <!-- ── Pane: Gallery ─────────────────────────────────────── -->
+                <div class="settings-pane" id="settings-pane-gallery">
                     <div class="setting-row">
                         <span class="setting-label">Auto Slideshow (?slideshow)</span>
-                        <div class="toggle-switch" id="toggle-slideshow">
-                            <div class="toggle-knob"></div>
-                        </div>
+                        <div class="toggle-switch" id="toggle-slideshow"><div class="toggle-knob"></div></div>
                     </div>
                     <div class="setting-row">
                         <span class="setting-label">Interval (ms) (?interval=)</span>
@@ -1610,163 +1718,175 @@
                     </div>
                     <div class="setting-row">
                         <span class="setting-label">Auto Fullscreen Viewer (?fullscreen)</span>
-                        <div class="toggle-switch" id="toggle-viewer-fs">
-                            <div class="toggle-knob"></div>
-                        </div>
+                        <div class="toggle-switch" id="toggle-viewer-fs"><div class="toggle-knob"></div></div>
                     </div>
-
                     <div class="setting-row">
                         <span class="setting-label">Direct Links (No iFrame)</span>
-                        <div class="toggle-switch" id="toggle-direct">
-                            <div class="toggle-knob"></div>
+                        <div class="toggle-switch" id="toggle-direct"><div class="toggle-knob"></div></div>
+                    </div>
+                </div>
+
+                <!-- ── Pane: AI Inspector ────────────────────────────────── -->
+                <div class="settings-pane" id="settings-pane-ai">
+                    <div class="setting-row">
+                        <span class="setting-label">Enable TheDoInspector</span>
+                        <div class="toggle-switch active" id="toggle-vlm"><div class="toggle-knob"></div></div>
+                    </div>
+                    <div class="setting-row" id="vlm-backend-row">
+                        <span class="setting-label">Backend</span>
+                        <select class="setting-select" id="select-vlm-backend">
+                            <option value="local">Local (via WebGPU)</option>
+                            <option value="api">OpenAI-compatible API</option>
+                            <option value="ollama">Ollama API</option>
+                        </select>
+                    </div>
+
+                    <!-- Local model settings -->
+                    <div id="vlm-local-settings">
+                        <div class="setting-category" style="margin-top:14px;">Local Model</div>
+                        <div class="vlm-model-search-wrap">
+                            <span class="vlm-voice-search-icon">&#128269;</span>
+                            <input type="text" id="vlm-model-filter" placeholder="Search models, size, or backend…"
+                                autocomplete="off" spellcheck="false">
+                            <button id="vlm-model-filter-clear" title="Clear">&#10005;</button>
+                        </div>
+                        <div id="vlm-model-list"></div>
+                        <!-- Hidden compat select — kept so existing code reading select-vlm-model.value still works -->
+                        <select id="select-vlm-model" style="display:none;">
+                            <option value="onnx-community/FastVLM-0.5B-ONNX" selected></option>
+                            <option value="HuggingFaceTB/SmolVLM-256M-Instruct"></option>
+                            <option value="HuggingFaceTB/SmolVLM-500M-Instruct"></option>
+                            <option value="HuggingFaceTB/SmolVLM2-256M-Instruct"></option>
+                            <option value="HuggingFaceTB/SmolVLM2-500M-Instruct"></option>
+                            <option value="LiquidAI/LFM2.5-VL-450M-ONNX"></option>
+                            <option value="LiquidAI/LFM2.5-VL-1.6B-ONNX"></option>
+                        </select>
+                        <div class="setting-row" id="vlm-model-note" style="display:none;margin-top:8px;">
+                            <span class="setting-note">⚠ Model change takes effect immediately — current chat will reset.</span>
+                        </div>
+
+                        <div class="setting-category" style="margin-top:18px;">Downloaded Models</div>
+                        <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:6px;">
+                            <div style="display:flex;justify-content:flex-end;align-items:center;">
+                                <button id="vlm-cache-refresh" type="button"
+                                    style="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid #444;background:transparent;color:#aaa;cursor:pointer">↻ Refresh</button>
+                            </div>
+                            <div id="vlm-cache-list" style="display:flex;flex-direction:column;"></div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;gap:8px;">
+                                <span id="vlm-cache-total" style="color:#888"></span>
+                                <button id="vlm-cache-clear-all" type="button"
+                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #5a3030;background:#3a1f1f;color:#ff8a8a;cursor:pointer">Clear All Cache</button>
+                            </div>
                         </div>
                     </div>
 
-                </div><!-- /.settings-col (left) -->
-                <div class="settings-col">
-                    <div class="setting-category">TheDoInspector (AI Vision)</div>
-                    <div class="setting-row">
-                        <span class="setting-label">Enable TheDoInspector</span>
-                        <div class="toggle-switch active" id="toggle-vlm">
-                            <div class="toggle-knob"></div>
+                    <!-- API settings -->
+                    <div id="vlm-api-settings" style="display:none">
+                        <div class="setting-category" style="margin-top:14px;">OpenAI-Compatible API</div>
+                        <div class="setting-row">
+                            <span class="setting-label">Endpoint</span>
+                            <input type="text" class="setting-input" id="vlm-api-endpoint"
+                                placeholder="https://api.openai.com/v1">
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Model</span>
+                            <input type="text" class="setting-input" id="vlm-api-model" placeholder="gpt-4o">
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">API Key</span>
+                            <input type="password" class="setting-input" id="vlm-api-key"
+                                placeholder="sk-… (leave blank for local servers)">
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-note">Key is stored only in your browser's localStorage.</span>
                         </div>
                     </div>
-                    <!-- Advanced / AI Backend (collapsible) -->
-                    <div class="setting-category" style="cursor:pointer;user-select:none;"
-                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
-                        ▸ Advanced / AI Backend
-                    </div>
-                    <div id="settings-advanced" style="display:none;">
-                        <!-- Backend selector (shown when enabled) -->
-                        <div class="setting-row" id="vlm-backend-row">
-                            <span class="setting-label">Backend</span>
-                            <select class="setting-select" id="select-vlm-backend">
-                                <option value="local">Local (via WebGPU)</option>
-                                <option value="api">OpenAI-compatible API</option>
-                                <option value="ollama">Ollama API</option>
+
+                    <!-- Ollama settings -->
+                    <div id="vlm-ollama-settings" style="display:none">
+                        <div class="setting-category" style="margin-top:14px;">Ollama</div>
+                        <div class="setting-row">
+                            <span class="setting-label">Endpoint</span>
+                            <input type="text" class="setting-input" id="vlm-ollama-endpoint"
+                                placeholder="http://localhost:11434">
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Model</span>
+                            <input type="text" class="setting-input" id="vlm-ollama-model" placeholder="gemma3">
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Thinking</span>
+                            <select class="setting-select" id="vlm-ollama-think">
+                                <option value="null">Auto</option>
+                                <option value="true">Think</option>
+                                <option value="false">No Think</option>
                             </select>
                         </div>
-                        <!-- Local model settings -->
-                        <div id="vlm-local-settings">
-                            <div class="setting-row">
-                                <span class="setting-label">Model</span>
-                                <select class="setting-select" id="select-vlm-model">
-                                    <option value="onnx-community/FastVLM-0.5B-ONNX" selected>Apple FastVLM 0.5B (~500
-                                        MB)</option>
-                                    <option value="HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM 256M (~300 MB)</option>
-                                    <option value="HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM 500M (~500 MB)</option>
-                                    <option value="HuggingFaceTB/SmolVLM2-256M-Instruct">SmolVLM2 256M (~300 MB)
-                                    </option>
-                                    <option value="HuggingFaceTB/SmolVLM2-500M-Instruct">SmolVLM2 500M (~500 MB)
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="setting-row" id="vlm-model-note" style="display:none;">
-                                <span class="setting-note">⚠ Model change takes effect immediately — current chat will
-                                    reset.</span>
-                            </div>
+                        <div class="setting-row">
+                            <button id="vlm-ollama-fetch-btn"
+                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Fetch Models</button>
                         </div>
-                        <!-- API settings (shown when backend = api) -->
-                        <div id="vlm-api-settings" style="display:none">
-                            <div class="setting-row">
-                                <span class="setting-label">Endpoint</span>
-                                <input type="text" class="setting-input" id="vlm-api-endpoint"
-                                    placeholder="https://api.openai.com/v1">
-                            </div>
-                            <div class="setting-row">
-                                <span class="setting-label">Model</span>
-                                <input type="text" class="setting-input" id="vlm-api-model" placeholder="gpt-4o">
-                            </div>
-                            <div class="setting-row">
-                                <span class="setting-label">API Key</span>
-                                <input type="password" class="setting-input" id="vlm-api-key"
-                                    placeholder="sk-… (leave blank for local servers)">
-                            </div>
-                            <div class="setting-row">
-                                <span class="setting-note">Key is stored only in your browser's localStorage.</span>
-                            </div>
+                        <div class="setting-row" id="vlm-ollama-model-row" style="display:none">
+                            <span class="setting-label">Select</span>
+                            <select class="setting-select" id="vlm-ollama-model-select"></select>
                         </div>
-                        <!-- Ollama settings (shown when backend = ollama) -->
-                        <div id="vlm-ollama-settings" style="display:none">
-                            <div class="setting-row">
-                                <span class="setting-label">Endpoint</span>
-                                <input type="text" class="setting-input" id="vlm-ollama-endpoint"
-                                    placeholder="http://localhost:11434">
-                            </div>
-                            <div class="setting-row">
-                                <span class="setting-label">Model</span>
-                                <input type="text" class="setting-input" id="vlm-ollama-model" placeholder="gemma3">
-                            </div>
-                            <div class="setting-row">
-                                <span class="setting-label">Thinking</span>
-                                <select class="setting-select" id="vlm-ollama-think">
-                                    <option value="null">Auto</option>
-                                    <option value="true">Think</option>
-                                    <option value="false">No Think</option>
-                                </select>
-                            </div>
-                            <div class="setting-row">
-                                <button id="vlm-ollama-fetch-btn"
-                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Fetch
-                                    Models</button>
-                            </div>
-                            <div class="setting-row" id="vlm-ollama-model-row" style="display:none">
-                                <span class="setting-label">Select</span>
-                                <select class="setting-select" id="vlm-ollama-model-select"></select>
-                            </div>
-                            <div class="setting-row">
-                                <span class="setting-note" id="vlm-ollama-note">Requires Ollama running locally with a
-                                    vision model (e.g. llava, bakllava).</span>
-                            </div>
-                            <!-- Running models / load-unload -->
-                            <div class="setting-row" style="gap:6px;flex-wrap:wrap">
-                                <button id="vlm-ollama-ps-btn"
-                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Active
-                                    Models</button>
-                                <button id="vlm-ollama-load-btn"
-                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Load</button>
-                                <button id="vlm-ollama-unload-btn"
-                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Unload</button>
-                            </div>
-                            <div id="vlm-ollama-running-list"
-                                style="display:none;padding:4px 0;font-size:11px;color:#fff"></div>
+                        <div class="setting-row">
+                            <span class="setting-note" id="vlm-ollama-note">Requires Ollama running locally with a vision model (e.g. llava, bakllava).</span>
                         </div>
-                        <!-- TTS Voice (shown when browser supports speechSynthesis) -->
-                        <div id="vlm-voice-settings" style="display:none">
-                            <div class="setting-row" style="margin-bottom:6px">
-                                <span class="setting-label">Voice</span>
-                            </div>
-                            <div class="vlm-voice-search-wrap">
-                                <span class="vlm-voice-search-icon">&#128269;</span>
-                                <input type="text" id="vlm-voice-filter" placeholder="Search voices or language…"
-                                    autocomplete="off" spellcheck="false">
-                                <button id="vlm-voice-filter-clear" title="Clear">&#10005;</button>
-                            </div>
-                            <div id="vlm-voice-list"></div>
-                            <div class="setting-row" style="margin-top:10px">
-                                <span class="setting-label">Speed</span>
-                                <input type="range" id="vlm-voice-speed" min="0.5" max="2" step="0.1" value="1"
-                                    style="flex:1;accent-color:#4fc3f7;cursor:pointer">
-                                <span id="vlm-voice-speed-val"
-                                    style="font-size:11px;color:#fff;min-width:28px;text-align:right">1.0×</span>
-                            </div>
+                        <div class="setting-row" style="gap:6px;flex-wrap:wrap">
+                            <button id="vlm-ollama-ps-btn"
+                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Active Models</button>
+                            <button id="vlm-ollama-load-btn"
+                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Load</button>
+                            <button id="vlm-ollama-unload-btn"
+                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Unload</button>
                         </div>
-                        <!-- System Prompt (shown when backend = api or ollama) -->
-                        <div id="vlm-systemprompt-settings" style="display:none">
-                            <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-                                <span class="setting-label">System Prompt</span>
-                                <textarea class="setting-input" id="vlm-system-prompt" rows="5"
-                                    placeholder="Leave blank to use the built-in default…"
-                                    style="width:100%;resize:vertical;font-size:11px;padding:5px 7px;font-family:monospace;line-height:1.4"></textarea>
-                            </div>
-                            <div class="setting-row">
-                                <button id="vlm-system-prompt-reset"
-                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Reset
-                                    to Default</button>
-                            </div>
+                        <div id="vlm-ollama-running-list"
+                            style="display:none;padding:4px 0;font-size:11px;color:#fff"></div>
+                    </div>
+
+                    <!-- System Prompt (shown when backend = api or ollama) -->
+                    <div id="vlm-systemprompt-settings" style="display:none">
+                        <div class="setting-category" style="margin-top:14px;">System Prompt</div>
+                        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+                            <textarea class="setting-input" id="vlm-system-prompt" rows="5"
+                                placeholder="Leave blank to use the built-in default…"
+                                style="width:100%;resize:vertical;font-size:11px;padding:5px 7px;font-family:monospace;line-height:1.4"></textarea>
                         </div>
-                    </div><!-- /#settings-advanced -->
-                </div><!-- /.settings-col (right) -->
+                        <div class="setting-row">
+                            <button id="vlm-system-prompt-reset"
+                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Reset to Default</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Pane: Voice ───────────────────────────────────────── -->
+                <div class="settings-pane" id="settings-pane-voice">
+                    <div id="vlm-voice-settings" style="display:none">
+                        <div class="setting-row" style="margin-bottom:6px">
+                            <span class="setting-label">Voice</span>
+                        </div>
+                        <div class="vlm-voice-search-wrap">
+                            <span class="vlm-voice-search-icon">&#128269;</span>
+                            <input type="text" id="vlm-voice-filter" placeholder="Search voices or language…"
+                                autocomplete="off" spellcheck="false">
+                            <button id="vlm-voice-filter-clear" title="Clear">&#10005;</button>
+                        </div>
+                        <div id="vlm-voice-list"></div>
+                        <div class="setting-row" style="margin-top:10px">
+                            <span class="setting-label">Speed</span>
+                            <input type="range" id="vlm-voice-speed" min="0.5" max="2" step="0.1" value="1"
+                                style="flex:1;accent-color:#4fc3f7;cursor:pointer">
+                            <span id="vlm-voice-speed-val"
+                                style="font-size:11px;color:#fff;min-width:28px;text-align:right">1.0×</span>
+                        </div>
+                    </div>
+                    <div id="vlm-voice-unavailable"
+                        style="display:none;color:#666;text-align:center;padding:32px 0;font-size:0.85rem;font-style:italic;">
+                        Text-to-speech is not available in this browser.
+                    </div>
+                </div>
+
             </div><!-- /.settings-body -->
         </div>
     </div>
@@ -1832,20 +1952,26 @@
             window.VLM_SETTINGS.ollamaModel = state.vlmOllamaModel;
             window.VLM_SETTINGS.ollamaThink = state.vlmOllamaThink;
             window.VLM_SETTINGS.systemPrompt = state.vlmSystemPrompt;
-            window.dispatchEvent(new CustomEvent('vlmsettingschanged', {
-                detail: {
-                    enabled: state.vlmEnabled,
-                    model: state.vlmModel,
-                    type: state.vlmType,
-                    apiEndpoint: state.vlmApiEndpoint,
-                    apiKey: state.vlmApiKey,
-                    apiModel: state.vlmApiModel,
-                    ollamaEndpoint: state.vlmOllamaEndpoint,
-                    ollamaModel: state.vlmOllamaModel,
-                    ollamaThink: state.vlmOllamaThink,
-                    systemPrompt: state.vlmSystemPrompt,
-                }
-            }));
+            const detail = {
+                enabled: state.vlmEnabled,
+                model: state.vlmModel,
+                type: state.vlmType,
+                apiEndpoint: state.vlmApiEndpoint,
+                apiKey: state.vlmApiKey,
+                apiModel: state.vlmApiModel,
+                ollamaEndpoint: state.vlmOllamaEndpoint,
+                ollamaModel: state.vlmOllamaModel,
+                ollamaThink: state.vlmOllamaThink,
+                systemPrompt: state.vlmSystemPrompt,
+            };
+            window.dispatchEvent(new CustomEvent('vlmsettingschanged', { detail }));
+            // Forward to the gallery iframe so its overlay/worker can react
+            // (e.g. restart with a new model). Without this, model changes from
+            // the parent settings UI never reach the iframe's VLMManager.
+            const _exh = document.getElementById('exhibit-iframe');
+            if (_exh && _exh.contentWindow) {
+                try { _exh.contentWindow.postMessage({ type: 'vlm-config', config: detail }, '*'); } catch (_) {}
+            }
         }
 
         // --- DOM ELEMENTS ---
@@ -1957,7 +2083,24 @@
             const savedVlmEnabled = localStorage.getItem('vlmEnabled');
             if (savedVlmEnabled !== null) state.vlmEnabled = savedVlmEnabled !== 'false';
             const savedVlmModel = localStorage.getItem('vlmModel');
-            if (savedVlmModel) state.vlmModel = savedVlmModel;
+            // Reset to default if a saved model has been removed from the catalog
+            // (e.g. a previously-broken model was withdrawn). Without this, the
+            // worker would keep failing to load the missing model on every reload.
+            const _knownModels = [
+                'onnx-community/FastVLM-0.5B-ONNX',
+                'HuggingFaceTB/SmolVLM-256M-Instruct',
+                'HuggingFaceTB/SmolVLM-500M-Instruct',
+                'HuggingFaceTB/SmolVLM2-256M-Instruct',
+                'HuggingFaceTB/SmolVLM2-500M-Instruct',
+                'LiquidAI/LFM2.5-VL-450M-ONNX',
+                'LiquidAI/LFM2.5-VL-1.6B-ONNX',
+            ];
+            if (savedVlmModel && _knownModels.includes(savedVlmModel)) {
+                state.vlmModel = savedVlmModel;
+            } else if (savedVlmModel) {
+                // Stale/broken model — drop it and persist the default
+                localStorage.setItem('vlmModel', state.vlmModel);
+            }
             const savedVlmType = localStorage.getItem('vlmType');
             if (savedVlmType) state.vlmType = savedVlmType;
             const savedVlmApiEndpoint = localStorage.getItem('vlmApiEndpoint');
@@ -2010,7 +2153,231 @@
             document.getElementById('vlm-api-settings').style.display = (_vlmOn && _vlmApi) ? '' : 'none';
             document.getElementById('vlm-ollama-settings').style.display = (_vlmOn && _vlmOllama) ? '' : 'none';
             document.getElementById('vlm-systemprompt-settings').style.display = (_vlmOn && (_vlmApi || _vlmOllama)) ? '' : 'none';
-            document.getElementById('vlm-voice-settings').style.display = (_vlmOn && !!window.speechSynthesis) ? '' : 'none';
+            // Voice has its own tab now — visibility depends only on speechSynthesis support, not VLM enable state.
+            const _ttsAvail = !!window.speechSynthesis;
+            document.getElementById('vlm-voice-settings').style.display = _ttsAvail ? '' : 'none';
+            const _vu = document.getElementById('vlm-voice-unavailable');
+            if (_vu) _vu.style.display = _ttsAvail ? 'none' : '';
+        }
+
+        // ─── VLM Model Cache Management ─────────────────────────────────────
+        // Transformers.js v3 defaults to 'transformers-cache' but the name can vary
+        // (older versions, custom env.cacheDir, OPFS-backed caches). Enumerate all
+        // cache buckets and pick any that contain huggingface.co entries.
+
+        async function _findVLMCacheNames() {
+            if (!('caches' in window)) return [];
+            try {
+                const allNames = await caches.keys();
+                const matched  = [];
+                for (const name of allNames) {
+                    try {
+                        const cache = await caches.open(name);
+                        const reqs  = await cache.keys();
+                        if (reqs.some(r => /huggingface\.co/.test(r.url))) matched.push(name);
+                    } catch (_) { /* skip unreadable cache */ }
+                }
+                return matched;
+            } catch (_) {
+                return [];
+            }
+        }
+
+        async function listVLMCachedModels() {
+            const names = await _findVLMCacheNames();
+            if (!names.length) return [];
+            const byModel = new Map();   // modelId → { fileCount, bytes, urls }
+            for (const name of names) {
+                try {
+                    const cache    = await caches.open(name);
+                    const requests = await cache.keys();
+                    for (const req of requests) {
+                        const m = req.url.match(/huggingface\.co\/([^/]+\/[^/]+)\//);
+                        if (!m) continue;
+                        const modelId = m[1];
+                        const entry   = byModel.get(modelId) ?? { fileCount: 0, bytes: 0, urls: new Set() };
+
+                        // Skip duplicates of the same URL across multiple caches
+                        if (entry.urls.has(req.url)) continue;
+                        entry.urls.add(req.url);
+                        entry.fileCount++;
+
+                        const res = await cache.match(req);
+                        if (res) {
+                            // Always size via the actual blob — content-length on cached
+                            // responses (especially CDN-redirected ones) is often stale,
+                            // missing, or reflects compressed transfer size rather than
+                            // the bytes actually stored.
+                            try {
+                                const blob = await res.clone().blob();
+                                entry.bytes += blob.size;
+                            } catch (_) {
+                                // Last-ditch fallback if reading the body fails
+                                const cl = res.headers.get('content-length');
+                                if (cl) entry.bytes += parseInt(cl, 10) || 0;
+                            }
+                        }
+                        byModel.set(modelId, entry);
+                    }
+                } catch (_) { /* skip */ }
+            }
+            return [...byModel.entries()]
+                .map(([modelId, info]) => ({ modelId, fileCount: info.fileCount, sizeBytes: info.bytes }))
+                .sort((a, b) => b.sizeBytes - a.sizeBytes);
+        }
+
+        async function clearVLMCacheForModel(modelId) {
+            const names = await _findVLMCacheNames();
+            const escaped = modelId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(`huggingface\\.co/${escaped}/`);
+            for (const name of names) {
+                try {
+                    const cache = await caches.open(name);
+                    const reqs  = await cache.keys();
+                    await Promise.all(reqs.map(req => re.test(req.url) ? cache.delete(req) : null));
+                } catch (_) { /* ignore */ }
+            }
+        }
+
+        async function clearAllVLMCache() {
+            const names = await _findVLMCacheNames();
+            for (const name of names) {
+                try { await caches.delete(name); } catch (_) { /* ignore */ }
+            }
+        }
+
+        async function renderVLMCacheList() {
+            const listEl  = document.getElementById('vlm-cache-list');
+            const totalEl = document.getElementById('vlm-cache-total');
+            if (!listEl) return;
+
+            listEl.innerHTML = '<div style="color:#888;font-size:11px;padding:6px 0">Scanning cache…</div>';
+            if (totalEl) totalEl.textContent = '';
+
+            if (!('caches' in window)) {
+                listEl.innerHTML = '<div style="color:#888;font-size:11px;padding:6px 0">Cache API unavailable in this browser.</div>';
+                return;
+            }
+
+            const models = await listVLMCachedModels();
+            if (!models.length) {
+                listEl.innerHTML = '<div style="color:#888;font-size:11px;padding:6px 0">No models cached yet.</div>';
+                return;
+            }
+
+            listEl.innerHTML = '';
+            let totalBytes = 0;
+            for (const m of models) {
+                totalBytes += m.sizeBytes;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border:1px solid #333;border-radius:6px;margin-bottom:4px;background:#1a1a1a;';
+                const label = document.createElement('div');
+                label.style.cssText = 'flex:1;min-width:0;';
+                label.innerHTML =
+                    `<div style="color:#ccc;font-family:monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.modelId}">${m.modelId}</div>` +
+                    `<div style="color:#888;font-size:10px;margin-top:2px">${(m.sizeBytes / 1e6).toFixed(1)} MB · ${m.fileCount} ${m.fileCount === 1 ? 'file' : 'files'}</div>`;
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.textContent = 'Delete';
+                delBtn.style.cssText = 'font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #5a3030;background:#3a1f1f;color:#ff8a8a;cursor:pointer;flex-shrink:0;';
+                delBtn.addEventListener('click', async () => {
+                    delBtn.textContent = 'Deleting…';
+                    delBtn.disabled = true;
+                    await clearVLMCacheForModel(m.modelId);
+                    renderVLMCacheList();
+                });
+                row.appendChild(label);
+                row.appendChild(delBtn);
+                listEl.appendChild(row);
+            }
+            if (totalEl) totalEl.textContent = `Total: ${(totalBytes / 1e6).toFixed(1)} MB`;
+        }
+
+        // ─── Local Model Catalog & Search List ──────────────────────────────
+        const VLM_LOCAL_MODELS = [
+            { id: 'onnx-community/FastVLM-0.5B-ONNX',          name: 'Apple FastVLM 0.5B',     size: '~500 MB',       backend: 'WebGPU/WASM',  tags: ['recommended'] },
+            { id: 'HuggingFaceTB/SmolVLM-256M-Instruct',       name: 'SmolVLM 256M',           size: '~300 MB',       backend: 'WebGPU/WASM',  tags: ['small'] },
+            { id: 'HuggingFaceTB/SmolVLM-500M-Instruct',       name: 'SmolVLM 500M',           size: '~500 MB',       backend: 'WebGPU/WASM',  tags: [] },
+            { id: 'HuggingFaceTB/SmolVLM2-256M-Instruct',      name: 'SmolVLM2 256M',          size: '~300 MB',       backend: 'WebGPU/WASM',  tags: ['small'] },
+            { id: 'HuggingFaceTB/SmolVLM2-500M-Instruct',      name: 'SmolVLM2 500M',          size: '~500 MB',       backend: 'WebGPU/WASM',  tags: [] },
+            // Both LFM2.5-VL variants are driven by a custom ORT pipeline
+            // (port of Liquid AI's reference WebGPU Space) — Transformers.js v3
+            // doesn't ship the Lfm2VlImageProcessorFast class.
+            // See vlm/lfm2vlModel.js + vlm/lfm2vlProcessor.js.
+            { id: 'LiquidAI/LFM2.5-VL-450M-ONNX',              name: 'Liquid LFM2.5-VL 450M',  size: '~675 MB q4',    backend: 'WebGPU',       tags: [] },
+            { id: 'LiquidAI/LFM2.5-VL-1.6B-ONNX',              name: 'Liquid LFM2.5-VL 1.6B',  size: '~1.8 GB q4',    backend: 'WebGPU',       tags: ['webgpu'] },
+            // Gemma 3n/4 still needs upstream Transformers.js support — leaving disabled.
+        ];
+
+        function _hl(text, q) {
+            if (!q) return text;
+            const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(re, '<mark style="background:rgba(79,195,247,0.25);color:#fff;border-radius:2px">$1</mark>');
+        }
+
+        function renderVLMModelList(filter) {
+            const list  = document.getElementById('vlm-model-list');
+            const clear = document.getElementById('vlm-model-filter-clear');
+            if (!list) return;
+            const q = (filter ?? '').trim().toLowerCase();
+            if (clear) clear.classList.toggle('visible', q.length > 0);
+
+            const filtered = q ? VLM_LOCAL_MODELS.filter(m =>
+                m.name.toLowerCase().includes(q) ||
+                m.id.toLowerCase().includes(q) ||
+                m.size.toLowerCase().includes(q) ||
+                m.backend.toLowerCase().includes(q) ||
+                (m.tags || []).some(t => t.toLowerCase().includes(q))
+            ) : VLM_LOCAL_MODELS;
+
+            if (!filtered.length) {
+                list.innerHTML = '<div class="vlm-model-empty">No models match</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(m => {
+                const sel  = m.id === state.vlmModel;
+                const tags = (m.tags || []).map(t => `<span class="vlm-model-tag ${t}">${t}</span>`).join('');
+                return `<div class="vlm-model-item${sel ? ' selected' : ''}" data-id="${m.id}">
+                    <div class="vlm-model-item-name">${_hl(m.name, q)}${tags}</div>
+                    <div class="vlm-model-item-meta">${_hl(m.size, q)} · ${_hl(m.backend, q)} · ${_hl(m.id, q)}</div>
+                </div>`;
+            }).join('');
+
+            // Scroll selected into view (only when not searching, to avoid scroll jump)
+            if (!q) {
+                const selEl = list.querySelector('.vlm-model-item.selected');
+                if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+            }
+
+            list.querySelectorAll('.vlm-model-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const newModel = el.dataset.id;
+                    if (newModel === state.vlmModel) return;
+                    const workerRunning = !!(window.VLM_SETTINGS._workerStarted);
+                    state.vlmModel = newModel;
+                    localStorage.setItem('vlmModel', newModel);
+                    // Keep hidden compat select in sync
+                    const sel = document.getElementById('select-vlm-model');
+                    if (sel) sel.value = newModel;
+                    // Show "will reset chat" warning if a worker is already running
+                    const note = document.getElementById('vlm-model-note');
+                    if (note) note.style.display = workerRunning ? '' : 'none';
+                    // Re-render to update selection highlight
+                    renderVLMModelList(document.getElementById('vlm-model-filter')?.value ?? '');
+                    syncVLMSettings();
+                });
+            });
+        }
+
+        // ─── Settings Tabs ──────────────────────────────────────────────────
+        function activateSettingsTab(name) {
+            document.querySelectorAll('.settings-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === name);
+            });
+            document.querySelectorAll('.settings-pane').forEach(p => {
+                p.classList.toggle('active', p.id === `settings-pane-${name}`);
+            });
         }
 
         function setupEventListeners() {
@@ -2019,8 +2386,29 @@
                 els.settingsOverlay.classList.add('visible');
                 const _vf = document.getElementById('vlm-voice-filter');
                 if (_vf) _vf.value = '';
+                const _mf = document.getElementById('vlm-model-filter');
+                if (_mf) _mf.value = '';
                 populateVoiceSelect();
                 renderVoiceList('');
+                renderVLMModelList('');
+                renderVLMCacheList();
+                // Default to the General tab on every open
+                activateSettingsTab('general');
+            });
+
+            // Tab switching
+            document.querySelectorAll('.settings-tab').forEach(tab => {
+                tab.addEventListener('click', () => activateSettingsTab(tab.dataset.tab));
+            });
+
+            // Model search input
+            const _mfInput = document.getElementById('vlm-model-filter');
+            const _mfClear = document.getElementById('vlm-model-filter-clear');
+            _mfInput?.addEventListener('input', (e) => renderVLMModelList(e.target.value));
+            _mfClear?.addEventListener('click', () => {
+                _mfInput.value = '';
+                renderVLMModelList('');
+                _mfInput.focus();
             });
             document.getElementById('btn-close-settings').addEventListener('click', () => {
                 els.settingsOverlay.classList.remove('visible');
@@ -2221,6 +2609,20 @@
                 const note = document.getElementById('vlm-model-note');
                 note.style.display = workerRunning ? '' : 'none';
                 syncVLMSettings();
+            });
+
+            // VLM Cache Management
+            document.getElementById('vlm-cache-refresh')?.addEventListener('click', () => {
+                renderVLMCacheList();
+            });
+            document.getElementById('vlm-cache-clear-all')?.addEventListener('click', async (e) => {
+                const btn = e.currentTarget;
+                btn.textContent = 'Clearing…';
+                btn.disabled = true;
+                await clearAllVLMCache();
+                btn.disabled = false;
+                btn.textContent = 'Clear All Cache';
+                renderVLMCacheList();
             });
 
             // VLM API fields — each fires syncVLMSettings on change
@@ -2534,6 +2936,24 @@
                 }
                 if (event.data && event.data.action === 'openLicense') {
                     handleNav('license.html', true);
+                }
+                // VLM iframe handshake: when the iframe overlay signals it's ready,
+                // push the current VLM_SETTINGS so it can init the worker correctly.
+                if (event.data && event.data.type === 'vlm-iframe-ready') {
+                    const _exh = document.getElementById('exhibit-iframe');
+                    if (_exh && _exh.contentWindow) {
+                        try {
+                            _exh.contentWindow.postMessage({
+                                type: 'vlm-config',
+                                config: window.VLM_SETTINGS,
+                            }, '*');
+                        } catch (_) {}
+                    }
+                }
+                // Iframe overlay's settings button forwards here
+                if (event.data && event.data.type === 'vlm-open-settings') {
+                    document.getElementById('btn-open-settings')?.click();
+                    activateSettingsTab('ai');
                 }
             });
 
