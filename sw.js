@@ -9,6 +9,7 @@ const CORE_ASSETS = [
     './',
     './index.html',
     './about.html',
+    './linktree.html',
     './manifest.json',
     './assets/icon-192.png',
     './assets/icon-512.png'
@@ -35,16 +36,20 @@ function isThumbRequest(url) {
     return /\/portfolios\/[^/]+\/thumbs\//.test(url.pathname);
 }
 function isMetadataRequest(url) {
-    return /\/portfolios\/[^/]+\/metadata\//.test(url.pathname);
+    return /\/portfolios\/[^/]+\/metadata\//.test(url.pathname) || /\/assets\/search-index\.json$/.test(url.pathname);
 }
 function isCoreAsset(url) {
     if (url.origin !== location.origin) return false;
     const p = url.pathname;
-    if (p === '/' || p.endsWith('/index.html') || p.endsWith('/about.html') || p.endsWith('/license.html')) return true;
+    if (p === '/' || p.endsWith('/index.html') || p.endsWith('/about.html') || p.endsWith('/linktree.html') || p.endsWith('/license.html')) return true;
     if (p.endsWith('.css') || p.endsWith('.js')) return true;
     if (/\/portfolios\/[^/]+\/(index|immersive|license)\.html$/.test(p)) return true;
     if (/\/portfolios\/[^/]+\/(css|js)\//.test(p)) return true;
     return false;
+}
+function isHtmlPage(url) {
+    if (url.origin !== location.origin) return false;
+    return url.pathname === '/' || url.pathname.endsWith('.html');
 }
 function isModelAsset(url) {
     // Hands-off: large ML weights, hosted on huggingface, ollama endpoints, etc.
@@ -63,6 +68,19 @@ self.addEventListener('fetch', (event) => {
 
     // Hands-off: never intercept ML weights, ollama, or hf hub
     if (isModelAsset(url)) return;
+
+    // Network-first for pages so navigation does not retain stale HTML after an update.
+    if (isHtmlPage(url)) {
+        event.respondWith(
+            caches.open(STATIC_CACHE).then(cache =>
+                fetch(req).then(resp => {
+                    if (resp && resp.ok) cache.put(req, resp.clone()).catch(() => {});
+                    return resp;
+                }).catch(() => cache.match(req))
+            )
+        );
+        return;
+    }
 
     // Stale-while-revalidate: thumbs + metadata json
     if (url.origin === location.origin && (isThumbRequest(url) || isMetadataRequest(url))) {

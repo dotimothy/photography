@@ -507,9 +507,12 @@ def main():
     step4_start = time.time()
     profiler.start('Deployment Prep')
     
-    deploy_assets = ['index.html', 'about.html', 'license.html', 'assets', 'vlm', 'LICENSE']
+    deploy_assets = ['index.html', 'about.html', 'linktree.html', 'license.html', 'assets', 'vlm', 'LICENSE']
     # manifest.json + sw.js are handled inside prepare_deployment (sw.js needs build-time stamping)
     build_module.prepare_deployment(deploy_assets)
+    # Always include every gallery already present in the build. A selective
+    # gallery rebuild must not shrink the portfolio-wide search index.
+    build_module.generate_metadata_search_index(PORTFOLIOS_ROOT, GALLERY_EMOJIS.keys())
             
     profiler.stop('Deployment Prep')
     print(f"{color.BOLD}*** Step 4 Completed in {time.time() - step4_start:.2f}s ***{color.END}")

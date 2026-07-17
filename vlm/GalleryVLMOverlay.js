@@ -21,7 +21,8 @@
  *   <script type="module" src="vlm/GalleryVLMOverlay.js"></script>
  */
 
-import { VLMManager } from './VLMManager.js?v=11';
+import { VLMManager } from './VLMManager.js?v=12';
+import { loadSearchRecords, rankImageRecords, recommendImageRecords } from './ImageSearch.js?v=3';
 
 // ─── Markdown + LaTeX rendering (loaded lazily from CDN) ─────────────────────
 
@@ -792,6 +793,32 @@ function injectCSS() {
     border-top: 1px solid rgba(79,195,247,0.1);
     flex-shrink: 0;
 }
+
+/* ── Portfolio Search ─────────────────────────────────────────── */
+.vlm-mode-tabs { display:flex; gap:4px; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
+.vlm-mode-tab, .vlm-search-scope { border:1px solid rgba(255,255,255,.12); background:transparent; color:#78909c; border-radius:6px; padding:4px 9px; cursor:pointer; font:inherit; }
+.vlm-mode-tab.vlm-active, .vlm-search-scope.vlm-active { color:#e0f7fa; border-color:rgba(79,195,247,.55); background:rgba(79,195,247,.12); }
+.vlm-search-view { display:none; min-height:0; flex:1; flex-direction:column; }
+.vlm-panel[data-vlm-mode="search"] .vlm-search-view { display:flex; }
+.vlm-panel[data-vlm-mode="search"] .vlm-chat-only { display:none !important; }
+.vlm-search-controls { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); }
+.vlm-search-row { display:flex; gap:6px; }
+.vlm-search-input { flex:1; min-width:0; color:#eceff1; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.14); border-radius:7px; padding:8px 9px; font:inherit; }
+.vlm-search-input:focus { outline:none; border-color:rgba(79,195,247,.55); }
+.vlm-recommend-btn { flex:0 0 auto; border:1px solid rgba(79,195,247,.48); border-radius:7px; padding:7px 9px; color:#e0f7fa; background:rgba(79,195,247,.12); cursor:pointer; font:inherit; font-size:10px; }
+.vlm-recommend-btn:hover:not(:disabled), .vlm-recommend-btn:focus-visible { border-color:#4fc3f7; background:rgba(79,195,247,.22); outline:none; }
+.vlm-recommend-btn:disabled { cursor:not-allowed; opacity:.38; }
+.vlm-search-scopes { display:flex; gap:5px; margin-top:7px; align-items:center; }
+.vlm-search-coverage { margin-left:auto; color:#607d8b; font-size:10px; }
+.vlm-search-results { overflow:auto; padding:8px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; align-content:start; }
+.vlm-search-note { grid-column:1/-1; color:#78909c; padding:20px 10px; text-align:center; line-height:1.5; }
+.vlm-result { appearance:none; text-align:left; padding:0; overflow:hidden; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(255,255,255,.035); color:#cfd8dc; cursor:pointer; }
+.vlm-result:hover, .vlm-result:focus-visible { border-color:rgba(79,195,247,.55); outline:none; background:rgba(79,195,247,.08); }
+.vlm-result img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#111; }
+.vlm-result-body { padding:6px 7px 8px; }
+.vlm-result-title { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#e0f7fa; font-size:11px; }
+.vlm-result-meta { display:block; color:#78909c; font-size:10px; text-transform:capitalize; margin-top:2px; }
+.vlm-result-caption { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:10px; line-height:1.35; margin-top:4px; }
 .vlm-action-btn {
     background: rgba(79,195,247,0.07);
     border: 1px solid rgba(79,195,247,0.18);
@@ -1142,6 +1169,10 @@ class GalleryVLMOverlay {
         this._directLinks      = localStorage.getItem('vlm-direct-links') === 'on'; // default off (embeds)
         this._iframeMode       = window.VLM_PANEL_MODE === true;  // running inside vlm/panel.html
         this._galleryOpen      = false;  // tracks gallery state in iframe mode
+        this._searchRecords    = [];
+        this._searchInventory  = [];
+        this._metadataMatches  = [];
+        this._recommendController = null;
         // User-editable system prompt override (empty = use built-in default)
         this._customSystemPrompt = window.VLM_SETTINGS?.systemPrompt ?? '';
         // Default system prompt for API / Ollama modes (gallery context)
@@ -1543,8 +1574,22 @@ class GalleryVLMOverlay {
     <button class="vlm-action-btn" id="${this._id}-copy-chat">&#128203; Copy Chat</button>
     <button class="vlm-action-btn" id="${this._id}-export-log">&#128229; Export Log</button>
 </div>
-<div class="vlm-tts-bar" id="${this._id}-tts-bar"></div>
-<div class="vlm-input-area">
+<div class="vlm-tts-bar vlm-chat-only" id="${this._id}-tts-bar"></div>
+<div class="vlm-search-view" id="${this._id}-search-view">
+    <div class="vlm-search-controls">
+        <div class="vlm-search-row">
+            <input class="vlm-search-input" id="${this._id}-search-input" type="search" placeholder="Sony, ISO 3200, astronomy…" aria-label="Search portfolio metadata">
+            <button class="vlm-recommend-btn" id="${this._id}-recommend" type="button" disabled title="Visually rerank the metadata shortlist with the selected VLM">Recommend with VLM</button>
+        </div>
+        <div class="vlm-search-scopes">
+            <button class="vlm-search-scope vlm-active" id="${this._id}-scope-current" type="button">Current gallery</button>
+            <button class="vlm-search-scope" id="${this._id}-scope-all" type="button">All galleries</button>
+            <span class="vlm-search-coverage" id="${this._id}-search-coverage"></span>
+        </div>
+    </div>
+    <div class="vlm-search-results" id="${this._id}-search-results" aria-live="polite"><div class="vlm-search-note">Search the build-time metadata index. You can then ask the VLM to recommend the strongest visual matches from that shortlist.</div></div>
+</div>
+<div class="vlm-input-area vlm-chat-only">
     <textarea class="vlm-input" id="${this._id}-input" rows="1"
         placeholder="What camera settings? What's the subject? …"
         aria-label="Ask about the photo"></textarea>
@@ -1560,6 +1605,15 @@ class GalleryVLMOverlay {
         this._q('-close').addEventListener('click',    () => this._closePanel());
         this._q('-new').addEventListener('click',      () => this._newChat());
         this._q('-fs').addEventListener('click',       () => this._toggleFullscreen());
+        this._q('-mode-chat').addEventListener('click', () => this._setPanelMode('chat'));
+        this._q('-mode-search').addEventListener('click', () => this._setPanelMode('search'));
+        this._q('-scope-current').addEventListener('click', () => this._setSearchScope('current'));
+        this._q('-scope-all').addEventListener('click', () => this._setSearchScope('all'));
+        this._q('-search-input').addEventListener('input', () => {
+            this._cancelRecommendations();
+            this._renderSearchResults();
+        });
+        this._q('-recommend').addEventListener('click', () => this._recommendSearchResults());
 
         // Mobile drag-to-dismiss: pulldown on the header closes the bottom sheet.
         this._initHeaderDrag();
@@ -1687,8 +1741,214 @@ class GalleryVLMOverlay {
         this._setPush(open);
     }
     _closePanel() {
+        this._cancelRecommendations();
         this._panel.classList.remove('vlm-open');
         this._setPush(false);
+    }
+
+    async _setPanelMode(mode) {
+        if (mode !== 'search') this._cancelRecommendations();
+        this._panel.dataset.vlmMode = mode;
+        this._q('-mode-chat').classList.toggle('vlm-active', mode === 'chat');
+        this._q('-mode-search').classList.toggle('vlm-active', mode === 'search');
+        if (mode === 'search') {
+            await this._refreshSearchData();
+            this._q('-search-input')?.focus();
+        }
+    }
+
+    _setSearchScope(scope) {
+        this._cancelRecommendations();
+        this._searchScope = scope;
+        this._q('-scope-current').classList.toggle('vlm-active', scope === 'current');
+        this._q('-scope-all').classList.toggle('vlm-active', scope === 'all');
+        this._renderSearchResults();
+    }
+
+    _currentGalleryName() {
+        const match = this._imageSrc?.match(/\/portfolios\/([^/]+)\//);
+        if (match) return decodeURIComponent(match[1]);
+        try {
+            return this._iframeEl?.src?.match(/\/portfolios\/([^/]+)\//)?.[1] ?? null;
+        } catch (_) { return null; }
+    }
+
+    async _refreshSearchData() {
+        const coverage = this._q('-search-coverage');
+        try {
+            const { records, inventory } = await loadSearchRecords();
+            this._searchRecords = records;
+            this._searchInventory = inventory;
+            if (coverage) coverage.textContent = `${inventory.length} metadata records`;
+        } catch (error) {
+            this._searchRecords = [];
+            this._searchInventory = [];
+            this._metadataMatches = [];
+            if (coverage) coverage.textContent = 'Index unavailable';
+            const results = this._q('-search-results');
+            if (results) results.innerHTML = `<div class="vlm-search-note">${this._escapeHtml(error.message)}</div>`;
+            return;
+        }
+        this._renderSearchResults();
+    }
+
+    _escapeHtml(value) {
+        return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    _renderSearchResults() {
+        const container = this._q('-search-results');
+        const coverage = this._q('-search-coverage');
+        const recommendButton = this._q('-recommend');
+        const query = this._q('-search-input')?.value?.trim() ?? '';
+        if (!container) return;
+        container.innerHTML = '';
+        this._metadataMatches = [];
+        if (recommendButton) recommendButton.disabled = true;
+        const totalCount = this._searchInventory?.length ?? 0;
+        if (coverage) coverage.textContent = `${totalCount} metadata records`;
+        if (!this._searchRecords?.length) {
+            container.innerHTML = '<div class="vlm-search-note">No build-time metadata index is available.</div>';
+            return;
+        }
+        if (!query) {
+            container.innerHTML = '<div class="vlm-search-note">Start with gallery, filename, GPS coordinates, camera, lens, date, ISO, or other EXIF metadata. VLM recommendations become available after metadata finds a shortlist.</div>';
+            return;
+        }
+        const currentGallery = this._currentGalleryName();
+        const gallery = (this._searchScope ?? 'current') === 'current' ? currentGallery : null;
+        if (!gallery && (this._searchScope ?? 'current') === 'current') {
+            container.innerHTML = '<div class="vlm-search-note">Open a portfolio gallery or choose All galleries.</div>';
+            return;
+        }
+        const matches = rankImageRecords(this._searchRecords, query, { gallery });
+        this._metadataMatches = matches;
+        if (recommendButton) recommendButton.disabled = matches.length === 0;
+        if (coverage) coverage.textContent = `${matches.length} metadata result${matches.length === 1 ? '' : 's'}`;
+        if (!matches.length) {
+            container.innerHTML = '<div class="vlm-search-note">No metadata matched. Try a gallery, camera model, date, ISO, lens, filename, or GPS value.</div>';
+            return;
+        }
+        this._renderSearchCards(matches);
+    }
+
+    _renderSearchCards(items, { recommended = false } = {}) {
+        const container = this._q('-search-results');
+        if (!container) return;
+        container.innerHTML = '';
+        for (const item of items) {
+            const record = item.record ?? item;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'vlm-result';
+            button.title = `Open ${record.name} in ${record.gallery}`;
+            const img = document.createElement('img');
+            img.src = record.thumbUrl;
+            img.alt = record.caption || record.name;
+            img.loading = 'lazy';
+            const body = document.createElement('span');
+            body.className = 'vlm-result-body';
+            const title = document.createElement('span');
+            title.className = 'vlm-result-title';
+            title.textContent = record.name;
+            const meta = document.createElement('span');
+            meta.className = 'vlm-result-meta';
+            const camera = record.metadata?.['Image Model'] ?? record.metadata?.['Image Make'] ?? '';
+            meta.textContent = recommended
+                ? `${item.score}% VLM match · ${record.gallery}`
+                : [record.gallery, camera].filter(Boolean).join(' · ');
+            const caption = document.createElement('span');
+            caption.className = 'vlm-result-caption';
+            caption.textContent = recommended
+                ? item.reason
+                : (record.metadata?.['EXIF DateTimeOriginal'] ?? record.metadata?.['Image DateTime'] ?? 'Matched build metadata');
+            body.append(title, meta, caption);
+            button.append(img, body);
+            button.addEventListener('click', () => this._openSearchResult(record));
+            container.appendChild(button);
+        }
+    }
+
+    _cancelRecommendations() {
+        if (this._recommendController) this._recommendController.abort();
+        this._recommendController = null;
+        const button = this._q('-recommend');
+        if (button) {
+            button.textContent = 'Recommend with VLM';
+            button.disabled = !(this._metadataMatches?.length);
+        }
+    }
+
+    async _recommendSearchResults() {
+        if (this._recommendController) {
+            this._cancelRecommendations();
+            this._renderSearchResults();
+            return;
+        }
+        const query = this._q('-search-input')?.value?.trim() ?? '';
+        const candidates = this._metadataMatches ?? [];
+        const container = this._q('-search-results');
+        const coverage = this._q('-search-coverage');
+        const button = this._q('-recommend');
+        if (!query || !candidates.length || !container || !button) return;
+        if (!this.manager.isReady) {
+            container.insertAdjacentHTML('afterbegin', '<div class="vlm-search-note">The selected VLM is still loading. Metadata results remain available; try recommendations when the model is ready.</div>');
+            return;
+        }
+
+        const controller = new AbortController();
+        this._recommendController = controller;
+        button.textContent = 'Cancel';
+        button.disabled = false;
+        const candidateCount = Math.min(6, candidates.length);
+        container.innerHTML = `<div class="vlm-search-note">Preparing ${candidateCount} metadata candidate${candidateCount === 1 ? '' : 's'} for visual recommendation…</div>`;
+
+        try {
+            const recommendations = await recommendImageRecords(this.manager, query, candidates, {
+                limit: candidateCount,
+                signal: controller.signal,
+                onProgress: ({ stage, record, completed, total }) => {
+                    if (controller.signal.aborted) return;
+                    const action = stage === 'analyzing' ? 'Inspecting' : stage === 'loading' ? 'Loading' : stage === 'error' ? 'Skipped' : 'Recommended';
+                    container.innerHTML = `<div class="vlm-search-note">${action} ${this._escapeHtml(record.name)} · ${completed}/${total}</div>`;
+                },
+            });
+            if (controller.signal.aborted || this._q('-search-input')?.value?.trim() !== query) return;
+            if (!recommendations.length) {
+                this._renderSearchResults();
+                container.insertAdjacentHTML('afterbegin', '<div class="vlm-search-note">The VLM could not inspect this shortlist, so the metadata ranking is shown.</div>');
+                return;
+            }
+            if (coverage) coverage.textContent = `${recommendations.length} VLM recommendation${recommendations.length === 1 ? '' : 's'} from metadata shortlist`;
+            this._renderSearchCards(recommendations, { recommended: true });
+        } catch (error) {
+            if (error?.name !== 'AbortError') {
+                this._renderSearchResults();
+                container.insertAdjacentHTML('afterbegin', `<div class="vlm-search-note">Recommendation failed; metadata ranking restored. ${this._escapeHtml(error.message)}</div>`);
+            }
+        } finally {
+            if (this._recommendController === controller) {
+                this._recommendController = null;
+                button.textContent = 'Recommend with VLM';
+                button.disabled = false;
+            }
+        }
+    }
+
+    _openSearchResult(record) {
+        const detail = { gallery: record.gallery, image: record.name };
+        if (this._iframeMode) {
+            window.parent.postMessage({ type: 'vlm-open-image', ...detail }, '*');
+            return;
+        }
+        if (document.getElementById('exhibit-iframe')) {
+            window.dispatchEvent(new CustomEvent('vlm-open-image', { detail }));
+            return;
+        }
+        const url = new URL(`../${record.gallery}/index.html`, location.href);
+        url.searchParams.set('img', record.name);
+        location.href = url.href;
     }
 
     /**
