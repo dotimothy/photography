@@ -688,6 +688,12 @@
         flex-shrink: 0;
     }
 
+    .social-icon .pixieset-logo {
+        display: block;
+        width: 22px;
+        height: 22px;
+    }
+
     @media (max-width: 768px) {
         .social-row {
             gap: 8px !important;
@@ -1446,6 +1452,12 @@
         color: #fff;
     }
 
+    @media (max-width: 768px) {
+        #btn-skip-intro {
+            bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
         #space-intro {
             display: none !important;
@@ -1620,6 +1632,14 @@
                     <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" title="Flickr"
                         class="social-icon">
                         <i class="fab fa-flickr"></i>
+                    </a>
+                    <a href="https://thedoshoots.pixieset.com/" target="_blank" rel="me noopener"
+                        title="Pixieset" aria-label="Pixieset" class="social-icon">
+                        <svg class="pixieset-logo" viewBox="0 0 20 20" aria-hidden="true">
+                            <path fill="none" stroke="currentColor" stroke-width=".75" d="M.5.5h19v19H.5z" />
+                            <path fill="currentColor"
+                                d="M9.591 10.067v2.447c0 .529.058.857.174.985.157.182.394.273.712.273h.323v.23H7.2v-.23h.316c.355 0 .61-.116.762-.347.083-.128.124-.432.124-.91V7.086c0-.529-.056-.857-.167-.985-.161-.182-.401-.273-.719-.273H7.2V5.6h3.08c.75 0 1.344.077 1.777.232.434.155.8.416 1.097.784.297.368.446.803.446 1.307 0 .686-.226 1.244-.678 1.673-.453.43-1.092.644-1.918.644a5.41 5.41 0 0 1-.657-.043 8.56 8.56 0 0 1-.756-.13Zm0-.353c.22.041.414.072.583.093.17.02.314.03.434.03.43 0 .8-.165 1.112-.498.311-.332.467-.763.467-1.292 0-.363-.074-.7-.223-1.013a1.54 1.54 0 0 0-.632-.7 1.848 1.848 0 0 0-.929-.232c-.21 0-.481.04-.812.118v3.494Z" />
+                        </svg>
                     </a>
                     <a href="https://www.youtube.com/@TheDoShoots" target="_blank" title="YouTube" class="social-icon">
                         <i class="fab fa-youtube"></i>
@@ -1858,6 +1878,13 @@
                                 style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;width:100%">Reset to Default</button>
                         </div>
                     </div>
+
+                    <div id="vlm-image-index-settings">
+                        <div class="setting-category" style="margin-top:18px;">Portfolio Search</div>
+                        <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:7px">
+                            <span class="setting-note">The build generates a metadata-only index. Search uses it immediately; the VLM only inspects that metadata shortlist when you explicitly request recommendations in the Search tab.</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ── Pane: Voice ───────────────────────────────────────── -->
@@ -1898,6 +1925,7 @@
         <iframe src="" id="exhibit-iframe" allowfullscreen></iframe>
     </div>
 
+    <script src="./assets/js/live-fps.js"></script>
     <script>
         // --- GLOBAL STATE ---
         const state = {
@@ -2001,6 +2029,27 @@
         let uiClickZones = [];
         let pfpImage = new Image();
         pfpImage.src = './assets/photographer.jpg';
+
+        function viewportSize() {
+            return {
+                width: window.visualViewport ? window.visualViewport.width : window.innerWidth,
+                height: window.visualViewport ? window.visualViewport.height : window.innerHeight
+            };
+        }
+
+        function applyRendererPerformanceProfile(profile = window.SitePerformance?.current) {
+            if (!renderer || !profile) return;
+            const viewport = viewportSize();
+            const deviceRatio = window.devicePixelRatio || 1;
+            const pixelRatio = Math.max(0.5, Math.min(deviceRatio, profile.pixelRatioCap) * profile.resolutionScale);
+            renderer.setPixelRatio(pixelRatio);
+            renderer.setSize(viewport.width, viewport.height);
+        }
+
+        window.addEventListener('siteperformancechange', (event) => {
+            applyRendererPerformanceProfile(event.detail);
+            if (scene && renderer) createStarfield();
+        });
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -2500,7 +2549,10 @@
             }, { passive: true });
 
             document.addEventListener('touchend', (e) => {
-                if (e.changedTouches.length > 0) {
+                // Ignore taps on controls/modals. Touch events do not benefit from
+                // the mouse handler's canvas-target guard and previously allowed a
+                // Settings tap to pass through to the 3D gallery raycaster.
+                if (renderer && e.target === renderer.domElement && e.changedTouches.length > 0) {
                     const touchEndX = e.changedTouches[0].clientX;
                     const touchEndY = e.changedTouches[0].clientY;
                     const dx = touchEndX - touchStartX;
@@ -3112,9 +3164,15 @@
                 camera.position.set(0, 0, window.innerWidth < 768 ? 100 : 75);
             }
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            const performanceProfile = window.SitePerformance?.current;
+            renderer = new THREE.WebGLRenderer({
+                antialias: performanceProfile?.effects !== 'low',
+                powerPreference: performanceProfile?.resolvedProfile === 'performance' ? 'low-power' : 'high-performance'
+            });
+            applyRendererPerformanceProfile(performanceProfile || {
+                resolutionScale: 1,
+                pixelRatioCap: 2
+            });
             renderer.outputEncoding = THREE.sRGBEncoding;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 1.0;
@@ -3236,7 +3294,9 @@
             if (starSystem) scene.remove(starSystem);
 
             // Increased density for drama
-            const count = state.highDensityStars ? 40000 : 10000;
+            const baseCount = state.highDensityStars ? 40000 : 10000;
+            const starDensity = window.SitePerformance?.current?.starDensity || 1;
+            const count = Math.max(2500, Math.round(baseCount * starDensity));
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(count * 3);
             const sizes = new Float32Array(count);
@@ -3517,20 +3577,17 @@
 
         // --- INTERACTION LOGIC ---
         function onResize() {
-            const width = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-            const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            const { width, height } = viewportSize();
 
             if (camera) {
                 camera.aspect = width / height;
                 camera.updateProjectionMatrix();
             }
-            if (renderer) {
-                renderer.setSize(width, height);
-            }
+            if (renderer) applyRendererPerformanceProfile();
         }
 
         function onMouseMove(e) {
-            if (!state.is3D) return;
+            if (!state.is3D || !renderer || e.target !== renderer.domElement) return;
 
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -3539,7 +3596,13 @@
         }
 
         function onCanvasClick(e) {
-            if (!state.is3D || !state.hasExplored) return;
+            // The listener is registered on document, but only an actual click on
+            // the WebGL canvas should interact with the camera-screen gallery.
+            // Otherwise UI clicks (notably Settings) reuse the last mouse position
+            // and can accidentally activate a gallery button behind the overlay.
+            if (!state.is3D || !state.hasExplored || !renderer || e.target !== renderer.domElement) return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             checkIntersections(true);
         }
 
@@ -3578,8 +3641,36 @@
             }
         }
 
+        // The deployed site is served from build/, where galleries live at
+        // ./portfolios. A source-root preview (for example, port 8000) instead
+        // needs ./build/portfolios. Detect that preview without changing the
+        // production URLs or editing generated build files.
+        let portfolioBase = './portfolios/';
+
+        function applyPortfolioBase(url) {
+            return url.startsWith('./portfolios/')
+                ? url.replace('./portfolios/', portfolioBase)
+                : url;
+        }
+
+        fetch('./portfolios/astronomy/index.html', { method: 'HEAD', cache: 'no-store' })
+            .then((response) => {
+                if (response.ok) return false;
+                return fetch('./build/portfolios/astronomy/index.html', { method: 'HEAD', cache: 'no-store' })
+                    .then((fallback) => fallback.ok);
+            })
+            .then((useBuildFallback) => {
+                if (!useBuildFallback) return;
+                portfolioBase = './build/portfolios/';
+                document.querySelectorAll('.nav-card[style*="./portfolios/"]').forEach((card) => {
+                    card.setAttribute('style', card.getAttribute('style').replaceAll('./portfolios/', portfolioBase));
+                });
+            })
+            .catch(() => { });
+
         // --- UPDATED NAVIGATION LOGIC ---
         window.handleNav = function (url, isInternal) {
+            url = applyPortfolioBase(url);
             const params = new URLSearchParams();
 
             // ... (Keep your existing params logic here) ...
@@ -3667,8 +3758,10 @@
             TWEEN.update();
             if (controls) controls.update();
 
+            const decorativeAnimations = window.SitePerformance?.current?.animations !== false;
+
             // Dramatic Cam Pulse & Float
-            if (camGroup) {
+            if (camGroup && decorativeAnimations) {
                 const isMobile = window.innerWidth < 768;
                 const baseScale = isMobile ? 1.0 : 1.4; // Smaller base scale for mobile
                 const pulseAmt = isMobile ? 0.05 : 0.2; // Subtler pulse for mobile
@@ -3679,7 +3772,7 @@
                 camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
             }
 
-            if (starSystem) {
+            if (starSystem && decorativeAnimations) {
                 // FASTER ROTATION
                 starSystem.rotation.y += 0.0005;
             }
@@ -3791,6 +3884,14 @@
             let shakeStrength = 0;
             let animateIntro = true;
 
+            if (window.SitePerformance?.current?.animations === false) {
+                intro.style.display = 'none';
+                flash.style.display = 'none';
+                const watermark = document.getElementById('welcome-watermark');
+                if (watermark) watermark.classList.add('revealing');
+                return;
+            }
+
             // Initialize dimensions
             function resize() {
                 width = window.innerWidth;
@@ -3819,6 +3920,14 @@
 
             function update() {
                 if (!animateIntro) return;
+                if (window.SitePerformance?.current?.animations === false) {
+                    intro.style.display = 'none';
+                    flash.style.display = 'none';
+                    animateIntro = false;
+                    const watermark = document.getElementById('welcome-watermark');
+                    if (watermark) watermark.classList.add('revealing');
+                    return;
+                }
 
                 // Clear with slight fade for trail effect? No, clean clear looks faster for warp.
                 ctx.fillStyle = '#000000';

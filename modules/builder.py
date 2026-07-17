@@ -93,6 +93,66 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
         generated_count += 1
     return generated_count
 
+def generate_metadata_search_index(portfolios_root, target_keys, build_root='./build'):
+    """Build a deterministic, metadata-only search index.
+
+    This deliberately performs no image decoding and no VLM inference. An
+    explicitly requested VLM recommendation can later rerank a metadata shortlist.
+    """
+    records = []
+    gallery_counts = {}
+
+    for gallery in target_keys:
+        gallery_root = os.path.join(portfolios_root, gallery)
+        metadata_path = os.path.join(gallery_root, 'metadata', 'metadata.json')
+        if not os.path.exists(metadata_path):
+            continue
+
+        try:
+            with open(metadata_path, 'r', encoding='utf-8') as f:
+                gallery_metadata = json.load(f)
+        except (OSError, json.JSONDecodeError) as error:
+            print(f" - Warning: search metadata unavailable for {gallery}: {error}")
+            continue
+
+        # metadata.json stores stems in image_order. Resolve the deployed file
+        # name from fulls/ so non-JPEG portfolio entries remain valid.
+        deployed_names = {}
+        fulls_dir = os.path.join(gallery_root, 'fulls')
+        if os.path.isdir(fulls_dir):
+            for filename in sorted(os.listdir(fulls_dir)):
+                deployed_names.setdefault(os.path.splitext(filename)[0], filename)
+
+        count = 0
+        for name in gallery_metadata.get('image_order', []):
+            name = str(name)
+            stem = os.path.splitext(name)[0]
+            filename = deployed_names.get(stem, name if os.path.splitext(name)[1] else f'{name}.jpg')
+            records.append({
+                'id': f'{gallery}/{name}',
+                'gallery': gallery,
+                'name': name,
+                'filename': filename,
+                'metadata': gallery_metadata.get(name, gallery_metadata.get(stem, {})),
+                'source': 'metadata',
+            })
+            count += 1
+        gallery_counts[gallery] = count
+
+    payload = {
+        'version': 1,
+        'source': 'build-metadata',
+        'galleries': gallery_counts,
+        'records': records,
+    }
+    output_dir = os.path.join(build_root, 'assets')
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, 'search-index.json')
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, ensure_ascii=False, separators=(',', ':'))
+    print(f" - Built metadata search index ({len(records)} photos)")
+    return output_path
+
 def prepare_deployment(deploy_assets, build_root='./build'):
     """
     Copies necessary assets to the final build directory for deployment.

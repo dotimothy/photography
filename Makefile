@@ -44,10 +44,12 @@ icons: install
 
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -rf __pycache__
+
 
 deepclean: clean
 	rm -rf $(VENV)
-	rm -rf .cache
+	rm -rf .cache 
 	rm -rf tmp
 	rm -rf logs
 

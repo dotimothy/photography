@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="theme-color" content="#050505">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -52,7 +53,9 @@
             padding: 20px 16px calc(40px + var(--safe-area-bottom));
             /* Safe area for iPhone home bar */
             overflow-x: hidden;
-            overscroll-behavior: contain;
+            overflow-y: auto;
+            overscroll-behavior-x: none;
+            overscroll-behavior-y: auto;
             -webkit-font-smoothing: antialiased;
             -webkit-tap-highlight-color: transparent;
             /* Remove orange tap box on Android */
@@ -81,25 +84,110 @@
                 radial-gradient(1px 1px at 80% 80%, #fff, transparent);
             background-size: 300px 300px;
             opacity: 0.2;
+            animation: starDrift 34s linear infinite, starPulse 6s ease-in-out infinite alternate;
         }
 
         .bg-aurora {
-            /* Hardware Accelerated Gradient */
-            background: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.15), transparent 60%),
-                radial-gradient(circle at 80% 20%, rgba(120, 0, 255, 0.1), transparent 50%);
-            will-change: transform;
-            animation: breathe 10s ease-in-out infinite alternate;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse at 15% -5%, rgba(0, 229, 255, 0.2), transparent 43%),
+                radial-gradient(ellipse at 90% 8%, rgba(128, 58, 255, 0.17), transparent 46%),
+                linear-gradient(180deg, #061014 0%, transparent 48%);
         }
 
-        @keyframes breathe {
+        .bg-aurora::before,
+        .bg-aurora::after {
+            content: "";
+            position: absolute;
+            left: -18%;
+            top: -22%;
+            width: 136%;
+            height: 72%;
+            transform-origin: 50% 0;
+            will-change: transform, opacity;
+            pointer-events: none;
+        }
+
+        .bg-aurora::before {
+            background:
+                repeating-linear-gradient(112deg,
+                    transparent 0 8%,
+                    rgba(0, 229, 255, 0.04) 12%,
+                    rgba(91, 255, 185, 0.28) 17%,
+                    rgba(64, 136, 255, 0.12) 22%,
+                    transparent 29% 38%);
+            filter: blur(34px);
+            border-radius: 0 0 48% 52%;
+            opacity: 0.86;
+            animation: auroraSweep 13s ease-in-out infinite alternate;
+        }
+
+        .bg-aurora::after {
+            top: -12%;
+            background:
+                repeating-linear-gradient(74deg,
+                    transparent 0 12%,
+                    rgba(109, 37, 255, 0.03) 17%,
+                    rgba(143, 70, 255, 0.22) 22%,
+                    rgba(0, 229, 255, 0.16) 27%,
+                    transparent 34% 46%);
+            filter: blur(45px);
+            border-radius: 0 0 55% 45%;
+            opacity: 0.65;
+            animation: auroraFold 17s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes auroraSweep {
             0% {
-                transform: scale(1);
-                opacity: 0.8;
+                transform: translate3d(-7%, -3%, 0) skewX(-7deg) scaleY(0.9);
+                opacity: 0.52;
+            }
+
+            45% {
+                transform: translate3d(3%, 8%, 0) skewX(4deg) scaleY(1.18);
+                opacity: 0.94;
             }
 
             100% {
-                transform: scale(1.1);
-                opacity: 1;
+                transform: translate3d(9%, -1%, 0) skewX(-2deg) scaleY(1.02);
+                opacity: 0.68;
+            }
+        }
+
+        @keyframes auroraFold {
+            0% {
+                transform: translate3d(8%, 2%, 0) rotate(-3deg) scaleX(0.94);
+                opacity: 0.4;
+            }
+
+            55% {
+                transform: translate3d(-4%, 9%, 0) rotate(2deg) scaleX(1.08);
+                opacity: 0.78;
+            }
+
+            100% {
+                transform: translate3d(-10%, -2%, 0) rotate(-1deg) scaleX(1);
+                opacity: 0.55;
+            }
+        }
+
+        @keyframes starDrift {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 90px 150px;
+            }
+        }
+
+        @keyframes starPulse {
+            from {
+                opacity: 0.16;
+            }
+
+            to {
+                opacity: 0.31;
             }
         }
 
@@ -125,7 +213,29 @@
         .container {
             width: 100%;
             max-width: 1000px;
+            display: flex;
+            flex-direction: column;
             animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        header {
+            order: 1;
+        }
+
+        .story-feature {
+            order: 2;
+        }
+
+        .about-section {
+            order: 3;
+        }
+
+        .gear-bag {
+            order: 4;
+        }
+
+        footer {
+            order: 5;
         }
 
         @keyframes slideUp {
@@ -183,6 +293,127 @@
             opacity: 0.9;
         }
 
+        /* --- FEATURED STORY --- */
+        .story-feature {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+            min-height: 470px;
+            margin: 6px 0 30px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 229, 255, 0.24);
+            border-radius: calc(var(--card-radius) + 8px);
+            background: rgba(8, 12, 14, 0.9);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38), 0 0 50px rgba(0, 229, 255, 0.06);
+        }
+
+        .story-image-wrap {
+            position: relative;
+            min-height: 470px;
+            overflow: hidden;
+        }
+
+        .story-image-wrap::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent 62%, rgba(8, 12, 14, 0.95) 100%);
+            pointer-events: none;
+        }
+
+        .story-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .story-feature:hover .story-image {
+            transform: scale(1.025);
+        }
+
+        .story-copy {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: clamp(30px, 5vw, 58px) clamp(28px, 5vw, 54px) clamp(30px, 5vw, 58px) 12px;
+        }
+
+        .story-kicker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            color: var(--accent-cyan);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 2.4px;
+            text-transform: uppercase;
+        }
+
+        .story-kicker::before {
+            content: "";
+            width: 34px;
+            height: 1px;
+            background: currentColor;
+        }
+
+        .story-copy h2 {
+            max-width: 12ch;
+            margin: 0 0 22px;
+            color: #fff;
+            font-size: clamp(2rem, 4.2vw, 3.65rem);
+            font-weight: 900;
+            line-height: 0.98;
+            letter-spacing: -0.045em;
+        }
+
+        .story-copy h2 span {
+            color: var(--accent-cyan);
+        }
+
+        .story-copy p {
+            margin: 0 0 16px;
+            color: #c7c7c7;
+            font-size: 1rem;
+            line-height: 1.75;
+        }
+
+        .story-copy p:last-child {
+            margin-bottom: 0;
+        }
+
+        .story-copy strong {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        @media (max-width: 720px) {
+            .story-feature {
+                grid-template-columns: 1fr;
+            }
+
+            .story-image-wrap {
+                min-height: 330px;
+            }
+
+            .story-image-wrap::after {
+                background: linear-gradient(180deg, transparent 55%, rgba(8, 12, 14, 1) 100%);
+            }
+
+            .story-copy {
+                padding: 0 24px 32px;
+                margin-top: -22px;
+            }
+
+            .story-copy h2 {
+                max-width: 11ch;
+            }
+        }
+
         /* --- TOUCH FRIENDLY SOCIALS --- */
         .social-row {
             display: flex;
@@ -211,6 +442,15 @@
         .social-btn svg {
             width: 22px;
             height: 22px;
+        }
+
+        .social-btn .pixieset-logo {
+            display: block;
+            width: 27px;
+            height: 27px;
+            background: currentColor;
+            -webkit-mask: url('./assets/pixieset-link.svg') center / contain no-repeat;
+            mask: url('./assets/pixieset-link.svg') center / contain no-repeat;
         }
 
         .social-btn:active {
@@ -280,49 +520,33 @@
             text-decoration: none;
             transition: color 0.15s;
         }
-        .gear-list a:hover { color: var(--accent-cyan); text-decoration: underline; }
+
+        .gear-list a:hover {
+            color: var(--accent-cyan);
+            text-decoration: underline;
+        }
 
         /* --- INFO CARDS --- */
-        .info-dropdown {
+        .info-section {
             margin-bottom: 30px;
         }
 
-        .info-dropdown summary.info-summary {
+        .section-heading {
             display: flex;
             align-items: center;
             gap: 8px;
             padding: 12px 20px;
-            cursor: pointer;
-            list-style: none;
             color: #fff;
             font-size: 1rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
-            user-select: none;
-            background: var(--glass-bg);
+            background: rgba(79, 195, 247, 0.05);
             border: 1px solid rgba(79, 195, 247, 0.25);
-            border-radius: var(--card-radius);
+            border-bottom-color: var(--glass-border);
+            border-radius: var(--card-radius) var(--card-radius) 0 0;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            background: rgba(79, 195, 247, 0.05);
-            transition: background 0.15s, border-color 0.15s;
-        }
-        .info-dropdown summary.info-summary::-webkit-details-marker { display: none; }
-        .info-dropdown summary.info-summary:hover {
-            background: rgba(79, 195, 247, 0.12);
-            border-color: rgba(79, 195, 247, 0.5);
-        }
-        .info-dropdown summary.info-summary .info-chevron {
-            margin-left: auto;
-            font-size: 0.7rem;
-            opacity: 0.8;
-            transition: transform 0.32s ease;
-        }
-        .info-dropdown[open] summary.info-summary .info-chevron { transform: rotate(-180deg); }
-        .info-dropdown[open] summary.info-summary {
-            border-radius: var(--card-radius) var(--card-radius) 0 0;
-            border-bottom: 1px solid var(--glass-border);
         }
 
         .info-grid {
@@ -339,7 +563,9 @@
         }
 
         @media (min-width: 768px) {
-            .info-grid { grid-template-columns: repeat(2, 1fr); }
+            .info-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
 
         .card {
@@ -349,12 +575,19 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            height: 100%;
             cursor: pointer;
             transition: transform 0.2s ease, border-color 0.2s;
             -webkit-tap-highlight-color: rgba(0, 229, 255, 0.2);
         }
-        .card:hover { border-color: rgba(79, 195, 247, 0.4); }
-        .card:active { transform: scale(0.98); }
+
+        .card:hover {
+            border-color: rgba(79, 195, 247, 0.4);
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
 
         .card-img-wrapper {
             position: relative;
@@ -371,8 +604,14 @@
             transition: opacity 0.3s, transform 0.2s;
             opacity: 0;
         }
-        .card-img.loaded { opacity: 1; }
-        .card:hover .card-img { transform: scale(1.03); }
+
+        .card-img.loaded {
+            opacity: 1;
+        }
+
+        .card:hover .card-img {
+            transform: scale(1.03);
+        }
 
         .card-content {
             padding: 16px 18px 18px;
@@ -470,28 +709,79 @@
 
         /* --- PAGE LOAD UNRAVEL --- */
         @keyframes unravel {
-            from { opacity: 0; transform: translateY(-18px); }
-            to   { opacity: 1; transform: translateY(0);     }
+            from {
+                opacity: 0;
+                transform: translateY(-18px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .profile-img,
         header h1,
         header .subtitle,
-        header .social-row,
-        .gear-bag,
-        .info-dropdown:not(.gear-bag),
-        footer {
+        header .social-row {
             opacity: 0;
             animation: unravel 0.45s ease forwards;
         }
 
-        .profile-img              { animation-delay: 0.05s; }
-        header h1                 { animation-delay: 0.18s; }
-        header .subtitle          { animation-delay: 0.30s; }
-        header .social-row        { animation-delay: 0.42s; }
-        .gear-bag                 { animation-delay: 0.56s; }
-        .info-dropdown:not(.gear-bag) { animation-delay: 0.70s; }
-        footer                    { animation-delay: 0.84s; }
+        .profile-img {
+            animation-delay: 0.05s;
+        }
+
+        header h1 {
+            animation-delay: 0.18s;
+        }
+
+        header .subtitle {
+            animation-delay: 0.30s;
+        }
+
+        header .social-row {
+            animation-delay: 0.42s;
+        }
+
+        /* --- SCROLL REVEAL --- */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+                transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform, opacity;
+        }
+
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Staggered load for cards when revealed */
+        .card.scroll-reveal:nth-child(1) {
+            transition-delay: 0.05s;
+        }
+
+        .card.scroll-reveal:nth-child(2) {
+            transition-delay: 0.15s;
+        }
+
+        .card.scroll-reveal:nth-child(3) {
+            transition-delay: 0.25s;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 
@@ -522,6 +812,10 @@
                         <path fill="currentColor"
                             d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM144.5 319c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5zm159 0c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5z" />
                     </svg>
+                </a>
+                <a href="https://thedoshoots.pixieset.com/" target="_blank" rel="me noopener" class="social-btn"
+                    aria-label="Pixieset">
+                    <span class="pixieset-logo" aria-hidden="true"></span>
                 </a>
                 <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="YouTube">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
@@ -557,15 +851,32 @@
             </nav>
         </header>
 
+        <!-- FEATURED STORY -->
+        <section class="story-feature scroll-reveal" aria-labelledby="story-title">
+            <div class="story-image-wrap">
+                <img src="./assets/photographer.jpg" alt="Timothy Do looking through his camera beside a lake"
+                    class="story-image" width="1600" height="1600" loading="eager">
+            </div>
+            <div class="story-copy">
+                <div class="story-kicker">Behind the lens</div>
+                <h2 id="story-title">It started with my father's <span>Canon.</span></h2>
+                <p>Long before photography became a pursuit, I watched my father use his Canon T2i to turn ordinary
+                    family moments into memories we could keep.</p>
+                <p>That idea stayed with me. Today, I bring an engineer's curiosity and an explorer's patience to every
+                    frame—chasing distant stars, wild landscapes, and the brief moments that make us <strong>stop and
+                        feel something.</strong></p>
+            </div>
+        </section>
+
         <!-- GEAR BAG -->
-        <details class="info-dropdown gear-bag">
-            <summary class="info-summary">
+        <section class="info-section gear-bag scroll-reveal" aria-labelledby="gear-heading">
+            <div class="section-heading" id="gear-heading">
                 <svg class="icon" viewBox="0 0 512 512">
-                    <path d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
+                    <path
+                        d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
                 </svg>
                 Gear Bag
-                <span class="info-chevron">▾</span>
-            </summary>
+            </div>
             <div class="gear-bag-body">
                 <!-- Primary Shooter -->
                 <div>
@@ -573,33 +884,43 @@
                     <ul class="gear-list">
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
+                                <path
+                                    d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+Alpha+A7+IV" target="_blank" rel="noopener">Sony Alpha A7 IV</a>
+                            <a href="https://www.amazon.com/s?k=Sony+Alpha+A7+IV" target="_blank" rel="noopener">Sony
+                                Alpha A7 IV</a>
                         </li>
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+FE+28-70mm+f3.5-5.6" target="_blank" rel="noopener">Sony FE 28-70mm F/3.5-5.6</a>
+                            <a href="https://www.amazon.com/s?k=Sony+FE+28-70mm+f3.5-5.6" target="_blank"
+                                rel="noopener">Sony FE 28-70mm F/3.5-5.6</a>
                         </li>
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+FE+50mm+f1.8" target="_blank" rel="noopener">Sony FE 50mm F/1.8</a>
+                            <a href="https://www.amazon.com/s?k=Sony+FE+50mm+f1.8" target="_blank" rel="noopener">Sony
+                                FE 50mm F/1.8</a>
                         </li>
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Tamron+70-300mm+f4.5-6.3+Sony+E" target="_blank" rel="noopener">Tamron 70-300mm F/4.5-6.3</a>
+                            <a href="https://www.amazon.com/s?k=Tamron+70-300mm+f4.5-6.3+Sony+E" target="_blank"
+                                rel="noopener">Tamron 70-300mm F/4.5-6.3</a>
                         </li>
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Samyang+12mm+f2+Sony+E" target="_blank" rel="noopener">Samyang 12mm F/2.0</a>
+                            <a href="https://www.amazon.com/s?k=Samyang+12mm+f2+Sony+E" target="_blank"
+                                rel="noopener">Samyang 12mm F/2.0</a>
                         </li>
                     </ul>
                 </div>
@@ -609,21 +930,27 @@
                     <ul class="gear-list">
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
+                                <path
+                                    d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EOS+Rebel+T5" target="_blank" rel="noopener">Canon EOS Rebel T5</a>
+                            <a href="https://www.amazon.com/s?k=Canon+EOS+Rebel+T5" target="_blank" rel="noopener">Canon
+                                EOS Rebel T5</a>
                         </li>
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EF+70-300mm+f4-5.6" target="_blank" rel="noopener">Canon EF 70-300mm F/4-5.6</a>
+                            <a href="https://www.amazon.com/s?k=Canon+EF+70-300mm+f4-5.6" target="_blank"
+                                rel="noopener">Canon EF 70-300mm F/4-5.6</a>
                         </li>
                         <li>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
+                                <path
+                                    d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EF+18-55mm+f3.5-5.6" target="_blank" rel="noopener">Canon EF 18-55mm F/3.5-5.6</a>
+                            <a href="https://www.amazon.com/s?k=Canon+EF+18-55mm+f3.5-5.6" target="_blank"
+                                rel="noopener">Canon EF 18-55mm F/3.5-5.6</a>
                         </li>
                     </ul>
                 </div>
@@ -633,102 +960,100 @@
                     <ul class="gear-list">
                         <li>
                             <svg class="icon" viewBox="0 0 384 512">
-                                <path d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
+                                <path
+                                    d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Samsung+Galaxy+S24+Ultra" target="_blank" rel="noopener">Samsung S24 Ultra</a>
+                            <a href="https://www.amazon.com/s?k=Samsung+Galaxy+S24+Ultra" target="_blank"
+                                rel="noopener">Samsung S24 Ultra</a>
                         </li>
                         <li>
                             <svg class="icon" viewBox="0 0 384 512">
-                                <path d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
+                                <path
+                                    d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Google+Pixel+9+Pro" target="_blank" rel="noopener">Pixel 9 Pro</a>
+                            <a href="https://www.amazon.com/s?k=Google+Pixel+9+Pro" target="_blank" rel="noopener">Pixel
+                                9 Pro</a>
                         </li>
                     </ul>
                 </div>
             </div>
-        </details>
+        </section>
 
         <!-- INFO GRID -->
-        <details class="info-dropdown">
-            <summary class="info-summary">
+        <section class="info-section about-section" aria-labelledby="about-heading">
+            <div class="section-heading scroll-reveal" id="about-heading">
                 <svg class="icon" viewBox="0 0 448 512">
-                    <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z" />
+                    <path
+                        d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z" />
                 </svg>
                 About Me
-                <span class="info-chevron">▾</span>
-            </summary>
+            </div>
             <main class="info-grid">
-                <div class="card" onclick="openLightbox('./assets/photographer.jpg', 'Journey')">
+                <div class="card scroll-reveal" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
                     <div class="card-img-wrapper">
-                        <img data-src="./assets/photographer.jpg" alt="Journey" class="card-img" decoding="async" loading="lazy">
-                    </div>
-                    <div class="card-content">
-                        <h2>
-                            <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm50.7-186.9L256 416 205.3 325.1 114.4 274.3 205.3 223.5 256 132.7l50.7 90.8 90.8 50.7-90.8 50.7z" />
-                            </svg>
-                            Journey
-                        </h2>
-                        <p>My passion began years ago, watching my father capture family memories on his vintage Canon T2i.
-                            What started as a hobby evolved into a relentless pursuit to paint thousands of words with the
-                            pictures I take.</p>
-                    </div>
-                </div>
-
-                <div class="card" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
-                    <div class="card-img-wrapper">
-                        <img data-src="./assets/starshalo.jpg" alt="Photographer" class="card-img" decoding="async" loading="lazy">
+                        <img data-src="./assets/starshalo.jpg" alt="Photographer" class="card-img" decoding="async"
+                            loading="lazy">
                     </div>
                     <div class="card-content">
                         <h2>
                             <svg class="icon" viewBox="0 0 576 512">
-                                <path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" />
+                                <path
+                                    d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" />
                             </svg>
                             Photographer
                         </h2>
-                        <p>I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep colors
+                        <p>I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep
+                            colors
                             of the Orion Nebula. By day, I traverse National Parks to honor nature through landscape
                             photography.</p>
                     </div>
                 </div>
 
-                <div class="card" onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
+                <div class="card scroll-reveal"
+                    onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
                     <div class="card-img-wrapper">
-                        <img data-src="https://timothydo.me/images/TheDoProSolo.jpg" alt="Engineer" class="card-img" decoding="async" loading="lazy">
+                        <img data-src="https://timothydo.me/images/TheDoProSolo.jpg" alt="Engineer" class="card-img"
+                            decoding="async" loading="lazy">
                     </div>
                     <div class="card-content">
                         <h2>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm88 64v64H64V96h88zm56 0h88v64H208V96zm240 0v64H360V96h88zM64 224h88v64H64V224zm232 0v64H208V224h88zm64 0h88v64H360V224zM152 352v64H64V352h88zm56 0h88v64H208V352zm240 0v64H360V352h88z" />
+                                <path
+                                    d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm88 64v64H64V96h88zm56 0h88v64H208V96zm240 0v64H360V96h88zM64 224h88v64H64V224zm232 0v64H208V224h88zm64 0h88v64H360V224zM152 352v64H64V352h88zm56 0h88v64H208V352zm240 0v64H360V352h88z" />
                             </svg>
                             Engineer
                         </h2>
                         <p>With a Master's degree in Electrical and Computer Engineering from UCLA, I now work in
-                            Computer Vision and Image Processing. Understanding image acquisition, signal processing, and
+                            Computer Vision and Image Processing. Understanding image acquisition, signal processing,
+                            and
                             visual AI allows me to push the boundaries of what a camera can capture.</p>
                     </div>
                 </div>
 
-                <div class="card" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
+                <div class="card scroll-reveal" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
                     <div class="card-img-wrapper">
-                        <img data-src="./assets/zion.jpg" alt="Explorer" class="card-img" decoding="async" loading="lazy">
+                        <img data-src="./assets/zion.jpg" alt="Explorer" class="card-img" decoding="async"
+                            loading="lazy">
                     </div>
                     <div class="card-content">
                         <h2>
                             <svg class="icon" viewBox="0 0 512 512">
-                                <path d="M192 32c17.7 0 32 14.3 32 32V316c0 14.6-9.6 27.5-23.5 31.2C63.6 385.5 1.5 329.6 0 328c-1.1-1.1-17.7-18.4 12.5-47.5 19.4-18.7 28.3-27.1 36.1-34.5l9.4-8.9c19.3-18.2 41.9-46.7 41.9-82.6V64c0-17.7 14.3-32 32-32h60.1zm84.4 290.7l21.3 49.6c11.3 26.2 46.6 26.2 57.9 0l22.6-52.6c3.4-7.8 11-12.8 19.5-12.8s16.1 5 19.5 12.8l22.6 52.6c11.3 26.2 46.6 26.2 57.9 0l21.3-49.6c3.4-7.9 11.1-12.9 19.7-12.9H512V32c0-17.7-14.3-32-32-32H388c-17.7 0-32 14.3-32 32v157c-26.4 12.5-47.7 32.1-59.5 57.2l-20.1 42.6V32z" />
+                                <path
+                                    d="M192 32c17.7 0 32 14.3 32 32V316c0 14.6-9.6 27.5-23.5 31.2C63.6 385.5 1.5 329.6 0 328c-1.1-1.1-17.7-18.4 12.5-47.5 19.4-18.7 28.3-27.1 36.1-34.5l9.4-8.9c19.3-18.2 41.9-46.7 41.9-82.6V64c0-17.7 14.3-32 32-32h60.1zm84.4 290.7l21.3 49.6c11.3 26.2 46.6 26.2 57.9 0l22.6-52.6c3.4-7.8 11-12.8 19.5-12.8s16.1 5 19.5 12.8l22.6 52.6c11.3 26.2 46.6 26.2 57.9 0l21.3-49.6c3.4-7.9 11.1-12.9 19.7-12.9H512V32c0-17.7-14.3-32-32-32H388c-17.7 0-32 14.3-32 32v157c-26.4 12.5-47.7 32.1-59.5 57.2l-20.1 42.6V32z" />
                             </svg>
                             Explorer
                         </h2>
-                        <p>As an Eagle Scout with the photography merit badge, nature is my second home. This portfolio is
-                            my window into a collection of moments where the universe stood still just long enough for the
+                        <p>As an Eagle Scout with the photography merit badge, nature is my second home. This portfolio
+                            is
+                            my window into a collection of moments where the universe stood still just long enough for
+                            the
                             shutter to click.</p>
                     </div>
                 </div>
             </main>
-        </details>
+        </section>
 
-        <footer>
+        <footer class="scroll-reveal">
             © <a href="./index.html" target="_blank" style="color: inherit; text-decoration: underline;">TheDoShoots</a>
             2026. By <a href="https://timothydo.me/" target="_blank"
                 style="color: inherit; text-decoration: underline;">Timothy Do</a>.
@@ -750,9 +1075,8 @@
     <script>
         // --- 1. Lazy Loading Observer ---
         // Handles fading in images only when they are near the viewport.
-        // Images inside a closed <details> are hidden from IntersectionObserver,
-        // so we also load them eagerly on the details 'toggle' event.
         document.addEventListener("DOMContentLoaded", function () {
+            // --- Lazy Loading ---
             const lazyImages = [].slice.call(document.querySelectorAll("img[data-src]"));
 
             function loadImage(img) {
@@ -763,7 +1087,11 @@
                 }
             }
 
+            // --- Scroll Reveal ---
+            const revealElements = [].slice.call(document.querySelectorAll(".scroll-reveal"));
+
             if ("IntersectionObserver" in window) {
+                // Lazy images observer
                 let lazyImageObserver = new IntersectionObserver(function (entries, observer) {
                     entries.forEach(function (entry) {
                         if (entry.isIntersecting) {
@@ -776,58 +1104,30 @@
                 lazyImages.forEach(function (lazyImage) {
                     lazyImageObserver.observe(lazyImage);
                 });
+
+                // Scroll reveal observer
+                let revealObserver = new IntersectionObserver(function (entries, observer) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add("revealed");
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    rootMargin: "0px 0px -10px 0px",
+                    threshold: 0.05
+                });
+
+                revealElements.forEach(function (el) {
+                    revealObserver.observe(el);
+                });
             } else {
                 // Fallback for very old browsers
                 lazyImages.forEach(loadImage);
-            }
-
-            // Animated open/close for all details dropdowns.
-            // Native <details> toggling is instant; we intercept the click,
-            // manage the `open` attribute manually, and animate the body height.
-            document.querySelectorAll("details.info-dropdown").forEach(function (details) {
-                var summary = details.querySelector("summary");
-                var body    = summary && summary.nextElementSibling;
-                if (!body) return;
-
-                // Keep body visible but height-clipped so transitions work.
-                body.style.overflow = "hidden";
-
-                summary.addEventListener("click", function (e) {
-                    e.preventDefault();
-
-                    // Cancel any in-progress transition cleanly.
-                    body.style.transition = "none";
-                    body.style.height     = body.scrollHeight + "px";
-                    body.offsetHeight;    // force reflow
-
-                    if (details.hasAttribute("open")) {
-                        // ── CLOSE ──────────────────────────────────────────
-                        body.style.transition = "height 0.32s ease";
-                        body.style.height     = "0";
-                        body.addEventListener("transitionend", function handler() {
-                            body.removeEventListener("transitionend", handler);
-                            details.removeAttribute("open");
-                            body.style.height     = "";
-                            body.style.transition = "";
-                        });
-                    } else {
-                        // ── OPEN ───────────────────────────────────────────
-                        details.setAttribute("open", "");
-                        var targetH = body.scrollHeight;
-                        body.style.height     = "0";
-                        body.offsetHeight;    // force reflow
-                        body.style.transition = "height 0.32s ease";
-                        body.style.height     = targetH + "px";
-                        body.addEventListener("transitionend", function handler() {
-                            body.removeEventListener("transitionend", handler);
-                            body.style.height     = "";   // let it reflow freely
-                            body.style.transition = "";
-                            // Lazy-load any images now visible
-                            details.querySelectorAll("img[data-src]").forEach(loadImage);
-                        });
-                    }
+                revealElements.forEach(function (el) {
+                    el.classList.add("revealed");
                 });
-            });
+            }
         });
 
         // --- 2. Lightbox Logic ---
@@ -855,11 +1155,12 @@
             if (e.target === lightbox) closeLightbox();
         });
     </script>
+    <script src="./assets/js/live-fps.js"></script>
     <script>
         // Service Worker registration (PWA install + offline)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {});
+                navigator.serviceWorker.register('./sw.js').catch(() => { });
             });
         }
     </script>
