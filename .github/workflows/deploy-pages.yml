@@ -22,6 +22,9 @@ concurrency:
 jobs:
   build:
     runs-on: macos-latest
+    env:
+      # Bump this when image-processing behavior or output settings change.
+      PORTFOLIO_CACHE_VERSION: v1
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -29,13 +32,37 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' 
+          python-version: '3.11'
+          cache: pip
 
       - name: Install Builder Dependencies
         run: make install
 
+      - name: Download Current Portfolio Manifest
+        run: |
+          .venv/bin/python modules/downloader.py download \
+            --id 1PrLEoVooon_-rOZRGzH1BuZbNWLaHDqV \
+            --output .cache/manifest/portfolio.csv
+          test -s .cache/manifest/portfolio.csv
+
+      - name: Restore Processed Portfolio Cache
+        id: portfolio-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/images
+            assets/portfolio.csv
+            build/portfolios
+            tmp/gallery
+          key: ${{ runner.os }}-portfolio-${{ env.PORTFOLIO_CACHE_VERSION }}-${{ hashFiles('.cache/manifest/portfolio.csv', 'assets/watermark.png', 'requirements.txt') }}
+
       - name: Build TheDoShoots Photography Portfolio
+        if: steps.portfolio-cache.outputs.cache-hit != 'true'
         run: make build
+
+      - name: Update Cached Photography Portfolio
+        if: steps.portfolio-cache.outputs.cache-hit == 'true'
+        run: make incremental
 
       - name: Display & Expose Build Logs
         if: always()
@@ -50,9 +77,6 @@ jobs:
           
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-
-      - name: Cleanup Runner Environment
-        run: make deepclean
         
   deploy:
     environment:

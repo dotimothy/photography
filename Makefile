@@ -9,7 +9,7 @@ VENV_PYTHON = $(VENV)/bin/python
 quality ?= 80
 jobs ?= 0
 
-.PHONY: all build clean install help fast exif deepclean icons
+.PHONY: all build incremental clean install help fast exif deepclean icons
 
 default: build
 
@@ -27,6 +27,9 @@ $(VENV)/bin/activate: requirements.txt
 
 build: install
 	$(VENV_PYTHON) $(SCRIPT) --watermark --full-clean --quality $(quality) --jobs $(jobs)
+
+incremental: install
+	$(VENV_PYTHON) $(SCRIPT) --watermark --quality $(quality) --jobs $(jobs)
 
 fast: install
 	$(VENV_PYTHON) $(SCRIPT) --html-only --quality $(quality) --jobs $(jobs)
@@ -60,6 +63,7 @@ help:
 	@echo ""
 	@echo "make install   - Create venv and install dependencies"
 	@echo "make build     - Run full build (auto-installs venv if missing)"
+	@echo "make incremental - Reuse cached images and update changed content"
 	@echo "make fast      - Run build skipping image processing and git updates"
 	@echo "make web       - Just update HTML/JS/CSS assets (Fastest)"
 	@echo "make clean     - Remove build directory"
