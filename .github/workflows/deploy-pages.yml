@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       # Bump this when image-processing behavior or output settings change.
       PORTFOLIO_CACHE_VERSION: v1
