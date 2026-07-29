@@ -23,6 +23,7 @@
 
 import { VLMManager } from './VLMManager.js?v=12';
 import { loadSearchRecords, rankImageRecords, recommendImageRecords } from './ImageSearch.js?v=3';
+import { cropImage, ImageCropModal } from './ImageCrop.js?v=1';
 
 // ─── Markdown + LaTeX rendering (loaded lazily from CDN) ─────────────────────
 
@@ -1101,6 +1102,211 @@ function injectCSS() {
 .vlm-gen-stats-done .vlm-stat-ttft { color: #4dd0e1; }
 .vlm-gen-stats-done .vlm-stat-tps  { color: #78909c; }
 .vlm-gen-stats-done .vlm-stat-tok  { color: #546e7a; }
+
+/* ── Crop UI & Modal ───────────────────────────────────────────── */
+.vlm-crop-btn {
+    background: rgba(79, 195, 247, 0.15);
+    border: 1px solid rgba(79, 195, 247, 0.4);
+    color: #4fc3f7;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.vlm-crop-btn:hover {
+    background: rgba(79, 195, 247, 0.3);
+    border-color: #4fc3f7;
+}
+.vlm-crop-btn.vlm-crop-active {
+    background: rgba(79, 195, 247, 0.35);
+    border-color: #4fc3f7;
+    font-weight: bold;
+}
+.vlm-crop-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(79, 195, 247, 0.2);
+    border: 1px solid rgba(79, 195, 247, 0.5);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    font-size: 11px;
+    color: #81d4fa;
+}
+.vlm-crop-thumb {
+    width: 16px;
+    height: 16px;
+    object-fit: cover;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.vlm-crop-clear {
+    background: none;
+    border: none;
+    color: #ff8a80;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0 2px;
+    margin-left: 2px;
+}
+.vlm-crop-clear:hover {
+    color: #ff5252;
+}
+
+/* Crop Modal Dialog */
+.vlm-crop-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 5500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.vlm-crop-modal {
+    background: #12131c;
+    border: 1px solid rgba(79, 195, 247, 0.35);
+    border-radius: 12px;
+    width: 90vw;
+    max-width: 680px;
+    height: 80vh;
+    max-height: 580px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    color: #eceff1;
+    font-family: 'Roboto', system-ui, sans-serif;
+}
+.vlm-crop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.vlm-crop-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4fc3f7;
+}
+.vlm-crop-close-btn {
+    background: none;
+    border: none;
+    color: #b0bec5;
+    font-size: 20px;
+    cursor: pointer;
+}
+.vlm-crop-close-btn:hover { color: #fff; }
+.vlm-crop-body {
+    flex: 1;
+    position: relative;
+    background: #08080d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.vlm-crop-stage {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.vlm-crop-img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: contain;
+    pointer-events: none;
+}
+.vlm-crop-mask {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+}
+.vlm-crop-box {
+    position: absolute;
+    border: 2px solid #4fc3f7;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.5);
+    cursor: move;
+    touch-action: none;
+}
+.vlm-crop-grid {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px) 0 0 / 33.3% 100%,
+        linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px) 0 0 / 100% 33.3%;
+}
+.vlm-crop-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #4fc3f7;
+    border: 1px solid #000;
+    border-radius: 2px;
+}
+.vlm-crop-handle.handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.vlm-crop-handle.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.vlm-crop-handle.handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.vlm-crop-handle.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+.vlm-crop-handle.handle-n  { top: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.vlm-crop-handle.handle-s  { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.vlm-crop-handle.handle-w  { top: calc(50% - 6px); left: -6px; cursor: ew-resize; }
+.vlm-crop-handle.handle-e  { top: calc(50% - 6px); right: -6px; cursor: ew-resize; }
+
+.vlm-crop-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: #12131c;
+}
+.vlm-crop-actions-right {
+    display: flex;
+    gap: 8px;
+}
+.vlm-crop-btn-cancel, .vlm-crop-btn-reset {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cfd8dc;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.vlm-crop-btn-cancel:hover, .vlm-crop-btn-reset:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+.vlm-crop-btn-apply {
+    background: #0288d1;
+    border: 1px solid #039be5;
+    color: #fff;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.vlm-crop-btn-apply:hover {
+    background: #039be5;
+}
     `;
     document.head.appendChild(style);
 }
@@ -1151,6 +1357,8 @@ class GalleryVLMOverlay {
         this._id               = `vlm-${++_overlayCounter}`;
         this._imageSrc         = null;
         this._imageName        = null;
+        this._croppedImageSrc  = null;
+        this._cropRect         = null;
         this._imageExif        = null;   // EXIF text string for the current image, or null
         this._imageGps         = null;   // { lat, lon } signed decimals, or null
         this._imageExifPromise = null;   // resolves when EXIF extraction finishes
@@ -1495,6 +1703,7 @@ class GalleryVLMOverlay {
         // ── Panel ──────────────────────────────────────────────────────────
         this._panel = document.createElement('div');
         this._panel.className = 'vlm-panel';
+        this._panel.dataset.vlmMode = 'chat';
         this._panel.setAttribute('role', 'dialog');
         this._panel.setAttribute('aria-label', 'TheDoInspector');
         this._panel.innerHTML = `
@@ -1522,17 +1731,29 @@ class GalleryVLMOverlay {
                 aria-label="Toggle map embeds">Direct links</button>
     </div>
 </div>
+<div class="vlm-mode-tabs" role="tablist" aria-label="Assistant mode">
+    <button class="vlm-mode-tab vlm-active" id="${this._id}-mode-chat" type="button"
+            role="tab" aria-selected="true">Chat</button>
+    <button class="vlm-mode-tab" id="${this._id}-mode-search" type="button"
+            role="tab" aria-selected="false">Search</button>
+</div>
 <div class="vlm-progress-bar">
     <div class="vlm-progress-fill" id="${this._id}-prog"></div>
 </div>
 <div class="vlm-current-photo" id="${this._id}-imgname">
     <span class="vlm-photo-name" id="${this._id}-photoname"></span>
+    <button class="vlm-crop-btn" id="${this._id}-crop-btn" title="Crop image region to attach" style="display:none">✂️ Crop</button>
+    <span class="vlm-crop-badge" id="${this._id}-crop-badge" style="display:none">
+        <img class="vlm-crop-thumb" id="${this._id}-crop-thumb" alt="Crop" />
+        <span class="vlm-crop-label">Cropped ROI</span>
+        <button class="vlm-crop-clear" id="${this._id}-crop-clear" title="Remove crop and use full image">&times;</button>
+    </span>
     <button class="vlm-exif-toggle" id="${this._id}-exif-toggle" style="display:none">EXIF</button>
 </div>
 <div class="vlm-exif-drawer" id="${this._id}-exif-drawer"></div>
 
 <!-- Loading stage panel — visible until model is ready -->
-<div class="vlm-loading-section" id="${this._id}-loading">
+<div class="vlm-loading-section vlm-chat-only" id="${this._id}-loading">
     <div class="vlm-stage-row" id="${this._id}-s1">
         <span class="vlm-stage-icon pending" id="${this._id}-s1i">○</span>
         <div class="vlm-stage-body">
@@ -1567,10 +1788,10 @@ class GalleryVLMOverlay {
     <div class="vlm-stage-hint">First load downloads ~300 MB. Runtime ops compile in the background — first query may take a moment longer.</div>
 </div>
 
-<div class="vlm-messages" id="${this._id}-msgs">
+<div class="vlm-messages vlm-chat-only" id="${this._id}-msgs">
     <div class="vlm-empty">Open a photo, then ask anything about it.</div>
 </div>
-<div class="vlm-chat-actions" id="${this._id}-chat-actions" style="display:none">
+<div class="vlm-chat-actions vlm-chat-only" id="${this._id}-chat-actions" style="display:none">
     <button class="vlm-action-btn" id="${this._id}-copy-chat">&#128203; Copy Chat</button>
     <button class="vlm-action-btn" id="${this._id}-export-log">&#128229; Export Log</button>
 </div>
@@ -1620,6 +1841,32 @@ class GalleryVLMOverlay {
         this._q('-gear').addEventListener('click',     () => this._openSettings());
         this._q('-font-dn').addEventListener('click',  () => this._changeFontSize(-1));
         this._q('-font-up').addEventListener('click',  () => this._changeFontSize(+1));
+        this._q('-crop-btn').addEventListener('click', () => {
+            if (!this._imageSrc) return;
+            new ImageCropModal({
+                imageSrc: this._imageSrc,
+                initialCrop: this._cropRect,
+                onApply: (croppedDataUrl, cropRect) => {
+                    this._croppedImageSrc = croppedDataUrl;
+                    this._cropRect = cropRect;
+                    this._updateCropUI();
+                    this._refreshSendBtn();
+                },
+                onReset: () => {
+                    this._croppedImageSrc = null;
+                    this._cropRect = null;
+                    this._updateCropUI();
+                    this._refreshSendBtn();
+                },
+            }).open();
+        });
+        this._q('-crop-clear').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._croppedImageSrc = null;
+            this._cropRect = null;
+            this._updateCropUI();
+            this._refreshSendBtn();
+        });
         this._q('-exif-toggle').addEventListener('click', () => {
             const btn    = this._q('-exif-toggle');
             const drawer = this._q('-exif-drawer');
@@ -1749,8 +1996,12 @@ class GalleryVLMOverlay {
     async _setPanelMode(mode) {
         if (mode !== 'search') this._cancelRecommendations();
         this._panel.dataset.vlmMode = mode;
-        this._q('-mode-chat').classList.toggle('vlm-active', mode === 'chat');
-        this._q('-mode-search').classList.toggle('vlm-active', mode === 'search');
+        const chatTab = this._q('-mode-chat');
+        const searchTab = this._q('-mode-search');
+        chatTab.classList.toggle('vlm-active', mode === 'chat');
+        chatTab.setAttribute('aria-selected', String(mode === 'chat'));
+        searchTab.classList.toggle('vlm-active', mode === 'search');
+        searchTab.setAttribute('aria-selected', String(mode === 'search'));
         if (mode === 'search') {
             await this._refreshSearchData();
             this._q('-search-input')?.focus();
@@ -2462,9 +2713,18 @@ class GalleryVLMOverlay {
         const thumbSel = doc.querySelector('#thumbnail-selector');
         if (thumbSel) {
             const thumbObs = new MutationObserver(() => this._tryExtractFromViewer());
-            thumbObs.observe(thumbSel, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            thumbObs.observe(thumbSel, { attributes: true, childList: true, subtree: true });
             this._iframeObservers.push(thumbObs);
         }
+
+        // Strategy 1c: document-wide click listener to capture 3D mesh & thumbnail clicks
+        const globalClickHandler = () => {
+            setTimeout(() => this._tryExtractFromViewer(), 50);
+            setTimeout(() => this._tryExtractFromViewer(), 200);
+            setTimeout(() => this._tryExtractFromViewer(), 500);
+        };
+        doc.addEventListener('click', globalClickHandler, true);
+        this._iframeObservers.push({ disconnect: () => doc.removeEventListener('click', globalClickHandler, true) });
 
         // Strategy 2: capture-phase click delegation on #gallery-2d
         const grid = doc.querySelector('#gallery-2d');
@@ -2573,6 +2833,8 @@ class GalleryVLMOverlay {
      * Called automatically by observers; also exposed for manual calls.
      */
     _tryExtractFromViewer() {
+        const baseUrl = this._iframeDoc?.location?.href || location.href;
+
         // Priority 1 — full-res img inside the viewer.
         // Skip if the container is explicitly hidden (e.g. after exiting magnify mode in 3D —
         // the gallery sets display:none but leaves the old <img> in the DOM).
@@ -2582,7 +2844,7 @@ class GalleryVLMOverlay {
             const img = imgCont.querySelector('img.active[src]:not([src=""])') ??
                         imgCont.querySelector('img[src]:not([src=""])');
             if (img?.src && !img.src.startsWith('data:,')) {
-                this._setImage(new URL(img.src, location.href).href,
+                this._setImage(new URL(img.src, baseUrl).href,
                                img.alt || img.src.split('/').pop().replace(/\.[^.]+$/, ''));
                 return;
             }
@@ -2596,7 +2858,7 @@ class GalleryVLMOverlay {
             const active = strip.querySelector('img.active, .thumb.active img, img[aria-selected="true"]');
             if (active?.src) {
                 const full = active.src.replace('/thumbs/', '/fulls/');
-                this._setImage(new URL(full, location.href).href,
+                this._setImage(new URL(full, baseUrl).href,
                                active.src.split('/').pop().replace(/\.[^.]+$/, ''));
                 return;
             }
@@ -2636,6 +2898,26 @@ class GalleryVLMOverlay {
         return (this._iframeDoc ?? document).querySelector(selector);
     }
 
+    _updateCropUI() {
+        const cropBtn   = this._q('-crop-btn');
+        const cropBadge = this._q('-crop-badge');
+        const cropThumb = this._q('-crop-thumb');
+
+        if (cropBtn) {
+            cropBtn.style.display = this._imageSrc ? '' : 'none';
+            cropBtn.classList.toggle('vlm-crop-active', !!this._croppedImageSrc);
+        }
+        if (cropBadge) {
+            if (this._croppedImageSrc) {
+                cropBadge.style.display = 'inline-flex';
+                if (cropThumb) cropThumb.src = this._croppedImageSrc;
+            } else {
+                cropBadge.style.display = 'none';
+                if (cropThumb) cropThumb.src = '';
+            }
+        }
+    }
+
     _setImage(src, name) {
         if (src === this._imageSrc) return;
 
@@ -2646,6 +2928,9 @@ class GalleryVLMOverlay {
 
         this._imageSrc  = src;
         this._imageName = name ?? 'photo';
+        this._croppedImageSrc  = null;
+        this._cropRect         = null;
+        this._updateCropUI();
         this._imageExif        = null;
         this._imageGps         = null;
         this._imageExifPromise = null;
@@ -2891,14 +3176,16 @@ class GalleryVLMOverlay {
         // the user types a question; guarantees metadata is available on first send)
         await this._imageExifPromise;
 
-        const imageSrc = await this._downsample(this._imageSrc);
-        let fullText   = '';
+        const targetSrc = this._croppedImageSrc || this._imageSrc;
+        const imageSrc  = await this._downsample(targetSrc);
+        let fullText    = '';
 
         // Build a metadata preamble injected at the start of every user prompt.
         // — Local mode: include full EXIF here (only injection point available).
         // — API mode:   EXIF is already in the system prompt (authoritative); user
         //               message carries only the filename as a lightweight anchor.
-        const metaLines = [`File: ${this._imageName ?? 'unknown'}`];
+        const cropNote  = this._croppedImageSrc ? ' (Cropped Region)' : '';
+        const metaLines = [`File: ${this._imageName ?? 'unknown'}${cropNote}`];
         if (this.manager._mode !== 'api' && this._imageExif) metaLines.push(this._imageExif);
         const metaBlock = `[Photo metadata]\n${metaLines.join('\n')}\n\n`;
 
