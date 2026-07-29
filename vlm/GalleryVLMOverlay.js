@@ -796,7 +796,7 @@ function injectCSS() {
 }
 
 /* ── Portfolio Search ─────────────────────────────────────────── */
-.vlm-mode-tabs { display:flex; gap:4px; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
+.vlm-mode-tabs { display:flex; flex-shrink:0; gap:4px; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
 .vlm-mode-tab, .vlm-search-scope { border:1px solid rgba(255,255,255,.12); background:transparent; color:#78909c; border-radius:6px; padding:4px 9px; cursor:pointer; font:inherit; }
 .vlm-mode-tab.vlm-active, .vlm-search-scope.vlm-active { color:#e0f7fa; border-color:rgba(79,195,247,.55); background:rgba(79,195,247,.12); }
 .vlm-search-view { display:none; min-height:0; flex:1; flex-direction:column; }
@@ -841,7 +841,8 @@ function injectCSS() {
         right: 0;
         top: auto;
         bottom: 0;
-        height: auto;
+        height: min(75vh, 620px);
+        height: min(75dvh, 620px);
         max-height: 75vh;
         max-height: 75dvh;  /* dynamic viewport height — handles toolbars + keyboard */
         padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -860,6 +861,10 @@ function injectCSS() {
         right: 20px !important;
         width: 52px;
         height: 52px;
+    }
+    .vlm-mode-tab {
+        flex: 1;
+        min-height: 36px;
     }
     /* Header is the drag handle — hint to users with cursor + tiny grab tab */
     .vlm-header { cursor: grab; touch-action: none; position: relative; }
@@ -2575,20 +2580,42 @@ class GalleryVLMOverlay {
         // iOS Safari sometimes suppresses the iframe load event or fires it too early.
         if (container) {
             let fallbackTimer = null;
+            let fallbackAttempts = 0;
+            const attachWhenReady = () => {
+                if (!container.classList.contains('active')) return;
+                let doc = null;
+                try { doc = this._iframeEl?.contentDocument; } catch (_) { /* cross-origin */ }
+                if (doc && doc.location.href !== 'about:blank') {
+                    this._onIframeLoad();
+                    return;
+                }
+                if (++fallbackAttempts < 20) {
+                    fallbackTimer = setTimeout(attachWhenReady, 250);
+                }
+            };
             const containerObs = new MutationObserver(() => {
                 clearTimeout(fallbackTimer);
                 if (container.classList.contains('active')) {
-                    // Container just slid open — ensure button appears even if
-                    // the load event never fires (iOS Safari edge case).
-                    fallbackTimer = setTimeout(() => {
-                        if (this._btn.style.display === 'none') this._onIframeLoad();
-                    }, 600);
+                    // Expose the control immediately. iOS Safari can suppress the
+                    // iframe load event or report about:blank while the slide-up
+                    // transition is already visible.
+                    if ((window.VLM_SETTINGS ?? {}).enabled !== false) {
+                        this._btn.style.display = '';
+                    }
+                    fallbackAttempts = 0;
+                    fallbackTimer = setTimeout(attachWhenReady, 100);
                 } else {
+                    fallbackAttempts = 0;
                     this._clearImage();
                 }
             });
             containerObs.observe(container, { attributes: true, attributeFilter: ['class'] });
-            this._observers.push(containerObs);
+            this._observers.push({
+                disconnect: () => {
+                    clearTimeout(fallbackTimer);
+                    containerObs.disconnect();
+                },
+            });
         }
     }
 
