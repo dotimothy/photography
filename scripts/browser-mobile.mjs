@@ -31,8 +31,8 @@ try {
         await page.waitForFunction(() => !cameraInspection && !cameraTravel);
         assert.equal(await page.evaluate(() => state.is3D), true);
         await page.locator('#mobile-collection-dial').selectOption('food');
-        await page.waitForFunction(() => lastCameraPhoto?.gallery === 'food' && !cameraPhotoBusy && !cameraTravel);
-        await page.locator('.mobile-step-back').click();
+        await page.waitForURL('**/portfolios/food/index.html?*');
+        await page.goBack({ waitUntil: 'domcontentloaded' });
         await page.waitForFunction(() => !cameraInspection && !cameraTravel);
         await page.locator('#btn-controls-toggle').click();
         await page.locator('#btn-home').click();

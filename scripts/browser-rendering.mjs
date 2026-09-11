@@ -36,6 +36,12 @@ try {
         await page.locator('#settings-performance-profile').selectOption('quality');
         assert.equal(await pointCount(page), 36000);
         assert.equal(await page.evaluate(() => asteroidSystem.userData.rocks.length), 128);
+        for (const [density, count] of [['low', 32], ['medium', 64], ['ultra', 256], ['high', 128]]) {
+            await page.locator('#render-asteroid-density').selectOption(density);
+            assert.equal(await page.evaluate(() => asteroidSystem.userData.rocks.length), count);
+            assert.equal(await pointCount(page), 36000, 'Asteroid density leaves star density unchanged');
+            assert.match(await page.locator('#rendering-status').textContent(), new RegExp(`${count} asteroids`));
+        }
         assert.ok(await page.evaluate(() => asteroidSystem.userData.rocks.every((rock) =>
             rock.position.length() - rock.size * rock.mesh.geometry.boundingSphere.radius > controls.maxDistance + 20)));
         const spinning = await page.evaluate(() => asteroidSystem.userData.rocks[0].rotation.x);
@@ -47,6 +53,9 @@ try {
         await page.locator('#settings-performance-profile').selectOption('performance');
         assert.equal(await pointCount(page), 16250);
         assert.equal(await page.evaluate(() => asteroidSystem.userData.rocks.length), 32);
+        await page.locator('#render-asteroid-density').selectOption('ultra');
+        assert.equal(await page.evaluate(() => asteroidSystem.userData.rocks.length), 64, 'Performance preset scales asteroid density');
+        await page.locator('#render-asteroid-density').selectOption('high');
         const still = await page.evaluate(() => asteroidSystem.userData.rocks[0].rotation.x);
         await page.waitForTimeout(150);
         assert.equal(await page.evaluate(() => asteroidSystem.userData.rocks[0].rotation.x), still);
@@ -73,7 +82,9 @@ try {
         const frozen = await pose();
         await page.waitForTimeout(150);
         assert.deepEqual(await pose(), frozen);
+        await page.locator('#render-asteroid-density').selectOption('medium');
         await page.locator('#render-asteroids').uncheck();
+        assert.ok(await page.locator('#render-asteroid-density').isDisabled());
         assert.equal(await page.evaluate(() => asteroidSystem.visible), false);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 
@@ -86,6 +97,9 @@ try {
             assert.equal(await page.locator(`#${id}`).isChecked(), false);
         assert.equal(await page.evaluate(() => asteroidSystem.visible), false);
         await page.locator('#render-asteroids').check();
+        assert.equal(await page.locator('#render-asteroid-density').inputValue(), 'medium', 'Density persists across reloads and field toggles');
+        assert.equal(await page.evaluate(() => asteroidSystem.userData.rocks.length), 64);
+        assert.equal(await page.locator('#render-asteroid-density').isDisabled(), false);
 
         // Rebuilding dense/sparse scenes must not accumulate GPU resources.
         const memory = await page.evaluate(() => {
@@ -93,6 +107,7 @@ try {
             return { ...renderer.info.memory };
         });
         for (const value of ['ultra', 'off', 'low', 'high']) await page.locator('#render-star-density').selectOption(value);
+        for (const value of ['ultra', 'low', 'high', 'medium']) await page.locator('#render-asteroid-density').selectOption(value);
         for (const profile of ['balanced', 'performance', 'quality'])
             await page.locator('#settings-performance-profile').selectOption(profile);
         assert.deepEqual(await page.evaluate(() => {
@@ -101,6 +116,8 @@ try {
         }), memory);
         await page.locator('#reset-rendering').click();
         assert.equal(await page.locator('#render-star-density').inputValue(), 'high');
+        assert.equal(await page.locator('#render-asteroid-density').inputValue(), 'high');
+        assert.equal(await page.evaluate(() => asteroidSystem.userData.rocks.length === renderedAsteroidCount()), true);
         assert.equal(await page.locator('#render-star-brightness').inputValue(), '100');
         assert.equal(await page.locator('#settings-performance-profile').inputValue(), 'auto');
         assert.equal(await page.locator('#render-atmosphere').isChecked(), true);

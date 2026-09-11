@@ -2441,11 +2441,27 @@ class GalleryVLMOverlay {
 
     /** Open the main settings modal, expand the Advanced/AI section, and scroll to VLM. */
     _openSettings() {
+        if (typeof window.openAISettings === 'function') {
+            this._closePanel(); window.openAISettings(); return;
+        }
+        try {
+            if (window.parent !== window && typeof window.parent.openAISettings === 'function') {
+                this._closePanel(); window.parent.openAISettings(); return;
+            }
+        } catch (_) { /* Standalone navigation also works for cross-origin embeds. */ }
         const settingsBtn = document.getElementById('btn-open-settings')
             ?? document.getElementById('settings-btn')
             ?? document.querySelector('.settings-toggle, [data-target="settings"]');
-        if (!settingsBtn) return;
+        if (!settingsBtn) {
+            const settingsURL = new URL('../index.html', import.meta.url);
+            settingsURL.searchParams.set('settings', 'ai');
+            settingsURL.searchParams.set('returnTo', location.pathname + location.search + location.hash);
+            settingsURL.searchParams.set('mode', new URLSearchParams(location.search).get('mode') === '2d' ? '2d' : '3d');
+            location.assign(settingsURL.href);
+            return;
+        }
         settingsBtn.click();
+        document.querySelector('.settings-tab[data-tab="ai"]')?.click();
         setTimeout(() => {
             // Expand the collapsible "Advanced / AI Backend" section if collapsed
             const advancedSection = document.getElementById('settings-advanced');

@@ -284,7 +284,9 @@ try {
         await stepBack(page);
         await pose(page);
         await activate(page,mobile,'collection');
-        assert.equal(await page.evaluate(()=>cameraCollection),0);
+        await settle(page);
+        assert.equal(await page.evaluate(()=>cameraDisplay),'galleries');
+        assert.equal(await page.evaluate(()=>cameraCollection),-1);
         await page.waitForTimeout(300);
         assert.ok(await page.evaluate(()=>Math.abs(cameraControls.get('collection').parts[0].pivot.rotation.y)>0.1));
         await activate(page,mobile,'settings');

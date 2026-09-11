@@ -112,7 +112,7 @@
             #010c16 100%
         );
         background-size: 400% 400%;
-        animation: aurora-base 22s ease infinite;
+        animation: aurora-base 7s ease infinite;
     }
 
     .aurora-layer {
@@ -131,7 +131,7 @@
             radial-gradient(ellipse 80% 40% at 30% 20%, rgba(0, 229, 255, 0.22), transparent 60%),
             radial-gradient(ellipse 60% 50% at 70% 65%, rgba(100, 0, 255, 0.16), transparent 55%),
             radial-gradient(ellipse 50% 30% at 55% 80%, rgba(0, 200, 120, 0.14), transparent 50%);
-        animation: aurora-glow-1 14s ease-in-out infinite;
+        animation: aurora-glow-1 4s ease-in-out infinite;
     }
 
     .aurora-layer-2 {
@@ -139,7 +139,7 @@
             radial-gradient(ellipse 70% 35% at 65% 15%, rgba(0, 255, 140, 0.18), transparent 55%),
             radial-gradient(ellipse 55% 45% at 20% 75%, rgba(60, 80, 255, 0.14), transparent 50%),
             radial-gradient(ellipse 40% 35% at 80% 50%, rgba(180, 0, 255, 0.12), transparent 45%);
-        animation: aurora-glow-2 19s ease-in-out infinite;
+        animation: aurora-glow-2 6s ease-in-out infinite;
     }
 
     #mode-2d::before {
@@ -1345,6 +1345,8 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     }
 
+    .close-iframe[hidden] { display: none; }
+
     .close-iframe:hover {
         background: rgba(255, 255, 255, 0.9);
         color: black;
@@ -1540,7 +1542,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">👤</div>
                         <h3>About</h3>
-                        <span>Meet the photographer</span>
+                        <span>Meet the Photographer</span>
                     </div>
                 </a>
                 <a href="./portfolios/astronomy/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/astronomy/index.html', true); return false;"
@@ -1548,7 +1550,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🌌</div>
                         <h3>Astronomy</h3>
-                        <span>Explore astronomy</span>
+                        <span>Explore Astronomy</span>
                     </div>
                 </a>
                 <a href="./portfolios/food/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;"
@@ -1556,7 +1558,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🍱</div>
                         <h3>Food</h3>
-                        <span>Explore food</span>
+                        <span>Explore Food</span>
                     </div>
                 </a>
                 <a href="./portfolios/landscape/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/landscape/index.html', true); return false;"
@@ -1564,7 +1566,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🏞️</div>
                         <h3>Landscape</h3>
-                        <span>Explore landscapes</span>
+                        <span>Explore Landscapes</span>
                     </div>
                 </a>
                 <a href="./portfolios/planes/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/planes/index.html', true); return false;"
@@ -1572,7 +1574,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">✈️</div>
                         <h3>Planes</h3>
-                        <span>Explore planes</span>
+                        <span>Explore Planes</span>
                     </div>
                 </a>
                 <a href="./portfolios/wildlife/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/wildlife/index.html', true); return false;"
@@ -1580,7 +1582,7 @@
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🐿️</div>
                         <h3>Wildlife</h3>
-                        <span>Explore wildlife</span>
+                        <span>Explore Wildlife</span>
                     </div>
                 </a>
             </div>
@@ -1623,7 +1625,7 @@
             <div class="controls-group" id="home-controls">
                 <label class="mobile-gallery-menu">Open Full Gallery
                     <select aria-label="Open Full Gallery" onchange="if (this.value) { handleNav('./portfolios/' + this.value + '/index.html', true); this.value = ''; }">
-                        <option value="">Choose a Gallery</option><option value="astronomy">Astronomy</option><option value="landscape">Landscape</option><option value="wildlife">Wildlife</option><option value="planes">Planes</option><option value="food">Food</option>
+                        <option value="">Choose a Gallery</option><option value="astronomy">🌌 Astronomy</option><option value="landscape">🏞️ Landscape</option><option value="wildlife">🐿️ Wildlife</option><option value="planes">✈️ Planes</option><option value="food">🍱 Food</option>
                     </select>
                 </label>
                 <button class="icon-btn interactive-element" id="btn-home" data-label="Browse Photos" aria-label="Browse Photos" title="Go to Home (2D)">
@@ -1738,7 +1740,7 @@
         <p class="mobile-scene-hint">Drag to rotate &middot; Tap the camera screen to look closer</p>
         <div class="mobile-camera-console">
             <label class="mobile-collection-dial" for="mobile-collection-dial"><span>COLLECTION</span><select id="mobile-collection-dial" onchange="discoverMobileCollection(this.value)">
-                <option value="all">All Photographs</option><option value="astronomy">Astronomy</option><option value="landscape">Landscape</option><option value="wildlife">Wildlife</option><option value="planes">Planes</option><option value="food">Food</option>
+                <option value="all">Discover</option><option value="astronomy">Astronomy</option><option value="landscape">Landscape</option><option value="wildlife">Wildlife</option><option value="planes">Planes</option><option value="food">Food</option>
             </select></label>
             <button type="button" class="mobile-shutter" onclick="runCameraAction('shutter')" aria-label="Shutter"><span class="shutter-disc" aria-hidden="true"></span><span class="shutter-label">Shutter</span></button>
         </div>
@@ -1751,7 +1753,7 @@
         </div>
     </section>
     <button type="button" class="mobile-step-back mobile-camera-exit" onclick="leaveCameraInspection(true)"><span aria-hidden="true">&#8592;</span> Exit Camera View</button>
-    <p id="camera-keyboard-help" class="camera-screen-reader">Interactive camera: V looks through the viewfinder, Enter or Space presses the shutter, left and right arrows browse photos, C changes collection, M or H returns to the camera home screen, L opens live space view, I inspects the photo when AI is enabled, S opens settings, Z cycles the lens from 18 to 300 millimeters, and Escape steps back. Tap the lens or top dial to zoom, scroll the mouse wheel over the lens or displays to zoom, use plus and minus for finer adjustments, drag a zoomed photo to pan, or use its overview map. Shift plus arrow keys pans; Home recenters. On mobile, pinch to zoom, double-tap to zoom in or reset, swipe an unzoomed photo to browse, and drag the live view to aim. Exit Camera View is always available at the top-left; Camera Menu is below the display.</p>
+    <p id="camera-keyboard-help" class="camera-screen-reader">Interactive camera: V looks through the viewfinder, Enter or Space presses the shutter, left and right arrows browse photos, C opens full galleries, M or H returns to the camera home screen, L opens live space view, I inspects the photo when AI is enabled, S opens settings, Z cycles the lens from 18 to 300 millimeters, and Escape steps back. Tap the lens or top dial to zoom, scroll the mouse wheel over the lens or displays to zoom, use plus and minus for finer adjustments, drag a zoomed photo to pan, or use its overview map. Shift plus arrow keys pans; Home recenters. On mobile, pinch to zoom, double-tap to zoom in or reset, swipe an unzoomed photo to browse, and drag the live view to aim. Exit Camera View is always available at the top-left; Camera Menu is below the display.</p>
     <p id="camera-action-status" class="camera-screen-reader" role="status"></p>
 
     <!-- SETTINGS MODAL -->
@@ -1819,6 +1821,15 @@
                         <span class="setting-label">Asteroid field</span>
                         <input type="checkbox" id="render-asteroids" data-render-setting="asteroids" checked>
                     </label>
+                    <div class="setting-row">
+                        <label class="setting-label" for="render-asteroid-density">Asteroid density</label>
+                        <select class="setting-select" id="render-asteroid-density" data-render-setting="asteroidDensity">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high" selected>High</option>
+                            <option value="ultra">Ultra</option>
+                        </select>
+                    </div>
                     <div class="setting-category">Motion</div>
                     <label class="setting-row" for="render-asteroid-motion">
                         <span class="setting-label">Asteroid drift &amp; rotation</span>
@@ -2040,10 +2051,11 @@
     <script>
         // --- GLOBAL STATE ---
         const renderingDefaults = Object.freeze({
-            density: 'high', brightness: 100, atmosphere: true, asteroids: true,
+            density: 'high', brightness: 100, atmosphere: true, asteroids: true, asteroidDensity: 'high',
             starMotion: true, asteroidMotion: true, cameraMotion: true
         });
         const starCounts = Object.freeze({ off: 0, low: 8000, medium: 18000, high: 36000, ultra: 65000 });
+        const asteroidCounts = Object.freeze({ low: 32, medium: 64, high: 128, ultra: 256 });
         const sceneMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
         const state = {
             is3D: true,
@@ -2142,6 +2154,7 @@
         let raycaster, mouse;
         const cameraControls = new Map();
         const cameraCollections = ['astronomy', 'food', 'landscape', 'planes', 'wildlife'];
+        const cameraCollectionEmojis = { astronomy: '🌌', food: '🍱', landscape: '🏞️', planes: '✈️', wildlife: '🐿️' };
         let cameraCollection = -1, cameraZoom = 18, hoveredCameraControl = null;
         const cameraLens = { focalLength: 18 };
         const cameraPan = { x: 0.5, y: 0.5 };
@@ -2217,6 +2230,17 @@
             // Apply initial mode
             switchMode(state.is3D);
             if (state.is3D && matchMedia('(max-width: 768px)').matches) showCameraPhoto(null, 'preview');
+            const settingsParams = new URLSearchParams(location.search);
+            if (settingsParams.get('settings') === 'ai') {
+                const returnTo = settingsParams.get('returnTo');
+                try {
+                    const target = new URL(returnTo, location.href);
+                    if (returnTo && target.origin === location.origin && target.pathname !== location.pathname) aiSettingsReturnURL = target.href;
+                } catch (_) { /* Invalid return destinations leave the visitor on this page. */ }
+                document.getElementById('space-intro').style.display = 'none';
+                els.welcome.classList.add('hidden'); state.hasExplored = true;
+                openAISettings();
+            }
         });
 
         // History navigation can revive the entire WebGL scene from the browser's
@@ -2251,6 +2275,7 @@
                 const saved = JSON.parse(localStorage.getItem('portfolioRendering') || '{}');
                 if (!saved || typeof saved !== 'object') return;
                 if (Object.hasOwn(starCounts, saved.density)) state.rendering.density = saved.density;
+                if (Object.hasOwn(asteroidCounts, saved.asteroidDensity)) state.rendering.asteroidDensity = saved.asteroidDensity;
                 if (typeof saved.brightness === 'number' && Number.isFinite(saved.brightness))
                     state.rendering.brightness = Math.round(Math.min(150, Math.max(50, saved.brightness)) / 5) * 5;
                 for (const key of ['atmosphere', 'asteroids', 'starMotion', 'asteroidMotion', 'cameraMotion'])
@@ -2266,6 +2291,11 @@
             return Math.round(starCounts[state.rendering.density] * (window.SitePerformance?.current?.starDensity ?? 1));
         }
 
+        function renderedAsteroidCount() {
+            const profile = window.SitePerformance?.current?.resolvedProfile;
+            return asteroidCounts[state.rendering.asteroidDensity] / (profile === 'performance' ? 4 : profile === 'balanced' ? 2 : 1);
+        }
+
         function syncRenderingSettings() {
             document.querySelectorAll('[data-render-setting]').forEach((input) => {
                 const value = state.rendering[input.dataset.renderSetting];
@@ -2274,12 +2304,14 @@
             });
             const brightness = document.getElementById('render-star-brightness');
             if (brightness) brightness.disabled = state.rendering.density === 'off';
+            const asteroidDensity = document.getElementById('render-asteroid-density');
+            if (asteroidDensity) asteroidDensity.disabled = !state.rendering.asteroids;
             const output = document.getElementById('render-brightness-value');
             if (output) output.value = `${state.rendering.brightness}%`;
             const status = document.getElementById('rendering-status');
             if (status) {
                 const profile = window.SitePerformance?.current;
-                let note = `${renderedStarCount().toLocaleString()} stars at the ${profile?.label || 'current'} preset. Higher density draws more stars.`;
+                let note = `${renderedStarCount().toLocaleString()} stars and ${state.rendering.asteroids ? renderedAsteroidCount() : 0} asteroids at the ${profile?.label || 'current'} preset. Higher density draws more objects.`;
                 if (sceneMotionPreference.matches) note += ' Motion is paused by your reduced-motion preference.';
                 else if (profile?.animations === false) note += ' Motion is paused by the Performance preset.';
                 if (!state.is3D) note += ' Switch on 3D Immersive Mode to see the scene.';
@@ -2314,6 +2346,7 @@
                     state.rendering[key] = input.type === 'checkbox' ? input.checked :
                         input.type === 'range' ? Number(input.value) : input.value;
                     if (key === 'density' && scene && renderer) createStarfield();
+                    else if (key === 'asteroidDensity' && scene && renderer) createAsteroidField();
                     else applySceneRenderingSettings();
                     saveRenderingPreferences();
                     syncRenderingSettings();
@@ -2325,7 +2358,7 @@
                 if (window.SitePerformance) {
                     window.SitePerformance.setProfile('auto');
                     window.SitePerformance.setFpsVisible(true);
-                } else if (scene && renderer) createStarfield();
+                } else if (scene && renderer) { createStarfield(); createAsteroidField(); }
                 applySceneRenderingSettings();
                 syncRenderingSettings();
             });
@@ -2686,6 +2719,12 @@
             });
         }
 
+        let aiSettingsReturnURL = null;
+        function openAISettings() {
+            document.getElementById('btn-open-settings').click();
+            activateSettingsTab('ai');
+        }
+
         function setupEventListeners() {
             // Settings Open/Close
             document.getElementById('btn-open-settings').addEventListener('click', () => {
@@ -2719,6 +2758,7 @@
                 _mfInput.focus();
             });
             document.getElementById('btn-close-settings').addEventListener('click', () => {
+                if (aiSettingsReturnURL) { location.replace(aiSettingsReturnURL); return; }
                 els.settingsOverlay.classList.remove('visible');
                 (matchMedia('(max-width: 768px)').matches ? document.getElementById('btn-controls-toggle') : document.getElementById('btn-open-settings')).focus();
             });
@@ -2759,6 +2799,14 @@
             });
 
             // Close Iframe Logic
+            els.iframe.addEventListener('load', () => {
+                const closeButton = document.getElementById('close-iframe');
+                try {
+                    closeButton.hidden = Boolean(els.iframe.contentDocument?.getElementById('portfolio-return'));
+                } catch {
+                    closeButton.hidden = false;
+                }
+            });
             document.getElementById('close-iframe').addEventListener('click', () => {
                 closeiFrame();
             });
@@ -3267,8 +3315,7 @@
                 }
                 // Iframe overlay's settings button forwards here
                 if (event.data && event.data.type === 'vlm-open-settings') {
-                    document.getElementById('btn-open-settings')?.click();
-                    activateSettingsTab('ai');
+                    openAISettings();
                 }
             });
 
@@ -3327,7 +3374,8 @@
                 document.getElementById('mobile-collection-dial').value = cameraCollections[cameraCollection] || 'all';
                 return;
             }
-            selectCameraCollection(cameraCollections.indexOf(name));
+            if (name === 'all') selectCameraCollection(-1);
+            else openCameraGallery(name);
         }
 
         function switchMode(is3D) {
@@ -3743,8 +3791,8 @@
                 vertexColors: true, roughness: 1, metalness: 0.04,
                 bumpMap: grain, bumpScale: 0.13, flatShading: true
             });
-            const profile = window.SitePerformance?.current?.resolvedProfile;
-            const count = profile === 'performance' ? 32 : profile === 'balanced' ? 64 : 128;
+            const baseCount = asteroidCounts[state.rendering.asteroidDensity];
+            const count = renderedAsteroidCount();
             const variants = [];
             const direction = new THREE.Vector3();
             for (let variant = 0; variant < 4; variant++) {
@@ -3780,8 +3828,8 @@
             const transform = new THREE.Object3D();
             // A hollow shell outside the entire camera orbit keeps rocks behind the model
             // and its live screen, with real parallax when the visitor rotates the camera.
-            for (let i = 0; i < 128; i++) {
-                const y = 1 - (i + 0.5) / 128 * 2;
+            for (let i = 0; i < baseCount; i++) {
+                const y = 1 - (i + 0.5) / baseCount * 2;
                 const azimuth = i * Math.PI * (3 - Math.sqrt(5)) + 0.7;
                 const radial = Math.sqrt(1 - y * y);
                 const distance = 180 + random() * 160;
@@ -3789,7 +3837,7 @@
                 const position = new THREE.Vector3(Math.cos(azimuth) * radial, y, Math.sin(azimuth) * radial).multiplyScalar(distance);
                 const rotation = new THREE.Euler(random() * 6, random() * 6, random() * 6);
                 const spin = new THREE.Vector3(0.1 + random() * 0.1, (random() - 0.5) * 0.24, 0.035);
-                if (i % (128 / count) !== 0) continue;
+                if (i % (baseCount / count) !== 0) continue;
                 const index = rocks.length;
                 const mesh = variants[index % 4];
                 const slot = Math.floor(index / 4);
@@ -4256,15 +4304,16 @@
             // UPDATED BUTTONS
             drawUIBtn("◉ Discover", x, y, btnW, btnH, () => selectCameraCollection(-1));
             y += gap;
-            drawUIBtn("🌌 Astronomy", x, y, btnW, btnH, () => selectCameraCollection(0));
+            drawUIBtn("🌌 Astronomy", x, y, btnW, btnH, () => openCameraGallery('astronomy'));
             y += gap;
-            drawUIBtn("🍱 Food", x, y, btnW, btnH, () => selectCameraCollection(1));
+            drawUIBtn("🍱 Food", x, y, btnW, btnH, () => openCameraGallery('food'));
             y += gap;
-            drawUIBtn("🏞️ Landscape", x, y, btnW, btnH, () => selectCameraCollection(2));
+            drawUIBtn("🏞️ Landscape", x, y, btnW, btnH, () => openCameraGallery('landscape'));
             y += gap;
-            drawUIBtn("✈️ Planes", x, y, btnW, btnH, () => selectCameraCollection(3));
+            drawUIBtn("✈️ Planes", x, y, btnW, btnH, () => openCameraGallery('planes'));
             y += gap;
-            drawUIBtn("🐿️ Wildlife", x, y, btnW, btnH, () => selectCameraCollection(4));
+            drawUIBtn("🐿️ Wildlife", x, y, btnW, btnH, () => openCameraGallery('wildlife'));
+            cameraScreenButton(uiCtx, uiClickZones, 'FULL GALLERIES', 55, 1120, 425, 205, () => showCameraGalleries());
 
             uiCtx.fillStyle = '#8dd2eb';
             uiCtx.font = cameraFont(30);
@@ -4350,11 +4399,25 @@
         }
 
         function selectCameraCollection(index) {
+            if (index >= 0) { openCameraGallery(cameraCollections[index]); return; }
             cancelCameraInspectionAI(); cameraSource = 'portfolio'; cameraLiveView = false;
             cameraCollection = index;
             cameraDisplay = 'photo';
             if (!cameraInspection) focusCameraDisplay('screen');
             sfx.click(); showCameraPhoto();
+        }
+
+        function showCameraGalleries() {
+            cameraPhotoRequest++; cameraPhotoBusy = false;
+            cancelCameraInspectionAI(); cameraLiveView = false; cameraMetadataVisible = false;
+            cameraDisplay = 'galleries';
+            focusCameraDisplay('screen', cameraInspection === 'screen'); updateUI();
+        }
+
+        function openCameraGallery(gallery) {
+            if (!cameraCollections.includes(gallery) || cameraPhotoBusy || cameraTravel) return;
+            cancelCameraInspectionAI(); cameraLiveView = false; updateUI();
+            handleNav(`./portfolios/${gallery}/index.html`, true);
         }
 
         function cameraText(ctx, text, x, y, width) {
@@ -4750,7 +4813,7 @@
             const headerTop = headerY - 57;
             cameraScreenButton(ctx, zones, cameraSource === 'space' ? 'SPACE / LIVE' : 'PORTFOLIO', finder ? 105 : 45, headerTop, finder ? 430 : 490, 88,
                 () => setCameraSource(cameraSource === 'space' ? 'portfolio' : 'space'));
-            if (state.vlmEnabled && lastCameraPhoto && !cameraLiveView && cameraDisplay !== 'settings')
+            if (state.vlmEnabled && lastCameraPhoto && !cameraLiveView && !['settings', 'galleries'].includes(cameraDisplay))
                 cameraScreenButton(ctx, zones, cameraAI.visible ? 'CLOSE AI' : 'AI INSPECT', 965, headerTop, finder ? 430 : 490, 88, () => inspectCameraPhoto());
             else if (cameraLiveView && cameraCaptures.length)
                 cameraScreenButton(ctx, zones, `REVIEW / ${cameraCaptures.length}`, 965, headerTop, finder ? 430 : 490, 88, () => showCameraPhoto(cameraCaptures.at(-1), 'history'));
@@ -4758,17 +4821,19 @@
             ctx.fillStyle = '#d8eaf0'; ctx.font = cameraFont(36, true); ctx.textAlign = 'center';
             cameraBoxText(ctx, `${Math.round(cameraLens.focalLength)} mm`, { x: 650, y: headerTop, w: 200, h: 88 }, { size: 36, numeric: true, align: 'center' });
             ctx.textAlign = 'left';
-            if (cameraDisplay === 'settings' && !finder) {
+            if (cameraDisplay === 'galleries') {
+                cameraCollections.forEach((name, i) => cameraScreenButton(ctx, zones,
+                    `${cameraCollectionEmojis[name]} ${name.toUpperCase()} / FULL GALLERY`, 90, 200 + i * 195, 1320, 160, () => openCameraGallery(name)));
+            } else if (cameraDisplay === 'settings' && !finder) {
                 const choices = [
                     [`SOURCE / ${cameraSource === 'space' ? 'SPACE' : 'PORTFOLIO'}`, () => setCameraSource(cameraSource === 'space' ? 'portfolio' : 'space')],
-                    [`COLLECTION / ${gallery}`, () => runCameraAction('collection')],
+                    ['FULL GALLERIES', () => showCameraGalleries()],
                     [`STAR DRIFT / ${state.rendering.starMotion ? 'ON' : 'OFF'}`, () => runCameraAction('custom')],
                     [`ASTEROIDS / ${state.rendering.asteroids ? 'ON' : 'OFF'}`, () => {
                         state.rendering.asteroids = !state.rendering.asteroids;
                         applySceneRenderingSettings(); saveRenderingPreferences(); syncRenderingSettings(); updateUI();
                     }],
-                    ['BROWSE PHOTOGRAPHS', () => setCameraSource('portfolio')],
-                    ['COLLECTION INDEX', () => cameraHome()],
+                    ['DISCOVER', () => selectCameraCollection(-1)],
                     ['ABOUT THEDOSHOOTS', () => handleNav('about.html', true)]
                 ];
                 choices.forEach(([label, action], i) => cameraScreenButton(ctx, zones, label, 90, 170 + i * 150, 1320, 125, action));
@@ -4841,9 +4906,11 @@
                     ctx.fillStyle = `rgba(255, 255, 255, ${cameraFlashAmount * 0.85})`;
                     ctx.fillRect(area.x, area.y, area.w, area.h);
                 }
+                const fullGallery = !isLive && !cameraPhotoBusy && cameraCollections.includes(lastCameraPhoto?.gallery) ? lastCameraPhoto.gallery : null;
                 ctx.fillStyle = '#aec4ce'; ctx.font = cameraFont(30);
                 cameraBoxText(ctx, cameraMessage || (lastCameraPhoto ? `${lastCameraPhoto.gallery.toUpperCase()} / FRAME ${String(cameraHistoryIndex + 1).padStart(3, '0')}` : 'V: VIEWFINDER / ENTER: SHUTTER'),
-                    { x: 45, y: touchDisplay ? 1120 : 1240, w: 1410, h: 90 }, { size: 30 });
+                    { x: !touchDisplay && fullGallery ? 600 : 45, y: touchDisplay ? 1120 : 1240, w: !touchDisplay && fullGallery ? 855 : 1410, h: 90 }, { size: 30 });
+                if (!touchDisplay && fullGallery) cameraScreenButton(ctx, zones, 'OPEN FULL GALLERY', 55, 1240, 510, 90, () => openCameraGallery(fullGallery));
                 if (touchDisplay && !cameraAI.visible) {
                     ctx.fillStyle = '#03080bcc';
                     ctx.fillRect(55, 900, 230, 205); ctx.fillRect(1215, 900, 230, 205);
@@ -4856,7 +4923,7 @@
                 if (!touchDisplay) cameraScreenButton(ctx, zones, savedSpace ? 'SAVE PHOTO' : 'PREVIOUS', 55, 1350, 230, 105, () => savedSpace ? saveCameraCapture() : browseCameraPhoto(-1));
                 cameraScreenButton(ctx, zones, cameraPhotoBusy ? 'FOCUSING' : isLive ? 'CAPTURE' : cameraSource === 'space' ? 'CAPTURE AGAIN' : 'NEXT SHOT', touchDisplay ? 55 : 315, touchDisplay ? 1250 : 1350, touchDisplay ? 425 : 250, touchDisplay ? 205 : 105,
                     () => isLive ? runCameraAction('shutter') : cameraSource === 'space' ? setCameraSource('space') : showCameraPhoto());
-                if (!cameraAI.visible) cameraScreenButton(ctx, zones, isLive ? 'AIM / RESET' : cameraMetadataVisible ? 'HIDE INFO' : 'METADATA', touchDisplay ? 350 : 595, touchDisplay ? 900 : 1350, touchDisplay ? (savedSpace ? 370 : 800) : 250, touchDisplay ? 205 : 105, () => {
+                if (!cameraAI.visible) cameraScreenButton(ctx, zones, isLive ? 'AIM / RESET' : cameraMetadataVisible ? 'HIDE INFO' : 'METADATA', touchDisplay ? 350 : 595, touchDisplay ? 900 : 1350, touchDisplay ? (savedSpace || fullGallery ? 370 : 800) : 250, touchDisplay ? 205 : 105, () => {
                     if (isLive) { cameraAim.yaw = cameraAim.pitch = 0; return; }
                     cameraMetadataVisible = !cameraMetadataVisible; updateUI();
                     document.getElementById('camera-action-status').textContent = cameraMetadataVisible
@@ -4864,6 +4931,8 @@
                 });
                 if (touchDisplay && savedSpace && !cameraAI.visible)
                     cameraScreenButton(ctx, zones, 'SAVE PHOTO', 770, 900, 380, 205, () => saveCameraCapture());
+                if (touchDisplay && fullGallery && !cameraAI.visible)
+                    cameraScreenButton(ctx, zones, 'FULL GALLERY', 770, 900, 380, 205, () => openCameraGallery(fullGallery));
                 if (cameraAI.visible) {
                     drawCameraAI(ctx, area, zones, touchDisplay);
                     if (savedSpace) cameraScreenButton(ctx, zones, 'FULL SCREEN', 55, touchDisplay ? 900 : 1130, 230, touchDisplay ? 205 : 100, () => openCameraCapture());
@@ -5220,9 +5289,7 @@
                 focusCameraDisplay('screen');
                 if (!lastCameraPhoto) showCameraPhoto(); else updateUI();
             } else if (id === 'collection') {
-                cancelCameraInspectionAI(); cameraSource = 'portfolio'; cameraLiveView = false;
-                sfx.click(); cameraCollection = (cameraCollection + 2) % (cameraCollections.length + 1) - 1;
-                cameraAnnouncement(cameraCollection < 0 ? 'ALL COLLECTIONS' : `${cameraCollections[cameraCollection].toUpperCase()} / NEXT SHOT TO BROWSE`);
+                sfx.click(); showCameraGalleries();
             } else if (id === 'zoom') {
                 sfx.click();
                 setCameraLensZoom([18, 24, 35, 50, 70, 100, 135, 200, 300].find(value => value > cameraZoom) || 18);

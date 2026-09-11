@@ -890,13 +890,14 @@
                     <svg class="mode-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
                     <span class="mode-label">3D View</span>
                 </button>
+                <button type="button" id="about-inspector" title="Ask AI about the current photo">AI Inspector</button>
                 <div class="about-rotate-controls" id="about-rotate-controls" hidden>
                     <button type="button" id="about-previous" aria-label="Previous About section">&#8592;<span class="about-touch-label">Previous</span></button>
                     <span class="about-rotate-status" id="about-rotate-status" role="status" aria-live="polite"></span>
                     <select class="about-section-picker" id="about-section-picker" aria-label="Jump to About section"></select>
                     <button type="button" id="about-next" aria-label="Next About section">&#8594;<span class="about-touch-label">Next</span></button>
                 </div>
-                <p id="about-3d-help" hidden>Left/Right or swipe: navigate. Home/End: first/last. 2/3: view. Esc: exit. Scroll within each section.</p>
+                <p id="about-3d-help" hidden>Left/Right or Swipe: Navigate. Home/End: First/Last. 2/3: View. Esc: Exit. Scroll Within Each Section.</p>
                 <p class="about-touch-hint">Swipe to explore. Scroll to read.</p>
             </div>
 
@@ -1379,6 +1380,35 @@
             const initialMode = new URLSearchParams(window.location.search).get('mode');
             if (initialMode?.toLowerCase() === '3d') toggle.click();
         })();
+    </script>
+    <script type="module">
+        const inspectorButton = document.getElementById('about-inspector');
+        inspectorButton.addEventListener('click', async () => {
+            inspectorButton.disabled = true;
+            try {
+                const photo = document.querySelector('.lightbox.active #lightbox-img')
+                    || document.querySelector('.about-3d > .about-plane:not([aria-hidden]) img')
+                    || document.querySelector('.profile-img');
+                const image = photo ? { src: photo.currentSrc || photo.src || photo.dataset.src, alt: photo.alt } : null;
+                let parentOverlay;
+                try {
+                    if (window.parent !== window) parentOverlay = window.parent[Symbol.for('thedoshoots.galleryVLMOverlays')]?.[0];
+                } catch (_) { /* A standalone inspector also works in other embeds. */ }
+                if (parentOverlay) {
+                    if (image?.src) parentOverlay._setImage(image.src, image.alt);
+                    if (!parentOverlay._panel.classList.contains('vlm-open')) parentOverlay._togglePanel();
+                } else {
+                    const { openInspector } = await import('./assets/js/photo-tools.js');
+                    await openInspector(document.body, image);
+                }
+                inspectorButton.textContent = 'AI Inspector';
+            } catch (error) {
+                inspectorButton.textContent = 'Retry AI Inspector';
+                console.error('Could not open About inspector', error);
+            } finally {
+                inspectorButton.disabled = false;
+            }
+        });
     </script>
     <script src="./assets/js/live-fps.js"></script>
     <script>

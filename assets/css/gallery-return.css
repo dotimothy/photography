@@ -56,7 +56,11 @@
     #controls-container.expanded,
     #viewer-controls-container.expanded { z-index: 12001; }
 }
-body:has(#portfolio-return) #fps-counter { display: none !important; }
+/* Keep the gallery's FPS readout below the persistent return control. */
+body:has(#portfolio-return) #fps-counter {
+    top: calc(max(15px, env(safe-area-inset-top)) + 56px) !important;
+    left: max(15px, env(safe-area-inset-left)) !important;
+}
 #portfolio-inspector {
     position: fixed; right: max(16px, env(safe-area-inset-right));
     bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 4501;
