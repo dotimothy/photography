@@ -40,3 +40,8 @@ test('mobile mode keeps tabs visible and exposes the toggle before iframe readin
     );
     assert.match(overlaySource, /fallbackAttempts < 20/);
 });
+
+test('vlm overlay specifies Inter font and imports it', () => {
+    assert.match(overlaySource, /fonts\.googleapis\.com\/css2\?family=Inter/);
+    assert.match(overlaySource, /font-family:\s*'Inter'/);
+});

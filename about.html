@@ -119,7 +119,7 @@
             filter: blur(34px);
             border-radius: 0 0 48% 52%;
             opacity: 0.86;
-            animation: auroraSweep 13s ease-in-out infinite alternate;
+            animation: auroraSweep 4s ease-in-out infinite alternate;
         }
 
         .bg-aurora::after {
@@ -134,7 +134,7 @@
             filter: blur(45px);
             border-radius: 0 0 55% 45%;
             opacity: 0.65;
-            animation: auroraFold 17s ease-in-out infinite alternate-reverse;
+            animation: auroraFold 5s ease-in-out infinite alternate-reverse;
         }
 
         @keyframes auroraSweep {
@@ -782,6 +782,99 @@
                 transition-duration: 0.01ms !important;
             }
         }
+
+        /* Layout refresh: retain the original Roboto, cyan, glass, and aurora theme. */
+        .container { max-width: 1120px; }
+        .about-intro { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: 28px 40px; text-align: left; align-items: center; padding: 44px 12px 0; margin-bottom: 36px; }
+        .about-intro .profile-img { width: 176px; height: 176px; margin: 0; }
+        .intro-copy { min-width: 0; }
+        .intro-name { margin: 0 0 10px; color: #d0e9ee; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+        .about-intro h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.1; }
+        .about-intro .subtitle { margin: 12px 0 20px; line-height: 1.8; }
+        .about-intro .social-row { justify-content: flex-start; flex-wrap: wrap; gap: 10px; }
+        .about-intro .social-btn { width: 44px; height: 44px; }
+        .social-btn:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 4px; }
+        #my-story, #my-perspective, #my-gear { scroll-margin-top: 24px; }
+        .story-feature { margin: 0 0 44px; }
+        .story-copy { padding: clamp(28px, 4vw, 48px); }
+        .story-copy p { line-height: 1.85; }
+        .info-section { margin-bottom: 44px; }
+        .section-heading { padding: 18px 24px; font-size: .85rem; }
+        .info-grid { gap: 20px; }
+        .info-grid .card { height: auto; }
+        .card-content { padding: 22px; }
+        .card p { line-height: 1.8; }
+        .gear-bag-body { gap: 24px; padding: 28px; }
+        .gear-category-label { text-align: left; padding-bottom: 12px; margin-bottom: 16px; }
+        .gear-list li { min-height: 46px; line-height: 1.5; }
+        footer { padding: 12px 8px 24px; line-height: 2; }
+        @media (max-width: 720px) {
+            .about-intro { grid-template-columns: 1fr; justify-items: center; gap: 18px; padding: 48px 0 0; margin-bottom: 24px; text-align: center; }
+            .about-intro .profile-img { width: 132px; height: 132px; }
+            .about-intro .social-row { justify-content: center; gap: 8px; }
+            .about-intro .subtitle { font-size: 10px; letter-spacing: 1.5px; }
+            .story-copy { padding: 28px 24px; }
+            .story-feature, .info-section { margin-bottom: 28px; }
+            .info-grid, .gear-bag-body { padding: 16px; gap: 18px; }
+            .section-heading { padding: 16px 18px; }
+        }
+
+        .about-view-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 20px; background: var(--glass-bg); border-inline: 1px solid var(--glass-border); }
+        .about-view-controls button { min-height: 44px; padding: 8px 16px; border: 1px solid rgba(0,229,255,.3); border-radius: 8px; background: rgba(0,229,255,.07); color: #e0f7fa; font: 700 13px 'Roboto', sans-serif; cursor: pointer; }
+        .about-view-controls button:hover, .about-view-controls button[aria-pressed="true"] { background: rgba(0,229,255,.2); border-color: var(--accent-cyan); }
+        .about-view-controls button:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+        .about-rotate-controls { display: flex; gap: 8px; align-items: center; }
+        .about-rotate-controls[hidden] { display: none; }
+        .about-rotate-status { color: #b0bec5; font-size: 12px; }
+        body.about-3d-active { overflow: hidden; }
+        .about-view-controls { align-self: center; border: 1px solid var(--glass-border); border-radius: 12px; margin-top: 36px; max-width: 100%; }
+        .about-view-controls p { margin: 0; color: #b0bec5; font-size: 12px; }
+        body:not(.about-3d-active) .about-view-controls { padding: 0; background: none; border: 0; }
+        #about-3d-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 10px 18px; border: 1px solid rgba(0,229,255,.4); border-radius: 999px; background: linear-gradient(135deg, rgba(0,229,255,.12), rgba(12,18,28,.85)); color: #e0f7fa; letter-spacing: .4px; box-shadow: inset 0 1px 0 #ffffff12, 0 4px 18px #0004; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+        #about-3d-toggle svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--accent-cyan); }
+        #about-3d-toggle:hover { border-color: var(--accent-cyan); background: rgba(0,229,255,.18); box-shadow: 0 0 18px rgba(0,229,255,.18), inset 0 1px 0 #ffffff20; }
+        #about-3d-toggle[aria-pressed="true"] { border-color: var(--accent-cyan); background: rgba(0,229,255,.15); }
+        #about-3d-toggle .mode-grid, #about-3d-toggle[aria-pressed="true"] .mode-cube { display: none; }
+        #about-3d-toggle[aria-pressed="true"] .mode-grid { display: block; }
+        .about-3d-active .about-view-controls { position: fixed; top: 16px; left: 80px; right: 16px; margin: 0; z-index: 100; justify-content: center; background: rgba(8,18,24,.95); }
+        .container.about-3d { position: fixed; inset: 100px 0 64px; width: 100%; max-width: none; perspective: 1600px; overflow: hidden; animation: none; touch-action: pan-y; }
+        .container.about-3d > .about-plane { position: absolute; top: 0; left: 50%; width: min(78%, 1040px); height: 100%; max-height: 100%; margin: 0; padding: 28px; overflow: auto; overscroll-behavior: contain; border: 1px solid rgba(0,229,255,.3); border-radius: 20px; background: rgba(8,16,21,.97); box-shadow: 0 20px 60px #0008; transform: translateX(calc(-50% + var(--card-slot) * 105%)) translateZ(calc(var(--card-distance) * -380px)) rotateY(calc(var(--card-slot) * -24deg)); opacity: 1; transition: transform .45s ease, filter .45s ease; filter: brightness(var(--card-brightness)); z-index: var(--card-layer); backface-visibility: hidden; }
+        .container.about-3d > .about-plane[aria-hidden="true"] { pointer-events: none; }
+        .container.about-3d > .about-intro { align-content: center; }
+        .container.about-3d .scroll-reveal { opacity: 1; }
+        .container.about-3d > .story-feature { min-height: 0; }
+        .container.about-3d > .story-feature .story-image-wrap { min-height: 300px; }
+        .container.about-3d > footer { display: none; }
+        .container:not(.about-3d) > .about-plane { transition: opacity .8s ease; }
+        .about-3d:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -3px; }
+        @media (max-width: 600px) {
+            .about-view-controls { padding: 10px; }
+            .about-3d-active .about-view-controls { left: 64px; right: 8px; top: 8px; gap: 6px; }
+            .about-view-controls p { flex-basis: 100%; text-align: center; font-size: 10px; line-height: 1.4; }
+            .about-rotate-controls { gap: 4px; }
+            .about-view-controls button { padding: 8px 10px; }
+            .container.about-3d { top: 176px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); perspective: 1000px; }
+            .container.about-3d > .about-plane { width: 90%; padding: 16px; border-radius: 16px; }
+            .container.about-3d > .about-intro { align-content: start; }
+            .container.about-3d > .story-feature { display: block; }
+            .container.about-3d > .story-feature .story-image-wrap { height: 280px; min-height: 0; }
+            .container.about-3d .story-copy { padding: 24px 8px; }
+            .container.about-3d .info-grid, .container.about-3d .gear-bag-body { padding: 12px; }
+        }
+        @media (prefers-reduced-motion: reduce) { .container.about-3d > .about-plane { transition: none; } }
+        .about-section-picker, .about-touch-hint, .about-touch-label { display: none; }
+        @media (max-width: 768px), (pointer: coarse) {
+            .about-3d-active .about-view-controls { top: 8px; left: 64px; right: 8px; padding: 8px; gap: 6px; }
+            .about-3d-active #about-3d-help { display: none; }
+            .about-3d-active .about-touch-hint { display: block; font-size: 11px; }
+            .about-3d-active .about-rotate-controls { position: fixed; left: 12px; right: 12px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 64px minmax(0, 1fr) 64px; gap: 8px; padding: 10px; border: 1px solid rgba(0,229,255,.3); border-radius: 16px; background: rgba(8,18,24,.97); box-shadow: 0 8px 24px #0008; }
+            .about-3d-active .about-rotate-status { display: none; }
+            .about-3d-active .about-section-picker { display: block; min-width: 0; width: 100%; min-height: 52px; padding: 8px; color: #e0f7fa; border: 1px solid rgba(0,229,255,.3); border-radius: 8px; background: #10242c; font: 13px 'Roboto', sans-serif; }
+            .about-section-picker:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+            .about-rotate-controls button { min-height: 52px; padding: 6px; touch-action: manipulation; }
+            .about-touch-label { display: block; font-size: 10px; margin-top: 3px; }
+            .container.about-3d { top: 104px; bottom: calc(148px + env(safe-area-inset-bottom, 0px)); }
+        }
     </style>
 </head>
 
@@ -791,14 +884,32 @@
     <div class="bg-layer bg-stars"></div>
     <div class="bg-layer bg-aurora"></div>
 
-    <div class="container">
+            <div class="about-view-controls">
+                <button type="button" id="about-3d-toggle" aria-pressed="false" aria-controls="about-page" title="Explore the About page in 3D">
+                    <svg class="mode-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></svg>
+                    <svg class="mode-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                    <span class="mode-label">3D View</span>
+                </button>
+                <div class="about-rotate-controls" id="about-rotate-controls" hidden>
+                    <button type="button" id="about-previous" aria-label="Previous About section">&#8592;<span class="about-touch-label">Previous</span></button>
+                    <span class="about-rotate-status" id="about-rotate-status" role="status" aria-live="polite"></span>
+                    <select class="about-section-picker" id="about-section-picker" aria-label="Jump to About section"></select>
+                    <button type="button" id="about-next" aria-label="Next About section">&#8594;<span class="about-touch-label">Next</span></button>
+                </div>
+                <p id="about-3d-help" hidden>Left/Right or swipe: navigate. Home/End: first/last. 2/3: view. Esc: exit. Scroll within each section.</p>
+                <p class="about-touch-hint">Swipe to explore. Scroll to read.</p>
+            </div>
 
-        <header>
+    <div class="container" id="about-page">
+
+        <header class="about-intro">
             <img src="./assets/tim.jpg" alt="Timothy Do" class="profile-img" width="140" height="140" loading="eager">
-            <h1>TheDoShoots</h1>
+            <div class="intro-copy">
+                <p class="intro-name">Timothy Do / About me</p>
+                <h1>TheDoShoots</h1>
             <div class="subtitle">Photographer • Engineer • Explorer</div>
 
-            <nav class="social-row">
+            <nav class="social-row" aria-label="Social profiles">
                 <!-- Inline SVGs for Maximum Performance (No external FontAwesome req) -->
                 <a href="https://instagram.com/thedoshoots" target="_blank" class="social-btn" aria-label="Instagram">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
@@ -849,10 +960,11 @@
                     </svg>
                 </a>
             </nav>
+            </div>
         </header>
 
         <!-- FEATURED STORY -->
-        <section class="story-feature scroll-reveal" aria-labelledby="story-title">
+        <section id="my-story" class="story-feature scroll-reveal" aria-labelledby="story-title">
             <div class="story-image-wrap">
                 <img src="./assets/photographer.jpg" alt="Timothy Do looking through his camera beside a lake"
                     class="story-image" width="1600" height="1600" loading="eager">
@@ -869,7 +981,7 @@
         </section>
 
         <!-- GEAR BAG -->
-        <section class="info-section gear-bag scroll-reveal" aria-labelledby="gear-heading">
+        <section id="my-gear" class="info-section gear-bag scroll-reveal" aria-labelledby="gear-heading">
             <div class="section-heading" id="gear-heading">
                 <svg class="icon" viewBox="0 0 512 512">
                     <path
@@ -980,7 +1092,7 @@
         </section>
 
         <!-- INFO GRID -->
-        <section class="info-section about-section" aria-labelledby="about-heading">
+        <section id="my-perspective" class="info-section about-section" aria-labelledby="about-heading">
             <div class="section-heading scroll-reveal" id="about-heading">
                 <svg class="icon" viewBox="0 0 448 512">
                     <path
@@ -988,7 +1100,7 @@
                 </svg>
                 About Me
             </div>
-            <main class="info-grid">
+            <main class="info-grid" id="about-cards" aria-label="About Timothy">
                 <div class="card scroll-reveal" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
                     <div class="card-img-wrapper">
                         <img data-src="./assets/starshalo.jpg" alt="Photographer" class="card-img" decoding="async"
@@ -1154,6 +1266,119 @@
         lightbox.addEventListener('click', (e) => {
             if (e.target === lightbox) closeLightbox();
         });
+    </script>
+
+    <script>
+        (() => {
+            const stage = document.getElementById('about-page');
+            const cards = [...stage.children].filter(section => !section.matches('footer')).sort((a, b) => Number(getComputedStyle(a).order) - Number(getComputedStyle(b).order));
+            const labels = ['Introduction', 'My Story', 'About Me', 'Gear Bag'];
+            const picker = document.getElementById('about-section-picker');
+            labels.forEach((label, index) => picker.add(new Option(`${index + 1} / ${labels.length} ${label}`, String(index))));
+            cards.forEach(card => card.classList.add('about-plane'));
+            let savedScroll = 0;
+            const toggle = document.getElementById('about-3d-toggle');
+            const controls = document.getElementById('about-rotate-controls');
+            const status = document.getElementById('about-rotate-status');
+            let active = 0;
+            let enabled = false;
+            let pointerStart = null;
+            let suppressClickUntil = 0;
+            const render = () => {
+                cards.forEach((card, index) => {
+                    let slot = (index - active + cards.length) % cards.length;
+                    if (slot > cards.length / 2) slot -= cards.length;
+                    card.style.setProperty('--card-slot', slot);
+                    card.style.setProperty('--card-distance', Math.abs(slot));
+                    card.style.setProperty('--card-brightness', slot === 0 ? '1' : '.55');
+                    card.style.setProperty('--card-layer', slot === 0 ? '2' : '1');
+                    card.inert = enabled && slot !== 0;
+                    if (enabled && slot !== 0) card.setAttribute('aria-hidden', 'true');
+                    else card.removeAttribute('aria-hidden');
+                });
+                status.textContent = `${active + 1} / ${cards.length} - ${labels[active]}`;
+                picker.value = String(active);
+            };
+            const rotate = direction => {
+                active = (active + direction + cards.length) % cards.length;
+                render();
+            };
+            toggle.addEventListener('click', () => {
+                enabled = !enabled;
+                if (enabled) savedScroll = window.scrollY;
+                document.body.classList.toggle('about-3d-active', enabled);
+                stage.classList.toggle('about-3d', enabled);
+                document.getElementById('about-3d-help').hidden = !enabled;
+                toggle.setAttribute('aria-pressed', String(enabled));
+                toggle.querySelector('.mode-label').textContent = enabled ? '2D View' : '3D View';
+                toggle.title = enabled ? 'Return to the scrolling About page' : 'Explore the About page in 3D';
+                controls.hidden = !enabled;
+                if (enabled) {
+                    stage.tabIndex = 0;
+                    cards.forEach(card => {
+                        card.classList.add('revealed');
+                        card.querySelectorAll('img').forEach(img => {
+                        if (img.dataset.src && !img.getAttribute('src')) img.src = img.dataset.src;
+                        if (img.complete) img.classList.add('loaded');
+                        else img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
+                        });
+                    });
+                } else {
+                    stage.removeAttribute('tabindex');
+                    window.scrollTo(0, savedScroll);
+                }
+                render();
+            });
+            document.getElementById('about-previous').addEventListener('click', () => rotate(-1));
+            document.getElementById('about-next').addEventListener('click', () => rotate(1));
+            picker.addEventListener('change', () => { active = Number(picker.value); render(); });
+            document.addEventListener('keydown', event => {
+                if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+                if (event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), .vlm-panel, .vlm-crop-modal-overlay, [role="dialog"], dialog')) return;
+                if (document.querySelector('dialog[open], .vlm-crop-modal-overlay, #site-performance-panel:not([hidden])')) return;
+                if (lightbox.classList.contains('active')) {
+                    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeLightbox(); }
+                    return;
+                }
+                if (!['2', '3'].includes(event.key) && (!enabled || !['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Escape'].includes(event.key))) return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.key === '2' || event.key === '3') {
+                    if (enabled !== (event.key === '3')) toggle.click();
+                } else if (event.key === 'Escape') {
+                    toggle.click();
+                    toggle.focus({ preventScroll: true });
+                } else {
+                    if (event.key === 'Home') active = 0;
+                    else if (event.key === 'End') active = cards.length - 1;
+                    else { rotate(event.key === 'ArrowRight' ? 1 : -1); }
+                    render();
+                    // Focus must not remain in a section that has just become inert.
+                    if (cards.some(card => card.inert && card.contains(document.activeElement))) stage.focus({ preventScroll: true });
+                }
+            });
+            stage.addEventListener('pointerdown', event => {
+                if (enabled && event.isPrimary && event.button === 0 && !event.target.closest('a, button, input, select, textarea')) pointerStart = { x: event.clientX, y: event.clientY };
+            });
+            stage.addEventListener('pointerup', event => {
+                if (!pointerStart) return;
+                const dx = event.clientX - pointerStart.x;
+                const dy = event.clientY - pointerStart.y;
+                pointerStart = null;
+                if (enabled && Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+                    suppressClickUntil = performance.now() + 400;
+                    rotate(dx < 0 ? 1 : -1);
+                }
+            });
+            stage.addEventListener('pointercancel', () => { pointerStart = null; });
+            stage.addEventListener('dragstart', event => { if (enabled) event.preventDefault(); });
+            stage.addEventListener('click', event => {
+                if (performance.now() < suppressClickUntil) { event.preventDefault(); event.stopPropagation(); }
+            }, true);
+            // Main-site navigation already forwards its current view as mode=2d/3d.
+            const initialMode = new URLSearchParams(window.location.search).get('mode');
+            if (initialMode?.toLowerCase() === '3d') toggle.click();
+        })();
     </script>
     <script src="./assets/js/live-fps.js"></script>
     <script>

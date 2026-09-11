@@ -141,7 +141,7 @@
 
     function profileOptions() {
         return `
-            <option value="auto">Auto (Device Recommended)</option>
+            <option value="auto">Auto (recommended)</option>
             <option value="performance">Performance</option>
             <option value="balanced">Balanced</option>
             <option value="quality">Quality</option>`;
@@ -205,9 +205,9 @@
         const hud = document.createElement('div');
         hud.id = 'site-performance-hud';
         hud.innerHTML = `
-            <button id="site-fps-readout" type="button" title="Hide live FPS">FPS --</button>
-            <button id="site-performance-button" type="button" aria-label="Performance settings" aria-expanded="false">⚙</button>
-            <section id="site-performance-panel" aria-label="Performance settings" hidden>
+            <button id="site-fps-readout" type="button" title="Hide Live FPS">FPS --</button>
+            <button id="site-performance-button" type="button" aria-label="Performance Settings" aria-expanded="false">⚙</button>
+            <section id="site-performance-panel" aria-label="Performance Settings" hidden>
                 <h2 class="site-performance-title">Performance</h2>
                 <label class="site-performance-label" for="site-performance-profile">Profile</label>
                 <select id="site-performance-profile" data-site-performance-select>${profileOptions()}</select>
@@ -218,15 +218,15 @@
             </section>`;
         document.body.appendChild(hud);
 
-        const generalPane = document.getElementById('settings-pane-general');
+        const generalPane = document.getElementById('rendering-quality-controls') || document.getElementById('settings-pane-general');
         if (generalPane && !document.getElementById('site-performance-settings-row')) {
             const settings = document.createElement('div');
             settings.id = 'site-performance-settings-row';
             settings.innerHTML = `
                 <div class="setting-category" style="margin-top:14px">Performance</div>
                 <div class="setting-row">
-                    <span class="setting-label">Performance Profile</span>
-                    <select class="setting-select" data-site-performance-select>${profileOptions()}</select>
+                    <label class="setting-label" for="settings-performance-profile">Rendering quality</label>
+                    <select class="setting-select" id="settings-performance-profile" data-site-performance-select>${profileOptions()}</select>
                 </div>
                 <label class="setting-row" style="cursor:pointer">
                     <span class="setting-label">Live FPS Overlay</span>

@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test vlm/GalleryVLMOverlay.test.mjs vlm/ImageCrop.test.mjs vlm/ImageSearch.test.mjs vlm/VLMManager.test.mjs"
+  }
+}

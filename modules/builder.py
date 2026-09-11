@@ -13,6 +13,28 @@ GALLERY_THEME_COLORS = {
     'wildlife':  '#2e2a1a',  # earthy gold
 }
 
+def add_gallery_return_navigation(content):
+    """Keep a route back to the portfolio in generated gallery/viewer pages."""
+    stylesheet = '<link rel="stylesheet" href="../../assets/css/gallery-return.css">'
+    script = '<script src="../../assets/js/gallery-return.js" defer></script>'
+    inspector_script = '<script src="../../assets/js/gallery-inspector.js" type="module"></script>'
+    if '../../assets/js/gallery-inspector.js' not in content:
+        content = re.sub(r'</head\s*>', inspector_script + '\n</head>', content, count=1, flags=re.IGNORECASE)
+    if 'id="portfolio-inspector"' not in content:
+        button = '<button type="button" id="portfolio-inspector">AI Inspector</button>'
+        content = re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + button,
+                         content, count=1, flags=re.IGNORECASE)
+    if '../../assets/js/gallery-return.js' not in content:
+        content = re.sub(r'</head\s*>', script + '\n</head>', content, count=1, flags=re.IGNORECASE)
+    if 'id="portfolio-return"' in content:
+        return content
+    link = ('<a id="portfolio-return" href="../../index.html?mode=3d" target="_top">'
+            '<span aria-hidden="true">&#8592;</span> Back to Camera</a>')
+    content = re.sub(r'</head\s*>', stylesheet + '\n</head>', content, count=1, flags=re.IGNORECASE)
+    return re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + link,
+                  content, count=1, flags=re.IGNORECASE)
+
+
 def generate_site(target_keys, gallery_map, results_map, portfolios_root, gallery_emojis, template_src='./tmp/gallery'):
     """
     Generates the static site structure for each target gallery.
@@ -82,7 +104,14 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
                         f'<meta name="theme-color" content="{tint}">',
                         content, count=1
                     )
+                content = add_gallery_return_navigation(content)
                 with open(html_path, 'w', encoding='utf-8') as f: f.write(content)
+
+            immersive_path = os.path.join(g_root, 'immersive.html')
+            if os.path.exists(immersive_path):
+                with open(immersive_path, 'r', encoding='utf-8') as f: content = f.read()
+                with open(immersive_path, 'w', encoding='utf-8') as f:
+                    f.write(add_gallery_return_navigation(content))
 
             js_path = os.path.join(g_root, 'js/app.js')
             if os.path.exists(js_path):

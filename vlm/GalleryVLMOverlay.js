@@ -276,8 +276,43 @@ function injectCSS() {
     if (_cssInjected) return;
     _cssInjected = true;
 
+    if (typeof document !== 'undefined' && document.head) {
+        if (!document.querySelector('link[href*="fonts.googleapis.com"][href*="Inter"]')) {
+            const preconnect1 = document.createElement('link');
+            preconnect1.rel = 'preconnect';
+            preconnect1.href = 'https://fonts.googleapis.com';
+            document.head.appendChild(preconnect1);
+
+            const preconnect2 = document.createElement('link');
+            preconnect2.rel = 'preconnect';
+            preconnect2.href = 'https://fonts.gstatic.com';
+            preconnect2.crossOrigin = 'anonymous';
+            document.head.appendChild(preconnect2);
+
+            const fontLink = document.createElement('link');
+            fontLink.rel = 'stylesheet';
+            fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap';
+            document.head.appendChild(fontLink);
+        }
+    }
+
     const style = document.createElement('style');
     style.textContent = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
+
+/* ── VLM Font System ──────────────────────────────────────────── */
+.vlm-panel,
+.vlm-panel button,
+.vlm-panel input,
+.vlm-panel select,
+.vlm-panel textarea,
+.vlm-toggle-btn,
+.vlm-crop-modal,
+.vlm-crop-modal button,
+.vlm-crop-modal input {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 /* ── VLM Toggle Button ────────────────────────────────────────── */
 .vlm-toggle-btn {
     position: fixed;
@@ -301,9 +336,20 @@ function injectCSS() {
     padding: 0;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 .vlm-toggle-btn:hover  { transform: scale(1.1); background: rgba(22, 22, 38, 0.98); }
 .vlm-toggle-btn:active { transform: scale(0.96); }
+.vlm-panel .vlm-toggle-btn.vlm-toggle-docked {
+    position: static;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    margin-right: 4px;
+    box-shadow: none;
+    animation: none;
+    transform: none;
+}
 .vlm-toggle-btn.vlm-model-loading {
     animation: vlm-pulse-ring 1.8s ease-in-out infinite;
 }
@@ -336,7 +382,7 @@ function injectCSS() {
     pointer-events: none;
     transform: translateX(100%);
     transition: opacity 0.22s ease, transform 0.22s ease, width 0.25s ease;
-    font-family: 'Roboto', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: var(--vlm-font-sz, 13px);
     color: #cfd8dc;
     will-change: transform, opacity;
@@ -986,8 +1032,47 @@ function injectCSS() {
 
 /* ── Expanded (wider panel) ────────────────────────────────────── */
 .vlm-panel.vlm-fullscreen {
-    width: min(680px, 50vw) !important;
+    box-sizing: border-box;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    border-radius: 0;
 }
+.vlm-panel.vlm-fullscreen .vlm-resize-handle { display: none; }
+.vlm-fullscreen-photo { display: none; }
+.vlm-panel.vlm-fullscreen .vlm-fullscreen-photo {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.vlm-panel.vlm-fullscreen.vlm-has-preview {
+    box-sizing: border-box;
+    padding-left: 55%;
+}
+.vlm-panel.vlm-fullscreen.vlm-has-preview .vlm-fullscreen-photo {
+    display: block;
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 55%;
+    height: 100%;
+    object-fit: contain;
+    background: #05070b;
+}
+@media (max-width: 800px) {
+    .vlm-panel.vlm-fullscreen.vlm-has-preview { padding-left: 0; }
+    .vlm-panel.vlm-fullscreen.vlm-has-preview .vlm-fullscreen-photo {
+        position: static;
+        width: 100%;
+        height: 25dvh;
+        flex-shrink: 0;
+    }
+}
+.vlm-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; flex-shrink: 0; }
+.vlm-suggestion { font: inherit; color: #b3e5fc; background: rgba(79,195,247,.08); border: 1px solid rgba(79,195,247,.3); border-radius: 16px; padding: 8px 12px; cursor: pointer; }
+.vlm-suggestion:hover, .vlm-suggestion:focus-visible { background: rgba(79,195,247,.2); }
+.vlm-suggestion:disabled { opacity: .35; cursor: not-allowed; }
 .vlm-panel.vlm-fullscreen.vlm-open { transform: translateX(0) !important; }
 
 /* ── Iframe-panel mode: fills the host iframe viewport ────────── */
@@ -1188,7 +1273,7 @@ function injectCSS() {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
     overflow: hidden;
     color: #eceff1;
-    font-family: 'Roboto', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 .vlm-crop-header {
     display: flex;
@@ -1208,6 +1293,7 @@ function injectCSS() {
     color: #b0bec5;
     font-size: 20px;
     cursor: pointer;
+    font-family: inherit;
 }
 .vlm-crop-close-btn:hover { color: #fff; }
 .vlm-crop-body {
@@ -1294,6 +1380,7 @@ function injectCSS() {
     padding: 6px 12px;
     font-size: 12px;
     cursor: pointer;
+    font-family: inherit;
 }
 .vlm-crop-btn-cancel:hover, .vlm-crop-btn-reset:hover {
     background: rgba(255, 255, 255, 0.15);
@@ -1308,6 +1395,7 @@ function injectCSS() {
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    font-family: inherit;
 }
 .vlm-crop-btn-apply:hover {
     background: #039be5;
@@ -1318,7 +1406,11 @@ function injectCSS() {
 
 // ─── System Prompts ───────────────────────────────────────────────────────────
 
+const _RESPONSE_LENGTH_INSTRUCTION =
+    'Keep each response under 100 words unless the user explicitly requests a different length or a more detailed response. ';
+
 const _GALLERY_SYSTEM_PROMPT =
+    _RESPONSE_LENGTH_INSTRUCTION +
     'You are an AI assistant embedded in a photography portfolio. ' +
     'A photograph is provided with every message. ' +
     'Answer questions directly and precisely — lead with the specific answer, then add supporting detail only if it adds value. ' +
@@ -1331,12 +1423,14 @@ const _GALLERY_SYSTEM_PROMPT =
     'Use markdown formatting (bold, lists, headings) to structure responses clearly.';
 
 const _GALLERY_LIVE_PROMPT =
+    _RESPONSE_LENGTH_INSTRUCTION +
     'You are an AI assistant in a live voice conversation about a photograph. ' +
     'Keep every reply to 2–3 sentences maximum — you are being read aloud. ' +
     'Be direct and conversational. No lists, no headings, no markdown. ' +
     'Do not mention, guess, or estimate camera settings unless explicitly asked.';
 
 const _ABOUT_SYSTEM_PROMPT =
+    _RESPONSE_LENGTH_INSTRUCTION +
     'You are TheDoInspector, an AI assistant for the photography portfolio of Timothy Do (TheDoShoots). ' +
     'You help visitors learn about the photographer and his work. ' +
     'Timothy Do is an astrophotographer and landscape photographer based in California. ' +
@@ -1708,6 +1802,7 @@ class GalleryVLMOverlay {
         // ── Panel ──────────────────────────────────────────────────────────
         this._panel = document.createElement('div');
         this._panel.className = 'vlm-panel';
+        this._panel.id = `${this._id}-panel`;
         this._panel.dataset.vlmMode = 'chat';
         this._panel.setAttribute('role', 'dialog');
         this._panel.setAttribute('aria-label', 'TheDoInspector');
@@ -1719,7 +1814,7 @@ class GalleryVLMOverlay {
         <span class="vlm-status-dot vlm-dot-loading" id="${this._id}-dot"></span>
         <span class="vlm-status-label" id="${this._id}-status">Loading model…</span>
         <button class="vlm-gear-btn"  id="${this._id}-gear"  title="VLM Settings" aria-label="Open VLM settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-        <button class="vlm-fs-btn"    id="${this._id}-fs"    title="Expand panel" aria-label="Toggle fullscreen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
+        <button class="vlm-fs-btn"    id="${this._id}-fs"    title="Enter fullscreen" aria-label="Enter fullscreen" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
         <button class="vlm-close-btn" id="${this._id}-close" title="Close panel" aria-label="Close">×</button>
     </div>
     <div class="vlm-header-row vlm-header-btns">
@@ -1756,6 +1851,7 @@ class GalleryVLMOverlay {
     <button class="vlm-exif-toggle" id="${this._id}-exif-toggle" style="display:none">EXIF</button>
 </div>
 <div class="vlm-exif-drawer" id="${this._id}-exif-drawer"></div>
+<img class="vlm-fullscreen-photo" id="${this._id}-fullscreen-photo" alt="" decoding="async">
 
 <!-- Loading stage panel — visible until model is ready -->
 <div class="vlm-loading-section vlm-chat-only" id="${this._id}-loading">
@@ -1815,6 +1911,11 @@ class GalleryVLMOverlay {
     </div>
     <div class="vlm-search-results" id="${this._id}-search-results" aria-live="polite"><div class="vlm-search-note">Search the build-time metadata index. You can then ask the VLM to recommend the strongest visual matches from that shortlist.</div></div>
 </div>
+<div class="vlm-suggestions vlm-chat-only" aria-label="Sample prompts">
+    <button type="button" class="vlm-suggestion">Describe the image</button>
+    <button type="button" class="vlm-suggestion">Where was this taken?</button>
+    <button type="button" class="vlm-suggestion">What camera settings were used?</button>
+</div>
 <div class="vlm-input-area vlm-chat-only">
     <textarea class="vlm-input" id="${this._id}-input" rows="1"
         placeholder="What camera settings? What's the subject? …"
@@ -1826,6 +1927,12 @@ class GalleryVLMOverlay {
     <button class="vlm-send-btn" id="${this._id}-send" disabled>Send</button>
 </div>`;
         document.body.appendChild(this._panel);
+        for (const eventName of ['contextmenu', 'dragstart']) {
+            this._panel.addEventListener(eventName, (event) => {
+                if (this._panel.classList.contains('vlm-fullscreen') &&
+                    event.target.closest('.vlm-fullscreen-photo')) event.preventDefault();
+            });
+        }
 
         // ── Panel event wiring ─────────────────────────────────────────────
         this._q('-close').addEventListener('click',    () => this._closePanel());
@@ -1923,6 +2030,25 @@ class GalleryVLMOverlay {
         const sendBtn = this._q('-send');
         const input   = this._q('-input');
 
+        this._panel.querySelectorAll('.vlm-suggestion').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!this._imageSrc || !this.manager.isReady || this._streaming) return;
+                input.value = button.textContent;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                // Suggested prompts send immediately; keep the software keyboard closed.
+                if (document.activeElement === input) input.blur();
+                this._sendMessage();
+            });
+        });
+        this._panel.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && this._panel.classList.contains('vlm-fullscreen')) {
+                event.preventDefault();
+                event.stopPropagation();
+                this._toggleFullscreen();
+                this._q('-fs').focus();
+            }
+        }, true);
+
         sendBtn.addEventListener('click',   () => {
             if (navigator.vibrate) try { navigator.vibrate(8); } catch (_) {}
             this._sendMessage();
@@ -1989,11 +2115,16 @@ class GalleryVLMOverlay {
     // ── Panel State ────────────────────────────────────────────────────────
 
     _togglePanel() {
+        if (this._panel.classList.contains('vlm-open')) {
+            this._closePanel();
+            return;
+        }
         const open = this._panel.classList.toggle('vlm-open');
         this._setPush(open);
     }
     _closePanel() {
         this._cancelRecommendations();
+        if (this._panel.classList.contains('vlm-fullscreen')) this._toggleFullscreen();
         this._panel.classList.remove('vlm-open');
         this._setPush(false);
     }
@@ -2216,8 +2347,26 @@ class GalleryVLMOverlay {
      * galleries shrink with their wrapper. About / direct-gallery pages also
      * fall back to body.paddingRight for normal-flow content.
      */
+    _syncTogglePlacement(open) {
+        if (this._iframeMode) return;
+        const header = this._panel.querySelector('.vlm-header-btns');
+        if (open && header && this._btn.parentElement !== header) {
+            this._toggleHome = this._btn.parentElement;
+            header.prepend(this._btn);
+        } else if (!open && this._panel.contains(this._btn)) {
+            const home = this._toggleHome?.isConnected ? this._toggleHome : document.body;
+            home.appendChild(this._btn);
+        }
+        this._btn.classList.toggle('vlm-toggle-docked', open);
+        this._btn.setAttribute('aria-expanded', String(open));
+        this._btn.setAttribute('aria-controls', this._panel.id);
+        this._btn.title = open ? 'Close TheDoInspector' : 'Open TheDoInspector';
+        this._btn.setAttribute('aria-label', this._btn.title);
+    }
+
     _setPush(open) {
-        if (window.innerWidth <= 600) {
+        this._syncTogglePlacement(open);
+        if (window.innerWidth <= 600 || this._panel.classList.contains('vlm-fullscreen')) {
             // Mobile bottom-sheet: never push; clear any leftover state.
             document.documentElement.style.setProperty('--vlm-pane-width', '0px');
             document.body.style.paddingRight = '';
@@ -2276,15 +2425,17 @@ class GalleryVLMOverlay {
         const isFs = this._panel.classList.toggle('vlm-fullscreen');
         const btn  = this._q('-fs');
         if (isFs) {
-            btn.title = 'Narrow panel';
+            btn.title = 'Exit fullscreen';
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
         } else {
-            btn.title = 'Expand panel';
+            btn.title = 'Enter fullscreen';
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
         }
+        btn.setAttribute('aria-label', btn.title);
+        btn.setAttribute('aria-pressed', String(isFs));
         // Re-sync body push after CSS transition settles
         if (this._panel.classList.contains('vlm-open')) {
-            setTimeout(() => this._setPush(true), 260);
+            setTimeout(() => this._setPush(this._panel.classList.contains('vlm-open')), 260);
         }
     }
 
@@ -2416,8 +2567,9 @@ class GalleryVLMOverlay {
             // Drive the parent doc's var — iframe-container shrinks via CSS,
             // the iframe element flexes with it.
             if (window.innerWidth > 600 && this._panel.classList.contains('vlm-open')) {
-                document.documentElement.style.setProperty('--vlm-pane-width', `${w}px`);
-                if (!this._iframeEl) document.body.style.paddingRight = `${w}px`;
+                const reservedWidth = w;
+                document.documentElement.style.setProperty('--vlm-pane-width', `${reservedWidth}px`);
+                if (!this._iframeEl) document.body.style.paddingRight = `${reservedWidth}px`;
                 this._btn.style.right = `${w + 12}px`;
             }
         };
@@ -2478,6 +2630,9 @@ class GalleryVLMOverlay {
         const input   = this._q('-input');
         const sendBtn = this._q('-send');
         const stopBtn = this._q('-stop');
+        this._panel.querySelectorAll('.vlm-suggestion').forEach(button => {
+            button.disabled = !this._imageSrc || !this.manager.isReady || this._streaming;
+        });
         sendBtn.disabled = (
             !this._imageSrc          ||
             !input.value.trim()      ||
@@ -2628,6 +2783,7 @@ class GalleryVLMOverlay {
             return;
         }
         this._iframeDoc = doc;
+
 
         // (No inner-doc var manipulation: the iframe element itself shrinks
         // when .iframe-container does, so the gallery's `width: 100%` fills
@@ -2842,6 +2998,8 @@ class GalleryVLMOverlay {
         if (this._imageSrc) this._newChat();
         this._imageSrc  = null;
         this._imageName = null;
+        this._q('-fullscreen-photo')?.removeAttribute('src');
+        this._panel.classList.remove('vlm-has-preview');
         const nameEl  = this._q('-imgname');
         const exifBtn = this._q('-exif-toggle');
         const drawer  = this._q('-exif-drawer');
@@ -2955,6 +3113,10 @@ class GalleryVLMOverlay {
 
         this._imageSrc  = src;
         this._imageName = name ?? 'photo';
+        const preview = this._q('-fullscreen-photo');
+        preview.src = src;
+        preview.alt = this._imageName;
+        this._panel.classList.add('vlm-has-preview');
         this._croppedImageSrc  = null;
         this._cropRect         = null;
         this._updateCropUI();
@@ -3221,7 +3383,9 @@ class GalleryVLMOverlay {
         const pageCtx = (!this._history.length && this._pageContext)
             ? `[About the photographer: ${this._pageContext}]\n\n`
             : '';
-        const queryPrompt = metaBlock + pageCtx + prompt;
+        // Local models receive instructions in the query rather than a system message.
+        const lengthInstruction = this.manager._mode === 'api' ? '' : _RESPONSE_LENGTH_INSTRUCTION + '\n\n';
+        const queryPrompt = lengthInstruction + metaBlock + pageCtx + prompt;
 
         // Snapshot generation at send-time. If the user switches images or clicks
         // "New" before this query finishes, _generation increments and these
@@ -3607,7 +3771,9 @@ class GalleryVLMOverlay {
  * Direct-gallery mode (single gallery page / local testing):
  *   No iframe found — observers attach directly to the current document.
  */
-function initGalleryVLM() {
+const pageOverlayKey = Symbol.for('thedoshoots.galleryVLMOverlays');
+function initGalleryVLM({ autoStart = true } = {}) {
+    if (window[pageOverlayKey]) return window[pageOverlayKey];
     injectCSS();
     patchThreeRenderer();
 
@@ -3670,16 +3836,19 @@ function initGalleryVLM() {
         } else {
             // Direct-gallery mode (local testing / single-gallery deployment):
             overlay._btn.style.display = '';
-            manager.init();
+            if (autoStart) manager.init();
             overlay._attachDocObservers(document);
         }
     }
 
-    return [overlay];
+    window[pageOverlayKey] = [overlay];
+    return window[pageOverlayKey];
 }
 
 // Auto-init after DOM is parsed (module scripts are deferred, so DOM is ready).
-if (document.readyState === 'loading') {
+if (window.VLM_MANUAL_INIT) {
+    // The explicit inspector entry point initializes on demand.
+} else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initGalleryVLM);
 } else {
     initGalleryVLM();

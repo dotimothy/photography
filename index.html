@@ -459,6 +459,22 @@
         }
     }
 
+    body.camera-inspecting .controls-container, body.camera-inspecting .ui-footer, body.camera-inspecting #site-performance-hud { visibility: hidden; opacity: 0; pointer-events: none; }
+    body.camera-inspecting .mobile-scene-dock { background: none; padding-top: 12px; }
+    body.camera-inspecting .mobile-shutter { display: none; }
+    #camera-capture-viewer { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #03080b; color: #e5f3fa; }
+    #camera-capture-viewer[open] { display: flex; flex-direction: column; }
+    #camera-capture-viewer::backdrop { background: #03080b; }
+    .capture-toolbar { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: max(12px, env(safe-area-inset-top)) 12px 12px; }
+    .capture-toolbar button, .capture-toolbar a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 8px 14px; box-sizing: border-box; border: 1px solid #557c8d; border-radius: 8px; background: #0c1722; color: inherit; font: 14px system-ui; text-decoration: none; cursor: pointer; }
+    .capture-toolbar :focus-visible { outline: 2px solid #94e4ed; outline-offset: 2px; }
+    .capture-toolbar button:disabled { opacity: .4; cursor: default; }
+    .capture-toolbar [data-count] { align-self: center; font: 14px system-ui; }
+    .capture-image-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: auto; padding-bottom: env(safe-area-inset-bottom); }
+    .capture-image-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; touch-action: pan-x pan-y pinch-zoom; }
+    .camera-screen-reader { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    #mode-3d canvas:focus-visible { outline: 1px solid #8dd2eb; outline-offset: -3px; }
+
     /* --- 3D MODE CONTAINER --- */
     #mode-3d {
         position: fixed;
@@ -1002,6 +1018,16 @@
         color: var(--accent-color);
         border-bottom-color: var(--accent-color);
     }
+    #settings-pane-rendering .setting-row { min-height: 44px; gap: 16px; }
+    #settings-pane-rendering .setting-select { max-width: 55%; min-height: 40px; }
+    #settings-pane-rendering input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-color); flex-shrink: 0; }
+    .rendering-note { color: #aebbc7; font-size: 0.8rem; line-height: 1.6; margin: 0 0 16px; }
+    .rendering-range { display: flex; align-items: center; gap: 10px; width: 50%; min-width: 0; }
+    .rendering-range input { width: 100%; min-width: 0; height: 32px; accent-color: var(--accent-color); }
+    .rendering-range output { min-width: 4ch; color: #d6e1ed; font-size: 0.8rem; text-align: right; }
+    .rendering-reset { background: #1b232c; border: 1px solid #465463; color: #e1e9f0; border-radius: 5px; padding: 10px 16px; min-height: 44px; font: inherit; font-size: 0.8rem; cursor: pointer; }
+    #settings-pane-rendering :focus-visible { outline: 2px solid var(--accent-color); outline-offset: 4px; }
+
     .settings-pane { display: none; }
     .settings-pane.active { display: block; }
 
@@ -1491,6 +1517,7 @@
         }
     }
 </style>
+<link rel="stylesheet" href="./assets/css/mobile-home.css">
 
 <body>
 
@@ -1506,56 +1533,54 @@
 
             <h1 class="glitch-title" data-text="TheDoShoots">TheDoShoots</h1>
 
-            <div class="nav-grid">
-                <a href="#" class="nav-card" onclick="handleNav('about.html', true); return false;"
+            <p class="mobile-browse-intro">Photography by Timothy Do. Pick a collection to explore.</p>
+            <div class="nav-grid" id="collections" aria-label="Photo collections">
+                <a href="about.html" target="_self" class="nav-card"
                     style="background-image: url('./assets/photographer.jpg');">
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">👤</div>
                         <h3>About</h3>
-                        <span>Exhibit 01: Biography</span>
+                        <span>Meet the photographer</span>
                     </div>
                 </a>
-                <a href="#" class="nav-card"
-                    onclick="handleNav('./portfolios/astronomy/index.html', true); return false;"
+                <a href="./portfolios/astronomy/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/astronomy/index.html', true); return false;"
                     style="background-image: url('./portfolios/astronomy/fulls/20240518_014956.jpg');">
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🌌</div>
                         <h3>Astronomy</h3>
-                        <span>Telephoto Lens</span>
+                        <span>Explore astronomy</span>
                     </div>
                 </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;"
+                <a href="./portfolios/food/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/food/index.html', true); return false;"
                     style="background-image: url('./portfolios/food/fulls/_MG_1412.jpg');">
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🍱</div>
                         <h3>Food</h3>
-                        <span>Macro Element</span>
+                        <span>Explore food</span>
                     </div>
                 </a>
-                <a href="#" class="nav-card"
-                    onclick="handleNav('./portfolios/landscape/index.html', true); return false;"
+                <a href="./portfolios/landscape/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/landscape/index.html', true); return false;"
                     style="background-image: url('./portfolios/landscape/fulls/_MG_0074.jpg');">
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🏞️</div>
                         <h3>Landscape</h3>
-                        <span>Image Sensor</span>
+                        <span>Explore landscapes</span>
                     </div>
                 </a>
-                <a href="#" class="nav-card" onclick="handleNav('./portfolios/planes/index.html', true); return false;"
+                <a href="./portfolios/planes/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/planes/index.html', true); return false;"
                     style="background-image: url('./portfolios/planes/fulls/_MG_1442.jpg');">
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">✈️</div>
                         <h3>Planes</h3>
-                        <span>Shutter Mechanism</span>
+                        <span>Explore planes</span>
                     </div>
                 </a>
-                <a href="#" class="nav-card"
-                    onclick="handleNav('./portfolios/wildlife/index.html', true); return false;"
+                <a href="./portfolios/wildlife/index.html" target="_self" class="nav-card" onclick="handleNav('./portfolios/wildlife/index.html', true); return false;"
                     style="background-image: url('./portfolios/wildlife/fulls/_MG_0001.jpg');">
                     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
                         <div class="card-emoji">🐿️</div>
                         <h3>Wildlife</h3>
-                        <span>Autofocus Motor</span>
+                        <span>Explore wildlife</span>
                     </div>
                 </a>
             </div>
@@ -1587,33 +1612,54 @@
         </div>
 
         <div class="controls-container" id="controls-container">
+            <span class="mobile-wordmark">TheDoShoots<span>PHOTOGRAPHY BY TIMOTHY DO</span></span>
+            <button type="button" class="mobile-browse-button interactive-element" onclick="toggleMode(true)">Back to Camera</button>
             <!-- TOGGLE BUTTON (Mobile/Compact) -->
-            <button class="icon-btn interactive-element" id="btn-controls-toggle" title="Menu">
-                <i class="fas fa-bars"></i>
+            <button class="icon-btn interactive-element" id="btn-controls-toggle" title="Menu" aria-label="Menu" aria-expanded="false" aria-controls="home-controls">
+                <i class="fas fa-bars" aria-hidden="true"></i><span class="mobile-control-label">Menu</span>
             </button>
 
             <!-- CONTROLS GROUP -->
-            <div class="controls-group">
-                <button class="icon-btn interactive-element" id="btn-home" title="Go to Home (2D)">
+            <div class="controls-group" id="home-controls">
+                <label class="mobile-gallery-menu">Open Full Gallery
+                    <select aria-label="Open Full Gallery" onchange="if (this.value) { handleNav('./portfolios/' + this.value + '/index.html', true); this.value = ''; }">
+                        <option value="">Choose a Gallery</option><option value="astronomy">Astronomy</option><option value="landscape">Landscape</option><option value="wildlife">Wildlife</option><option value="planes">Planes</option><option value="food">Food</option>
+                    </select>
+                </label>
+                <button class="icon-btn interactive-element" id="btn-home" data-label="Browse Photos" aria-label="Browse Photos" title="Go to Home (2D)">
                     <i class="fas fa-home"></i>
                 </button>
+                <a href="about.html" target="_self" class="icon-btn interactive-element" id="btn-about" data-label="About" aria-label="About" title="About TheDoShoots"
+                    style="text-decoration: none;">
+                    <i class="fas fa-user" aria-hidden="true"></i>
+                </a>
 
-                <button class="icon-btn interactive-element" id="btn-mute" title="Mute Audio">
+                <button class="icon-btn interactive-element" id="btn-mute" data-label="Sound" aria-label="Sound" title="Mute Audio">
                     <i class="fas fa-volume-mute"></i>
                 </button>
 
                 <!-- QUICK MODE TOGGLE -->
-                <button class="icon-btn interactive-element" id="btn-quick-toggle" title="Toggle 2D/3D Mode">
+                <button class="icon-btn interactive-element" id="btn-quick-toggle" data-label="Switch 2D / 3D" aria-label="Switch 2D / 3D" title="Toggle 2D/3D Mode">
                     <i class="fas fa-cube"></i>
                 </button>
 
+                <!-- AI INSPECTOR -->
+                <button class="icon-btn interactive-element" id="btn-open-inspector" data-label="AI Inspector" aria-label="AI Inspector" title="AI Inspector" onclick="openPortfolioInspector()">
+                    <i class="fas fa-search-plus" aria-hidden="true"></i>
+                </button>
+
+                <!-- RESET CAMERA VIEW -->
+                <button class="icon-btn interactive-element" id="btn-reset-view" data-label="Reset View" aria-label="Reset View" title="Reset View" onclick="resetCameraPage()">
+                    <i class="fas fa-undo" aria-hidden="true"></i>
+                </button>
+
                 <!-- SETTINGS TRIGGER -->
-                <button class="icon-btn interactive-element" id="btn-open-settings" title="Settings">
+                <button class="icon-btn interactive-element" id="btn-open-settings" data-label="Settings" aria-label="Settings" title="Settings">
                     <i class="fas fa-sliders-h"></i>
                 </button>
 
                 <!-- FULLSCREEN TOGGLE -->
-                <button class="icon-btn interactive-element" id="btn-fullscreen" title="Toggle Fullscreen">
+                <button class="icon-btn interactive-element" id="btn-fullscreen" data-label="Fullscreen" aria-label="Fullscreen" title="Toggle Fullscreen">
                     <i class="fas fa-expand"></i>
                 </button>
             </div>
@@ -1688,18 +1734,39 @@
         </div>
     </div>
 
+    <section class="mobile-scene-dock" aria-label="Explore the portfolio">
+        <p class="mobile-scene-hint">Drag to rotate &middot; Tap the camera screen to look closer</p>
+        <div class="mobile-camera-console">
+            <label class="mobile-collection-dial" for="mobile-collection-dial"><span>COLLECTION</span><select id="mobile-collection-dial" onchange="discoverMobileCollection(this.value)">
+                <option value="all">All Photographs</option><option value="astronomy">Astronomy</option><option value="landscape">Landscape</option><option value="wildlife">Wildlife</option><option value="planes">Planes</option><option value="food">Food</option>
+            </select></label>
+            <button type="button" class="mobile-shutter" onclick="runCameraAction('shutter')" aria-label="Shutter"><span class="shutter-disc" aria-hidden="true"></span><span class="shutter-label">Shutter</span></button>
+        </div>
+        <p class="mobile-camera-gesture-hint" aria-live="polite"></p>
+        <div class="mobile-camera-shortcuts" aria-label="Camera controls">
+            <button type="button" data-camera-action="menu">Camera Menu</button>
+            <button type="button" id="mobile-camera-source" onclick="setCameraSource(cameraSource === 'space' ? 'portfolio' : 'space')">Space</button>
+            <button type="button" class="mobile-camera-capture" data-camera-action="shutter">Shutter</button>
+            <button type="button" id="mobile-camera-ai" data-camera-action="inspect" hidden>AI Inspect</button>
+        </div>
+    </section>
+    <button type="button" class="mobile-step-back mobile-camera-exit" onclick="leaveCameraInspection(true)"><span aria-hidden="true">&#8592;</span> Exit Camera View</button>
+    <p id="camera-keyboard-help" class="camera-screen-reader">Interactive camera: V looks through the viewfinder, Enter or Space presses the shutter, left and right arrows browse photos, C changes collection, M or H returns to the camera home screen, L opens live space view, I inspects the photo when AI is enabled, S opens settings, Z cycles the lens from 18 to 300 millimeters, and Escape steps back. Tap the lens or top dial to zoom, scroll the mouse wheel over the lens or displays to zoom, use plus and minus for finer adjustments, drag a zoomed photo to pan, or use its overview map. Shift plus arrow keys pans; Home recenters. On mobile, pinch to zoom, double-tap to zoom in or reset, swipe an unzoomed photo to browse, and drag the live view to aim. Exit Camera View is always available at the top-left; Camera Menu is below the display.</p>
+    <p id="camera-action-status" class="camera-screen-reader" role="status"></p>
+
     <!-- SETTINGS MODAL -->
-    <div class="settings-overlay" id="settings-overlay">
+    <div class="settings-overlay" id="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div class="settings-modal interactive-element">
             <div class="settings-header">
-                <h2>SYSTEM SETTINGS</h2>
-                <button class="close-settings" id="btn-close-settings">&times;</button>
+                <h2 id="settings-title">Settings</h2>
+                <button class="close-settings" id="btn-close-settings" aria-label="Close Settings">&times;</button>
             </div>
 
             <div class="settings-body" style="display:block;">
                 <!-- Tab strip -->
                 <div class="settings-tabs">
                     <button class="settings-tab active" type="button" data-tab="general">General</button>
+                    <button class="settings-tab" type="button" data-tab="rendering">Rendering</button>
                     <button class="settings-tab" type="button" data-tab="gallery">Gallery</button>
                     <button class="settings-tab" type="button" data-tab="ai">AI Inspector</button>
                     <button class="settings-tab" type="button" data-tab="voice">Voice</button>
@@ -1708,24 +1775,68 @@
                 <!-- ── Pane: General ─────────────────────────────────────── -->
                 <div class="settings-pane active" id="settings-pane-general">
                     <div class="setting-row">
-                        <span class="setting-label">3D Immersive Mode (?mode=2d)</span>
+                        <span class="setting-label">3D immersive mode</span>
                         <div class="toggle-switch active" id="toggle-3d-mode"><div class="toggle-knob"></div></div>
                     </div>
                     <div class="setting-row">
-                        <span class="setting-label">High Density Stars</span>
-                        <div class="toggle-switch active" id="toggle-stars"><div class="toggle-knob"></div></div>
-                    </div>
-                    <div class="setting-row">
-                        <span class="setting-label">Data Saver (Low Res) (?datasaver)</span>
+                        <span class="setting-label">Data saver (smaller photos)</span>
                         <div class="toggle-switch" id="toggle-saver"><div class="toggle-knob"></div></div>
                     </div>
                     <div class="setting-row">
-                        <span class="setting-label">Debug Mode (?debug)</span>
+                        <span class="setting-label">Debug information</span>
                         <div class="toggle-switch" id="toggle-debug"><div class="toggle-knob"></div></div>
                     </div>
                 </div>
 
-                <!-- ── Pane: Gallery ─────────────────────────────────────── -->
+                <!-- Pane: Rendering -->
+                <div class="settings-pane" id="settings-pane-rendering">
+                    <p class="rendering-note">Changes apply immediately and are saved on this device.</p>
+                    <div id="rendering-quality-controls"></div>
+                    <div class="setting-category">Starfield</div>
+                    <div class="setting-row">
+                        <label class="setting-label" for="render-star-density">Star density</label>
+                        <select class="setting-select" id="render-star-density" data-render-setting="density">
+                            <option value="off">Off</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high" selected>High</option>
+                            <option value="ultra">Ultra</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label class="setting-label" for="render-star-brightness">Star brightness</label>
+                        <div class="rendering-range">
+                            <input type="range" id="render-star-brightness" data-render-setting="brightness"
+                                min="50" max="150" step="5" value="100">
+                            <output id="render-brightness-value" for="render-star-brightness">100%</output>
+                        </div>
+                    </div>
+                    <label class="setting-row" for="render-atmosphere">
+                        <span class="setting-label">Atmospheric glow</span>
+                        <input type="checkbox" id="render-atmosphere" data-render-setting="atmosphere" checked>
+                    </label>
+                    <label class="setting-row" for="render-asteroids">
+                        <span class="setting-label">Asteroid field</span>
+                        <input type="checkbox" id="render-asteroids" data-render-setting="asteroids" checked>
+                    </label>
+                    <div class="setting-category">Motion</div>
+                    <label class="setting-row" for="render-asteroid-motion">
+                        <span class="setting-label">Asteroid drift &amp; rotation</span>
+                        <input type="checkbox" id="render-asteroid-motion" data-render-setting="asteroidMotion" checked>
+                    </label>
+                    <label class="setting-row" for="render-star-motion">
+                        <span class="setting-label">Star drift</span>
+                        <input type="checkbox" id="render-star-motion" data-render-setting="starMotion" checked>
+                    </label>
+                    <label class="setting-row" for="render-camera-motion">
+                        <span class="setting-label">Camera float &amp; pulse</span>
+                        <input type="checkbox" id="render-camera-motion" data-render-setting="cameraMotion" checked>
+                    </label>
+                    <p class="rendering-note" id="rendering-status" role="status"></p>
+                    <button type="button" class="rendering-reset" id="reset-rendering">Reset Rendering Defaults</button>
+                </div>
+
+                <!-- Pane: Gallery -->
                 <div class="settings-pane" id="settings-pane-gallery">
                     <div class="setting-row">
                         <span class="setting-label">Auto Slideshow (?slideshow)</span>
@@ -1928,10 +2039,16 @@
     <script src="./assets/js/live-fps.js"></script>
     <script>
         // --- GLOBAL STATE ---
+        const renderingDefaults = Object.freeze({
+            density: 'high', brightness: 100, atmosphere: true, asteroids: true,
+            starMotion: true, asteroidMotion: true, cameraMotion: true
+        });
+        const starCounts = Object.freeze({ off: 0, low: 8000, medium: 18000, high: 36000, ultra: 65000 });
+        const sceneMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
         const state = {
             is3D: true,
             hasExplored: false,
-            highDensityStars: true,
+            rendering: { ...renderingDefaults },
             directLinks: false,
             dataSaver: false,
             slideshow: false,
@@ -1993,6 +2110,7 @@
                 systemPrompt: state.vlmSystemPrompt,
             };
             window.dispatchEvent(new CustomEvent('vlmsettingschanged', { detail }));
+            if (typeof cameraAI !== 'undefined') { cancelCameraInspectionAI(); cameraAI.photo = null; if (uiCtx) updateUI(); }
             // Forward to the gallery iframe so its overlay/worker can react
             // (e.g. restart with a new model). Without this, model changes from
             // the parent settings UI never reach the iframe's VLMManager.
@@ -2013,7 +2131,6 @@
             iframe: document.getElementById('exhibit-iframe'),        // Corrected
             toggles: {
                 mode3d: document.getElementById('toggle-3d-mode'),
-                stars: document.getElementById('toggle-stars'),
                 direct: document.getElementById('toggle-direct'),
                 saver: document.getElementById('toggle-saver')
             }
@@ -2021,8 +2138,31 @@
 
         // --- THREE.JS VARIABLES ---
         let scene, camera, renderer, controls;
-        let camGroup, screenMesh, starSystem, uiTexture, uiCtx;
+        let camGroup, screenMesh, starSystem, asteroidSystem, uiTexture, uiCtx;
         let raycaster, mouse;
+        const cameraControls = new Map();
+        const cameraCollections = ['astronomy', 'food', 'landscape', 'planes', 'wildlife'];
+        let cameraCollection = -1, cameraZoom = 18, hoveredCameraControl = null;
+        const cameraLens = { focalLength: 18 };
+        const cameraPan = { x: 0.5, y: 0.5 };
+        let cameraLensTween;
+        let lastCameraPhoto = null, cameraPhotoRequest = 0, cameraPhotoBusy = false;
+        const cameraPhotoCatalogs = new Map();
+        const cameraPhotoMetadata = new Map();
+        let cameraMetadataVisible = false;
+        let cameraDisplay = 'menu', cameraMessage = '', cameraCaptureCount = 0;
+        let cameraInspection = null, cameraReturnPose = null, cameraTravel = false;
+        let cameraTravelTweens = [], cameraFlashAmount = 0;
+        let cameraPointerOverBody = false, cameraPointerPressed = false, cameraInteractionUntil = 0;
+        let cameraMotionTime = 0, cameraMotionLastFrame = 0;
+        let cameraFlashLight, cameraFlashPanel, cameraFlashTween;
+        let cameraSource = 'portfolio', cameraLiveView = false;
+        let cameraLiveTarget, cameraLiveCamera, cameraLiveLastFrame = 0;
+        const cameraAim = { yaw: 0, pitch: 0 };
+        const cameraAI = { visible: false, busy: false, text: '', status: '', page: 0, photo: null, controller: null };
+        let finderMesh, finderTexture, finderCtx;
+        let finderClickZones = [], cameraHistory = [], cameraHistoryIndex = -1;
+        const cameraCaptures = [];
         let animationFrameId;
         let lastTime = performance.now();
         let frameCount = 0;
@@ -2048,17 +2188,22 @@
 
         window.addEventListener('siteperformancechange', (event) => {
             applyRendererPerformanceProfile(event.detail);
-            if (scene && renderer) createStarfield();
+            if (scene && renderer) {
+                createStarfield();
+                createAsteroidField();
+            }
+            syncRenderingSettings();
         });
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
+            loadRenderingPreferences();
             loadPreferences();
             // 3D init failures (missing GL extension, broken CDN script, GPU
             // quirks) must NEVER prevent the rest of the page from booting.
             // Without this guard a thrown init3D() leaves the settings
             // dropdown unwired and the user can't switch backends.
-            try { init3D(); } catch (e) { console.error('[init3D]', e); }
+            try { init3D(); } catch (e) { console.error('[init3D]', e); state.is3D = false; }
             setupEventListeners();
             try { initSpaceIntro(); } catch (e) { console.error('[intro]', e); }
 
@@ -2070,12 +2215,124 @@
             });
 
             // Apply initial mode
-            if (!state.is3D) {
-                switchMode(false);
-            } else {
-                animate();
-            }
+            switchMode(state.is3D);
+            if (state.is3D && matchMedia('(max-width: 768px)').matches) showCameraPhoto(null, 'preview');
         });
+
+        // History navigation can revive the entire WebGL scene from the browser's
+        // back/forward cache. Reload once on restoration, not on ordinary tab focus.
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) resetCameraPage();
+        });
+
+        async function openPortfolioInspector() {
+            const button = document.getElementById('btn-open-inspector');
+            button.disabled = true;
+            try {
+                const { openInspector } = await import('./assets/js/photo-tools.js');
+                await openInspector(document.body, lastCameraPhoto ? { src: lastCameraPhoto.image?.src || lastCameraPhoto.src, alt: lastCameraPhoto.name } : null);
+                button.dataset.label = 'AI Inspector';
+            } catch {
+                button.dataset.label = 'Retry AI Inspector';
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function resetCameraPage() {
+            const url = new URL(location.href);
+            url.searchParams.set('mode', state.is3D ? '3d' : '2d');
+            history.replaceState(history.state, '', url);
+            location.reload();
+        }
+
+        function loadRenderingPreferences() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('portfolioRendering') || '{}');
+                if (!saved || typeof saved !== 'object') return;
+                if (Object.hasOwn(starCounts, saved.density)) state.rendering.density = saved.density;
+                if (typeof saved.brightness === 'number' && Number.isFinite(saved.brightness))
+                    state.rendering.brightness = Math.round(Math.min(150, Math.max(50, saved.brightness)) / 5) * 5;
+                for (const key of ['atmosphere', 'asteroids', 'starMotion', 'asteroidMotion', 'cameraMotion'])
+                    if (typeof saved[key] === 'boolean') state.rendering[key] = saved[key];
+            } catch (_) { /* Defaults also work when storage is unavailable or invalid. */ }
+        }
+
+        function saveRenderingPreferences() {
+            try { localStorage.setItem('portfolioRendering', JSON.stringify(state.rendering)); } catch (_) {}
+        }
+
+        function renderedStarCount() {
+            return Math.round(starCounts[state.rendering.density] * (window.SitePerformance?.current?.starDensity ?? 1));
+        }
+
+        function syncRenderingSettings() {
+            document.querySelectorAll('[data-render-setting]').forEach((input) => {
+                const value = state.rendering[input.dataset.renderSetting];
+                if (input.type === 'checkbox') input.checked = value;
+                else input.value = value;
+            });
+            const brightness = document.getElementById('render-star-brightness');
+            if (brightness) brightness.disabled = state.rendering.density === 'off';
+            const output = document.getElementById('render-brightness-value');
+            if (output) output.value = `${state.rendering.brightness}%`;
+            const status = document.getElementById('rendering-status');
+            if (status) {
+                const profile = window.SitePerformance?.current;
+                let note = `${renderedStarCount().toLocaleString()} stars at the ${profile?.label || 'current'} preset. Higher density draws more stars.`;
+                if (sceneMotionPreference.matches) note += ' Motion is paused by your reduced-motion preference.';
+                else if (profile?.animations === false) note += ' Motion is paused by the Performance preset.';
+                if (!state.is3D) note += ' Switch on 3D Immersive Mode to see the scene.';
+                status.textContent = note;
+            }
+        }
+
+        function applySceneRenderingSettings() {
+            if (starSystem) {
+                starSystem.getObjectByName('atmosphere').visible = state.rendering.atmosphere;
+                starSystem.children.filter((object) => object.isPoints).forEach((stars) => {
+                    stars.material.opacity = Math.min(1, stars.userData.baseOpacity * state.rendering.brightness / 100);
+                });
+                delete starSystem.userData.lastFrame;
+            }
+            if (asteroidSystem) {
+                asteroidSystem.visible = state.rendering.asteroids;
+                delete asteroidSystem.userData.lastFrame;
+            }
+            if (camGroup && !state.rendering.cameraMotion) {
+                cameraMotionTime = 0;
+                camGroup.position.y = 0;
+                camGroup.rotation.z = 0;
+                camGroup.scale.setScalar(innerWidth < 768 ? 1 : 1.4);
+            }
+        }
+
+        function setupRenderingSettings() {
+            document.querySelectorAll('[data-render-setting]').forEach((input) => {
+                input.addEventListener(input.type === 'range' ? 'input' : 'change', () => {
+                    const key = input.dataset.renderSetting;
+                    state.rendering[key] = input.type === 'checkbox' ? input.checked :
+                        input.type === 'range' ? Number(input.value) : input.value;
+                    if (key === 'density' && scene && renderer) createStarfield();
+                    else applySceneRenderingSettings();
+                    saveRenderingPreferences();
+                    syncRenderingSettings();
+                });
+            });
+            document.getElementById('reset-rendering').addEventListener('click', () => {
+                state.rendering = { ...renderingDefaults };
+                saveRenderingPreferences();
+                if (window.SitePerformance) {
+                    window.SitePerformance.setProfile('auto');
+                    window.SitePerformance.setFpsVisible(true);
+                } else if (scene && renderer) createStarfield();
+                applySceneRenderingSettings();
+                syncRenderingSettings();
+            });
+            sceneMotionPreference.addEventListener('change', syncRenderingSettings);
+            applySceneRenderingSettings();
+            syncRenderingSettings();
+        }
 
         function loadPreferences() {
             // WebGL feature detection: if unavailable, force 2D
@@ -2115,12 +2372,12 @@
                 if (saved3d !== null) {
                     state.is3D = saved3d === 'true';
                 } else {
-                    state.is3D = true; // Default
+                    state.is3D = !matchMedia('(prefers-reduced-motion: reduce)').matches;
                 }
             }
             // Only reset hasExplored if 3D mode is active; otherwise keep the
             // 2D-skip-intro flag set by feature-detect / reduced-motion / mode=2d.
-            if (state.is3D) state.hasExplored = false;
+            state.hasExplored = !state.is3D || matchMedia('(max-width: 768px)').matches;
 
             // Saved Data Saver
             const savedSaver = localStorage.getItem('datasaver');
@@ -2443,6 +2700,8 @@
                 renderVLMCacheList();
                 // Default to the General tab on every open
                 activateSettingsTab('general');
+                syncRenderingSettings();
+                document.getElementById('btn-close-settings').focus();
             });
 
             // Tab switching
@@ -2461,6 +2720,20 @@
             });
             document.getElementById('btn-close-settings').addEventListener('click', () => {
                 els.settingsOverlay.classList.remove('visible');
+                (matchMedia('(max-width: 768px)').matches ? document.getElementById('btn-controls-toggle') : document.getElementById('btn-open-settings')).focus();
+            });
+            document.addEventListener('keydown', (event) => {
+                if (!els.settingsOverlay.classList.contains('visible')) return;
+                if (event.key === 'Escape') {
+                    document.getElementById('btn-close-settings').click();
+                    return;
+                }
+                if (event.key !== 'Tab') return;
+                const focusable = [...els.settingsOverlay.querySelectorAll('button, input, select, textarea, a[href], [tabindex="0"]')]
+                    .filter((element) => !element.disabled && element.getClientRects().length);
+                const first = focusable[0], last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
             });
 
             // Quick Toggle
@@ -2471,7 +2744,7 @@
 
             // Toggle Switches
             setupToggle(els.toggles.mode3d, (val) => toggleMode(val));
-            setupToggle(els.toggles.stars, (val) => { state.highDensityStars = val; createStarfield(); });
+            setupRenderingSettings();
             setupToggle(els.toggles.direct, (val) => { state.directLinks = val; updateUI(); });
             setupToggle(els.toggles.saver, (val) => {
                 state.dataSaver = val;
@@ -2493,11 +2766,35 @@
             // Controls Toggle Logic
             const controlsContainer = document.getElementById('controls-container');
             const btnControlsToggle = document.getElementById('btn-controls-toggle');
+            const closeControls = () => {
+                controlsContainer.classList.remove('expanded');
+                btnControlsToggle.setAttribute('aria-expanded', 'false');
+                btnControlsToggle.querySelector('i').className = 'fas fa-bars';
+            };
+            document.getElementById('home-controls').addEventListener('click', (event) => {
+                const aboutLink = event.target.closest('#btn-about');
+                if (aboutLink && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+                    event.preventDefault();
+                    handleNav(aboutLink.getAttribute('href'), true, true);
+                }
+                if (event.target.closest('button, a')) {
+                    closeControls();
+                    if (els.settingsOverlay.classList.contains('visible'))
+                        document.getElementById('btn-close-settings').focus();
+                }
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && controlsContainer.classList.contains('expanded')) {
+                    closeControls();
+                    btnControlsToggle.focus();
+                }
+            });
 
             btnControlsToggle.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent canvas click
                 sfx.click();
                 controlsContainer.classList.toggle('expanded');
+                btnControlsToggle.setAttribute('aria-expanded', String(controlsContainer.classList.contains('expanded')));
 
                 // Toggle icon
                 const icon = btnControlsToggle.querySelector('i');
@@ -2514,6 +2811,7 @@
             document.addEventListener('click', (e) => {
                 if (controlsContainer.classList.contains('expanded') && !controlsContainer.contains(e.target)) {
                     controlsContainer.classList.remove('expanded');
+                    btnControlsToggle.setAttribute('aria-expanded', 'false');
                     const icon = btnControlsToggle.querySelector('i');
                     icon.classList.remove('fa-times');
                     icon.classList.add('fa-bars');
@@ -2522,8 +2820,7 @@
 
             // Raycaster Interaction
             window.addEventListener('resize', onResize);
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('click', onCanvasClick);
+            setupCameraInteractions();
 
             // Pause render loop when tab hidden; resume when shown
             document.addEventListener('visibilitychange', () => {
@@ -2534,40 +2831,6 @@
                     if (typeof animate === 'function') animate();
                 }
             });
-
-            // Touch support for mobile interaction
-            let touchStartTime = 0;
-            let touchStartX = 0;
-            let touchStartY = 0;
-
-            document.addEventListener('touchstart', (e) => {
-                if (e.touches.length > 0) {
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
-                    touchStartTime = performance.now();
-                }
-            }, { passive: true });
-
-            document.addEventListener('touchend', (e) => {
-                // Ignore taps on controls/modals. Touch events do not benefit from
-                // the mouse handler's canvas-target guard and previously allowed a
-                // Settings tap to pass through to the 3D gallery raycaster.
-                if (renderer && e.target === renderer.domElement && e.changedTouches.length > 0) {
-                    const touchEndX = e.changedTouches[0].clientX;
-                    const touchEndY = e.changedTouches[0].clientY;
-                    const dx = touchEndX - touchStartX;
-                    const dy = touchEndY - touchStartY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    const duration = performance.now() - touchStartTime;
-
-                    // Only trigger if it's a quick tap with minimal movement (prevents accidental clicks during orbit)
-                    if (distance < 15 && duration < 350) {
-                        mouse.x = (touchEndX / window.innerWidth) * 2 - 1;
-                        mouse.y = -(touchEndY / window.innerHeight) * 2 + 1;
-                        checkIntersections(true);
-                    }
-                }
-            }, { passive: true });
 
             // Mute Toggle Logic
             const muteBtn = document.getElementById('btn-mute');
@@ -3025,6 +3288,16 @@
         }
 
         function setupToggle(el, callback) {
+            el.setAttribute('role', 'switch');
+            el.tabIndex = 0;
+            el.setAttribute('aria-label', el.parentElement.querySelector('.setting-label')?.textContent || 'Toggle setting');
+            el.setAttribute('aria-checked', String(el.classList.contains('active')));
+            el.addEventListener('keydown', (event) => {
+                if (event.key === ' ' || event.key === 'Enter') {
+                    event.preventDefault();
+                    el.click();
+                }
+            });
             el.addEventListener('click', () => {
                 sfx.click();
                 const isActive = el.classList.contains('active');
@@ -3034,6 +3307,7 @@
         }
 
         function updateToggleUI(el, active) {
+            el.setAttribute('aria-checked', String(active));
             if (active) el.classList.add('active');
             else el.classList.remove('active');
         }
@@ -3048,11 +3322,28 @@
             updateToggleUI(els.toggles.mode3d, go3D);
         };
 
+        function discoverMobileCollection(name) {
+            if (cameraTravel || cameraPhotoBusy) {
+                document.getElementById('mobile-collection-dial').value = cameraCollections[cameraCollection] || 'all';
+                return;
+            }
+            selectCameraCollection(cameraCollections.indexOf(name));
+        }
+
         function switchMode(is3D) {
+            document.body.classList.toggle('browsing-photos', !is3D);
+            document.querySelector('.mobile-browse-button').textContent = 'Back to Camera';
+            if (is3D && matchMedia('(max-width: 768px)').matches) {
+                state.hasExplored = true;
+                els.welcome.classList.add('hidden');
+            }
+            if (!is3D) leaveCameraInspection(true);
+            setCameraHover(null);
             if (is3D) {
                 els.mode2d.classList.remove('active');
                 els.mode3d.style.display = 'block';
                 state.isAnimating = true;
+                frameMobileScene();
 
                 // If returning to 3D and haven't explored, show welcome
                 if (!state.hasExplored) {
@@ -3062,10 +3353,8 @@
             } else {
                 els.mode2d.classList.add('active');
                 els.mode3d.style.display = 'none';
-
-                if (state.hasExplored) {
-                    els.welcome.classList.add('hidden');
-                }
+                els.welcome.classList.add('hidden');
+                document.getElementById('space-intro').style.display = 'none';
 
                 state.isAnimating = false;
             }
@@ -3089,7 +3378,7 @@
                 new TWEEN.Tween(orbitData)
                     .to({
                         angle: Math.PI,
-                        radius: window.innerWidth < 768 ? 40 : 25,
+                        radius: window.innerWidth < 768 ? 44 : 25,
                         lift: 0
                     }, 1500)
                     .easing(TWEEN.Easing.Cubic.InOut)
@@ -3159,7 +3448,8 @@
 
             // Position camera based on exploration state
             if (state.hasExplored) {
-                camera.position.set(0, 0, window.innerWidth < 768 ? 40 : 25);
+                const mobileDistance = Math.max(30, 44 * (innerHeight / innerWidth) / (844 / 390));
+                camera.position.set(0, 0, window.innerWidth <= 768 ? -mobileDistance : 25);
             } else {
                 camera.position.set(0, 0, window.innerWidth < 768 ? 100 : 75);
             }
@@ -3186,7 +3476,7 @@
             keyLight.position.set(20, 20, 50);
             scene.add(keyLight);
 
-            const rimLight = new THREE.SpotLight(0x00e5ff, 5); // Blue rim light
+            const rimLight = new THREE.SpotLight(0xb3d4ed, 2.2); // Soft cool edge on the sculpted shell
             rimLight.position.set(-30, 10, 0);
             rimLight.lookAt(0, 0, 0);
             scene.add(rimLight);
@@ -3195,8 +3485,13 @@
             fillLight.position.set(20, -10, 20);
             scene.add(fillLight);
 
+            const rearFill = new THREE.DirectionalLight(0xd6e1ed, 1.1);
+            rearFill.position.set(-12, 8, -25);
+            scene.add(rearFill);
+
             // Objects
             createStarfield();
+            createAsteroidField();
             createCameraModel();
 
             // Controls
@@ -3206,53 +3501,43 @@
             controls.minDistance = 10;
             controls.maxDistance = 100;
             controls.enablePan = false;
+            frameMobileScene();
 
             // Interaction
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
         }
 
-        function generateLeatherTexture() {
-            const size = 1024;
+        function generateCameraSurfaceTexture(pebbled = false) {
+            const size = 512, cells = pebbled ? 64 : 128, step = size / cells;
+            let seed = pebbled ? 8197 : 4319;
+            const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+            const points = Array.from({ length: cells * cells }, () => [random(), random()]);
             const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-
-            // --- OPTIMIZED NOISE GENERATION (Direct Pixel Manipulation) ---
-            // Instead of drawing 800,000 rectangles, we write directly to the pixel array.
-            // This reduces load time from ~4 seconds to ~5 milliseconds.
-
-            const imageData = ctx.createImageData(size, size);
-            const data = imageData.data; // The array holding RGBA values
-
-            for (let i = 0; i < data.length; i += 4) {
-                // Randomly choose between dark grey (#222 -> 34) and darker grey (#111 -> 17)
-                const colorVal = Math.random() > 0.5 ? 34 : 17;
-
-                data[i] = colorVal; // Red
-                data[i + 1] = colorVal; // Green
-                data[i + 2] = colorVal; // Blue
-                data[i + 3] = 255;      // Alpha (Opacity)
+            canvas.width = canvas.height = size;
+            const ctx = canvas.getContext('2d'), pixels = ctx.createImageData(size, size);
+            for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+                const gx = x / step, gy = y / step, cx = Math.floor(gx), cy = Math.floor(gy);
+                let nearest = Infinity, second = Infinity;
+                for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+                    const point = points[((cy + dy + cells) % cells) * cells + (cx + dx + cells) % cells];
+                    const distance = (cx + dx + point[0] - gx) ** 2 + (cy + dy + point[1] - gy) ** 2;
+                    if (distance < nearest) { second = nearest; nearest = distance; }
+                    else second = Math.min(second, distance);
+                }
+                // Irregular raised cells for rubber; finer stippling for the painted shell.
+                const grain = pebbled ? Math.min(1, (second - nearest) * 2.4) : Math.max(0, 1 - nearest * 1.5);
+                const noise = random(), i = (y * size + x) * 4;
+                pixels.data[i] = Math.round(55 + grain * 155 + noise * 25);
+                // Red is bump height; green is roughness. Both are linear material data.
+                pixels.data[i + 1] = Math.round((pebbled ? 215 : 190) + grain * 25 + noise * 15);
+                pixels.data[i + 2] = pixels.data[i]; pixels.data[i + 3] = 255;
             }
-
-            // Put the noise onto the canvas instantly
-            ctx.putImageData(imageData, 0, 0);
-
-            // --- Layer 2: Cell pattern (Leather grain) ---
-            // This loop is small (5000), so we can keep using standard drawing here.
-            ctx.globalAlpha = 0.05;
-            ctx.fillStyle = '#fff';
-            for (let i = 0; i < 5000; i++) {
-                const r = Math.random() * 5 + 2;
-                ctx.beginPath();
-                ctx.arc(Math.random() * size, Math.random() * size, r, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            return tex;
+            ctx.putImageData(pixels, 0, 0);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+            return texture;
         }
 
         function generateMetalTexture() {
@@ -3291,144 +3576,561 @@
         }
 
         function createStarfield() {
-            if (starSystem) scene.remove(starSystem);
+            // Settings can rebuild this scene repeatedly; release the previous GPU resources.
+            const rotation = starSystem?.rotation.y || 0;
+            if (starSystem) {
+                scene.remove(starSystem);
+                const textures = new Set();
+                starSystem.traverse((object) => {
+                    object.geometry?.dispose();
+                    if (object.material) {
+                        if (object.material.map) textures.add(object.material.map);
+                        object.material.dispose();
+                    }
+                });
+                textures.forEach((texture) => texture.dispose());
+            }
+            starSystem = new THREE.Group();
+            starSystem.name = 'portfolio-sky';
+            starSystem.rotation.y = rotation;
+            scene.add(starSystem);
 
-            // Increased density for drama
-            const baseCount = state.highDensityStars ? 40000 : 10000;
-            const starDensity = window.SitePerformance?.current?.starDensity || 1;
-            const count = Math.max(2500, Math.round(baseCount * starDensity));
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(count * 3);
-            const sizes = new Float32Array(count);
-            const colors = new Float32Array(count * 3);
-            const color = new THREE.Color();
+            // A seamless, very low-contrast sky surrounds every viewing angle. Broad cool
+            // haze and a trace of copper echo the camera's finish without lighting the model.
+            const skyMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    midnight: { value: new THREE.Color(0x050810).convertSRGBToLinear() },
+                    blue: { value: new THREE.Color(0x1b304a).convertSRGBToLinear() },
+                    copper: { value: new THREE.Color(0x30241e).convertSRGBToLinear() }
+                },
+                vertexShader: `
+                    varying vec3 skyDirection;
+                    void main() {
+                        skyDirection = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 midnight;
+                    uniform vec3 blue;
+                    uniform vec3 copper;
+                    varying vec3 skyDirection;
+                    void main() {
+                        vec3 d = normalize(skyDirection);
+                        float sweep = d.y + 0.3 * d.x - 0.12 * sin(d.z * 4.0 + d.x * 3.0);
+                        float haze = exp(-sweep * sweep * 7.0);
+                        float veil = 0.76 + 0.12 * sin(d.x * 12.0 + d.z * 8.0 + sin(d.y * 11.0));
+                        float cool = haze * veil * (0.38 + 0.3 * (1.0 - d.x));
+                        float warm = exp(-pow(d.y + 0.28, 2.0) * 12.0) * smoothstep(-0.1, 0.85, d.x);
+                        vec3 color = mix(midnight, blue, cool);
+                        color = mix(color, copper, warm * 0.48);
+                        gl_FragColor = vec4(color, 1.0);
+                        #include <encodings_fragment>
+                    }
+                `,
+                side: THREE.BackSide, depthWrite: false, fog: false
+            });
+            const sky = new THREE.Mesh(new THREE.SphereGeometry(1750, 32, 20), skyMaterial);
+            sky.name = 'atmosphere';
+            sky.renderOrder = -2;
+            starSystem.add(sky);
 
-            for (let i = 0; i < count; i++) {
-                // Spherical distribution
-                const r = 400 + Math.random() * 1000;
-                const theta = 2 * Math.PI * Math.random();
-                const phi = Math.acos(2 * Math.random() - 1);
-
-                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-                positions[i * 3 + 2] = r * Math.cos(phi);
-
-                sizes[i] = Math.random() * 2;
-
-                // Slight blue/yellow tints
-                if (Math.random() > 0.9) color.setHex(0xaabfff);
-                else if (Math.random() > 0.9) color.setHex(0xffddaa);
-                else color.setHex(0xffffff);
-
-                colors[i * 3] = color.r;
-                colors[i * 3 + 1] = color.g;
-                colors[i * 3 + 2] = color.b;
+            if (renderedStarCount() === 0) {
+                applySceneRenderingSettings();
+                return;
             }
 
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-            const material = new THREE.PointsMaterial({
-                size: 1.5,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.9,
-                sizeAttenuation: true
+            // Soft circular sprites replace square pixels. One tiny shared texture serves
+            // all three distance/brightness layers; no image downloads or post-processing.
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const glow = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            glow.addColorStop(0, 'rgba(255,255,255,1)');
+            glow.addColorStop(0.12, 'rgba(255,255,255,0.95)');
+            glow.addColorStop(0.3, 'rgba(255,255,255,0.35)');
+            glow.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, 0, 64, 64);
+            const starTexture = new THREE.CanvasTexture(canvas);
+            const count = renderedStarCount();
+            // Stable placement avoids a distracting reshuffle when quality settings change.
+            let seed = 73;
+            const random = () => {
+                seed = seed * 16807 % 2147483647;
+                return (seed - 1) / 2147483646;
+            };
+            const palette = [0xb9cfe5, 0xe0e6ef, 0xdac5ac].map((hex) =>
+                new THREE.Color(hex).convertSRGBToLinear());
+            const layers = [
+                { fraction: 0.76, size: 2.4, opacity: 0.48, near: 850, depth: 650 },
+                { fraction: 0.21, size: 3.6, opacity: 0.65, near: 550, depth: 600 },
+                { fraction: 0.03, size: 5.2, opacity: 0.82, near: 350, depth: 550 }
+            ];
+            let allocated = 0;
+            layers.forEach((layer, index) => {
+                const length = index === layers.length - 1 ? count - allocated : Math.round(count * layer.fraction);
+                allocated += length;
+                const positions = new Float32Array(length * 3);
+                const colors = new Float32Array(length * 3);
+                for (let i = 0; i < length; i++) {
+                    const radius = layer.near + random() * layer.depth;
+                    const theta = random() * Math.PI * 2;
+                    const y = random() * 2 - 1;
+                    const radial = Math.sqrt(1 - y * y);
+                    positions.set([radius * radial * Math.cos(theta), radius * y,
+                        radius * radial * Math.sin(theta)], i * 3);
+                    const color = palette[Math.floor(random() * palette.length)];
+                    const brightness = 0.55 + random() * 0.45;
+                    colors.set([color.r * brightness, color.g * brightness, color.b * brightness], i * 3);
+                }
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                const material = new THREE.PointsMaterial({
+                    map: starTexture, size: layer.size, vertexColors: true,
+                    transparent: true, opacity: layer.opacity, depthWrite: false,
+                    blending: THREE.AdditiveBlending, sizeAttenuation: true, fog: false
+                });
+                const stars = new THREE.Points(geometry, material);
+                stars.name = `star-layer-${index}`;
+                stars.userData.baseOpacity = layer.opacity;
+                stars.renderOrder = -1;
+                starSystem.add(stars);
             });
+            applySceneRenderingSettings();
+        }
 
-            starSystem = new THREE.Points(geometry, material);
-            scene.add(starSystem);
+        function createAsteroidField() {
+            const rotation = asteroidSystem?.rotation.y || 0;
+            if (asteroidSystem) {
+                scene.remove(asteroidSystem);
+                const materials = new Set();
+                asteroidSystem.traverse((object) => {
+                    object.geometry?.dispose();
+                    if (object.material) materials.add(object.material);
+                });
+                materials.forEach((material) => {
+                    material.bumpMap?.dispose();
+                    material.dispose();
+                });
+            }
+            asteroidSystem = new THREE.Group();
+            asteroidSystem.name = 'asteroid-field';
+            asteroidSystem.rotation.y = rotation;
+            scene.add(asteroidSystem);
+            let seed = 917;
+            const random = () => {
+                seed = seed * 16807 % 2147483647;
+                return (seed - 1) / 2147483646;
+            };
+
+            // A tiny procedural grain texture and four irregular, dented rock shapes.
+            // All duplicates share geometry/material through four instanced draw calls.
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const pixels = ctx.createImageData(128, 128);
+            for (let i = 0; i < pixels.data.length; i += 4) {
+                const grain = 70 + Math.floor(random() * 110);
+                pixels.data.set([grain, grain, grain, 255], i);
+            }
+            ctx.putImageData(pixels, 0, 0);
+            const grain = new THREE.CanvasTexture(canvas);
+            grain.wrapS = grain.wrapT = THREE.RepeatWrapping;
+            grain.repeat.set(3, 2);
+            const material = new THREE.MeshStandardMaterial({
+                vertexColors: true, roughness: 1, metalness: 0.04,
+                bumpMap: grain, bumpScale: 0.13, flatShading: true
+            });
+            const profile = window.SitePerformance?.current?.resolvedProfile;
+            const count = profile === 'performance' ? 32 : profile === 'balanced' ? 64 : 128;
+            const variants = [];
+            const direction = new THREE.Vector3();
+            for (let variant = 0; variant < 4; variant++) {
+                const geometry = new THREE.IcosahedronGeometry(1, 2);
+                const positions = geometry.attributes.position;
+                const colors = new Float32Array(positions.count * 3);
+                const rockColor = new THREE.Color([0x71685e, 0x626972, 0x756e65, 0x5f5b58][variant]).convertSRGBToLinear();
+                const crater = new THREE.Vector3(random() - 0.5, random() - 0.5, random() - 0.5).normalize();
+                for (let i = 0; i < positions.count; i++) {
+                    direction.fromBufferAttribute(positions, i).normalize();
+                    const { x, y, z } = direction;
+                    const ridges = Math.sin(x * 7 + variant) * Math.sin(y * 6 - z * 4) * 0.13;
+                    const facets = Math.sin(x * 17 + y * 11 + z * 13) * 0.045;
+                    const dent = Math.pow(Math.max(0, direction.dot(crater)), 18) * 0.28;
+                    const radius = 1 + ridges + facets - dent;
+                    positions.setXYZ(i, x * radius * (1.12 + variant * 0.06),
+                        y * radius * (0.82 + variant * 0.04), z * radius);
+                    const shade = 0.72 + (ridges + 0.13) * 0.8 - dent * 0.7;
+                    colors.set([rockColor.r * shade, rockColor.g * shade, rockColor.b * shade], i * 3);
+                }
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.computeVertexNormals();
+                geometry.computeBoundingSphere();
+                const mesh = new THREE.InstancedMesh(geometry, material, count / 4);
+                mesh.name = `asteroid-variant-${variant}`;
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                // Instances sit well beyond the source geometry's unit bounding sphere.
+                mesh.frustumCulled = false;
+                asteroidSystem.add(mesh);
+                variants.push(mesh);
+            }
+            const rocks = [];
+            const transform = new THREE.Object3D();
+            // A hollow shell outside the entire camera orbit keeps rocks behind the model
+            // and its live screen, with real parallax when the visitor rotates the camera.
+            for (let i = 0; i < 128; i++) {
+                const y = 1 - (i + 0.5) / 128 * 2;
+                const azimuth = i * Math.PI * (3 - Math.sqrt(5)) + 0.7;
+                const radial = Math.sqrt(1 - y * y);
+                const distance = 180 + random() * 160;
+                const size = 2.2 + Math.pow(random(), 3) * 5.4;
+                const position = new THREE.Vector3(Math.cos(azimuth) * radial, y, Math.sin(azimuth) * radial).multiplyScalar(distance);
+                const rotation = new THREE.Euler(random() * 6, random() * 6, random() * 6);
+                const spin = new THREE.Vector3(0.1 + random() * 0.1, (random() - 0.5) * 0.24, 0.035);
+                if (i % (128 / count) !== 0) continue;
+                const index = rocks.length;
+                const mesh = variants[index % 4];
+                const slot = Math.floor(index / 4);
+                transform.position.copy(position);
+                transform.rotation.copy(rotation);
+                transform.scale.setScalar(size);
+                transform.updateMatrix();
+                mesh.setMatrixAt(slot, transform.matrix);
+                rocks.push({ mesh, slot, position, rotation, spin, size });
+            }
+            asteroidSystem.userData.rocks = rocks;
+            asteroidSystem.userData.transform = transform;
+            applySceneRenderingSettings();
+        }
+
+        function animateAsteroids(now, enabled) {
+            if (!asteroidSystem) return;
+            const previous = asteroidSystem.userData.lastFrame ?? now;
+            asteroidSystem.userData.lastFrame = now;
+            if (!enabled || !state.rendering.asteroidMotion || !asteroidSystem.visible) return;
+            const delta = Math.min((now - previous) / 1000, 0.05);
+            asteroidSystem.rotation.y += delta * 0.018;
+            const transform = asteroidSystem.userData.transform;
+            for (const rock of asteroidSystem.userData.rocks) {
+                rock.rotation.x += rock.spin.x * delta;
+                rock.rotation.y += rock.spin.y * delta;
+                rock.rotation.z += rock.spin.z * delta;
+                transform.position.copy(rock.position);
+                transform.rotation.copy(rock.rotation);
+                transform.scale.setScalar(rock.size);
+                transform.updateMatrix();
+                rock.mesh.setMatrixAt(rock.slot, transform.matrix);
+            }
+            asteroidSystem.children.forEach((mesh) => { mesh.instanceMatrix.needsUpdate = true; });
         }
 
         function createCameraModel() {
             camGroup = new THREE.Group();
-
-            // --- SCALING UPDATE: Make camera bigger ---
-            camGroup.scale.set(1.4, 1.4, 1.4);
-
+            camGroup.scale.setScalar(1.4);
             scene.add(camGroup);
 
-            const leatherTex = generateLeatherTexture();
-            const metalTex = generateMetalTexture();
-
+            const leatherTex = generateCameraSurfaceTexture(true);
+            const shellTex = generateCameraSurfaceTexture();
+            const shellMat = new THREE.MeshStandardMaterial({
+                color: 0x141619, roughness: 0.82, metalness: 0.16,
+                bumpMap: shellTex, bumpScale: 0.008, roughnessMap: shellTex
+            });
             const leatherMat = new THREE.MeshStandardMaterial({
-                map: leatherTex,
-                color: 0x333333,
-                roughness: 0.9,
-                bumpMap: leatherTex,
-                bumpScale: 0.05
+                color: 0x101214, roughness: 0.98,
+                bumpMap: leatherTex, bumpScale: 0.028, roughnessMap: leatherTex
             });
-
-            const metalMat = new THREE.MeshStandardMaterial({
-                map: metalTex,
-                color: 0xaaaaaa,
-                roughness: 0.3,
-                metalness: 0.8,
-                envMapIntensity: 1.0
-            });
-
             const blackMat = new THREE.MeshStandardMaterial({
-                color: 0x111111,
-                roughness: 0.5
+                color: 0x0b0d10, roughness: 0.82, metalness: 0.08,
+                bumpMap: shellTex, bumpScale: 0.005, roughnessMap: shellTex
             });
+            const metalMat = new THREE.MeshStandardMaterial({
+                color: 0x72777d, roughness: 0.3, metalness: 0.8
+            });
+            const mountMat = new THREE.MeshStandardMaterial({
+                color: 0xb66032, roughness: 0.36, metalness: 0.65
+            });
+            // r128 expects material colors in linear space; these swatches are sRGB.
+            for (const material of [shellMat, leatherMat, blackMat, metalMat, mountMat])
+                material.color.convertSRGBToLinear();
 
-            // 1. Body
-            const body = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 4), leatherMat);
-            camGroup.add(body);
+            // Bevel the actual geometry so the silhouette stays soft at every orbit angle.
+            // Shapes are centered in XY; positive Z faces the lens.
+            const roundedOutline = (width, height, radius) => {
+                const x = -width / 2, y = -height / 2;
+                const shape = new THREE.Shape();
+                shape.moveTo(x + radius, y);
+                shape.lineTo(x + width - radius, y);
+                shape.quadraticCurveTo(x + width, y, x + width, y + radius);
+                shape.lineTo(x + width, y + height - radius);
+                shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                shape.lineTo(x + radius, y + height);
+                shape.quadraticCurveTo(x, y + height, x, y + height - radius);
+                shape.lineTo(x, y + radius);
+                shape.quadraticCurveTo(x, y, x + radius, y);
+                return shape;
+            };
+            const sculpt = (shape, depth, bevel, material, x = 0, y = 0, z = 0) => {
+                const geometry = new THREE.ExtrudeGeometry(shape, {
+                    depth: depth - bevel * 2, steps: 1, curveSegments: 12,
+                    bevelEnabled: true, bevelSegments: 5,
+                    bevelSize: bevel, bevelThickness: bevel
+                });
+                geometry.translate(0, 0, -depth / 2 + bevel);
+                // Extruded surfaces use model-space UVs; keep the grain at a tactile scale.
+                const uv = geometry.attributes.uv;
+                for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 0.18, uv.getY(i) * 0.18);
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(x, y, z);
+                camGroup.add(mesh);
+                return mesh;
+            };
+            const rounded = (w, h, d, radius, bevel, material, x = 0, y = 0, z = 0) =>
+                sculpt(roundedOutline(w - bevel * 2, h - bevel * 2, radius), d, bevel, material, x, y, z);
+            const cylinder = (radius, depth, material, x, y, z, front = false) => {
+                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, depth, 64), material);
+                if (front) mesh.rotation.x = Math.PI / 2;
+                mesh.position.set(x, y, z);
+                camGroup.add(mesh);
+                return mesh;
+            };
+            const ring = (radius, tube, material, x, y, z) => {
+                const mesh = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 8, 64), material);
+                mesh.position.set(x, y, z);
+                camGroup.add(mesh);
+                return mesh;
+            };
 
-            // 2. Grip
-            const grip = new THREE.Mesh(new THREE.BoxGeometry(3, 9, 5), leatherMat);
-            grip.position.set(-7.5, -0.5, 1);
-            camGroup.add(grip);
+            // Compact magnesium-style shell, with curved corners and a thin base seam.
+            rounded(14.4, 9.4, 3.8, 0.65, 0.28, shellMat);
+            rounded(13.95, 8.75, 0.24, 0.7, 0.08, leatherMat, 0, -0.12, 1.91);
+            rounded(13.9, 0.38, 3.55, 0.12, 0.09, blackMat, 0, -4.48, 0);
 
-            // 3. Top Plate (Metal)
-            // INCREASED DIMENSIONS SLIGHTLY TO AVOID Z-FIGHTING (14.05 vs 14)
-            const topPlate = new THREE.Mesh(new THREE.BoxGeometry(14.05, 2, 4.05), metalMat);
-            topPlate.position.set(0, 5, 0);
-            camGroup.add(topPlate);
+            // Swept, asymmetric handgrip: a broad palm swell narrows at the shutter shelf.
+            const gripShape = new THREE.Shape();
+            gripShape.moveTo(-7.35, -4.12);
+            gripShape.bezierCurveTo(-8.05, -3.95, -8.05, -2.5, -8.0, -0.5);
+            gripShape.bezierCurveTo(-7.95, 1.25, -7.7, 3.6, -6.85, 4.1);
+            gripShape.bezierCurveTo(-6.3, 4.5, -5.25, 4.15, -5.02, 3.45);
+            gripShape.bezierCurveTo(-4.8, 2.8, -5.55, 1.5, -5.45, 0.2);
+            gripShape.bezierCurveTo(-5.3, -1.2, -4.85, -3.05, -5.3, -3.8);
+            gripShape.bezierCurveTo(-5.7, -4.35, -6.7, -4.35, -7.35, -4.12);
+            sculpt(gripShape, 5.65, 0.48, leatherMat, 0, 0, 0.9);
+            // Sloped shoulders flow into a low, central electronic-viewfinder housing.
+            const shoulder = new THREE.Shape();
+            shoulder.moveTo(-6.6, 3.65);
+            shoulder.lineTo(6.5, 3.65);
+            shoulder.quadraticCurveTo(7.0, 4.25, 6.3, 4.65);
+            shoulder.lineTo(2.3, 4.8);
+            shoulder.lineTo(1.55, 5.25);
+            shoulder.lineTo(-1.65, 5.25);
+            shoulder.lineTo(-2.5, 4.75);
+            shoulder.lineTo(-6.35, 4.62);
+            shoulder.quadraticCurveTo(-7.05, 4.5, -6.6, 3.65);
+            sculpt(shoulder, 4.0, 0.18, shellMat);
+            const viewfinder = new THREE.Shape();
+            viewfinder.moveTo(-2.25, 4.1);
+            viewfinder.lineTo(2.25, 4.1);
+            viewfinder.lineTo(1.62, 5.85);
+            viewfinder.quadraticCurveTo(1.45, 6.08, 1.15, 6.08);
+            viewfinder.lineTo(-1.15, 6.08);
+            viewfinder.quadraticCurveTo(-1.45, 6.08, -1.62, 5.85);
+            viewfinder.closePath();
+            const viewfinderStart = camGroup.children.length;
+            sculpt(viewfinder, 4.05, 0.22, shellMat, 0, 0, -0.05);
+            rounded(2.85, 1.65, 0.72, 0.35, 0.16, blackMat, 0, 4.97, -2.18);
+            rounded(1.92, 0.94, 0.12, 0.18, 0.04, metalMat, 0, 5.02, -2.57);
+            rounded(1.64, 0.7, 0.08, 0.16, 0.025, blackMat, 0, 5.02, -2.65);
+            registerCameraControl('viewfinder', 'Viewfinder · Random photo', camGroup.children.slice(viewfinderStart));
+            rounded(1.48, 0.14, 1.7, 0.06, 0.035, blackMat, 0, 6.33, -0.15);
+            for (const x of [-0.67, 0.67])
+                rounded(0.12, 0.12, 1.55, 0.025, 0.025, metalMat, x, 6.43, -0.15);
 
-            // 4. Shutter Button
-            const shutter = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16), metalMat);
-            shutter.position.set(-7.5, 6, 1.5);
-            camGroup.add(shutter);
+            // A compact external flash seated in the hot-shoe rails.
+            rounded(1.15, 0.25, 1.4, 0.06, 0.04, metalMat, 0, 6.56, -0.15);
+            rounded(1.3, 1.25, 1.2, 0.16, 0.08, blackMat, 0, 7.25, -0.15);
+            rounded(3.5, 1.85, 1.8, 0.25, 0.12, shellMat, 0, 8.58, -0.05);
+            rounded(3.18, 1.4, 0.16, 0.18, 0.04, blackMat, 0, 8.62, 0.91);
+            cameraFlashPanel = rounded(2.98, 1.17, 0.1, 0.13, 0.025,
+                new THREE.MeshBasicMaterial({ color: 0x75818a, toneMapped: false }), 0, 8.62, 1.04);
+            cameraFlashLight = new THREE.PointLight(0xffffff, 0, 90, 2);
+            cameraFlashLight.position.set(0, 8.62, 2.0);
+            camGroup.add(cameraFlashLight);
 
-            // 5. Lens Assembly
-            const lensOuter = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 2, 32), blackMat);
-            lensOuter.rotation.x = Math.PI / 2;
-            lensOuter.position.z = 3;
-            camGroup.add(lensOuter);
+            // Recessed control dials and a shutter sitting on the grip, not floating above it.
+            const dial = (x, y, z, radius) => {
+                cylinder(radius, 0.42, blackMat, x, y, z);
+                cylinder(radius * 0.85, 0.08, shellMat, x, y + 0.24, z);
+                // Shared geometry/material keeps the small knurled edge details inexpensive.
+                const ridgeGeometry = new THREE.BoxGeometry(0.055, 0.24, 0.09);
+                const ridges = new THREE.InstancedMesh(ridgeGeometry, metalMat, 32);
+                const transform = new THREE.Object3D();
+                for (let i = 0; i < 32; i++) {
+                    const angle = i * Math.PI * 2 / 32;
+                    transform.position.set(x + Math.sin(angle) * radius, y, z + Math.cos(angle) * radius);
+                    transform.rotation.y = angle;
+                    transform.updateMatrix();
+                    ridges.setMatrixAt(i, transform.matrix);
+                }
+                camGroup.add(ridges);
+                rounded(0.09, 0.035, 0.32, 0.015, 0.01, metalMat, x, y + 0.3, z + radius * 0.45);
+            };
+            const modeDialStart = camGroup.children.length;
+            dial(-4.15, 4.97, -0.6, 0.91);
+            registerCameraControl('collection', 'Mode dial · Next collection', camGroup.children.slice(modeDialStart));
+            const zoomDialStart = camGroup.children.length;
+            dial(4.65, 4.92, -0.1, 0.83);
+            registerCameraControl('zoom', '18–300mm zoom · Tap to adjust', camGroup.children.slice(zoomDialStart));
+            const shutterShelf = rounded(2.18, 0.48, 2.35, 0.46, 0.13, shellMat, -6.45, 4.63, 1.66);
+            shutterShelf.rotation.x = -0.16;
+            registerCameraControl('shutter', 'Shutter · Capture a photo', [
+                cylinder(0.66, 0.2, blackMat, -6.45, 4.98, 1.96),
+                cylinder(0.49, 0.16, metalMat, -6.45, 5.12, 1.96)
+            ]);
+            registerCameraControl('custom', 'Star drift · Toggle background star movement', [
+                cylinder(0.44, 0.24, blackMat, -5.1, 4.99, 0.9)
+            ]);
 
-            const lensRing = new THREE.Mesh(new THREE.CylinderGeometry(3.9, 3.9, 0.5, 32), metalMat);
-            lensRing.rotation.x = Math.PI / 2;
-            lensRing.position.z = 3.5;
-            camGroup.add(lensRing);
-
-            // 6. Glass
-            const glassGeo = new THREE.CircleGeometry(3.5, 32);
+            // Fine copper mount accent and a stepped barrel complement the darker body.
+            cylinder(3.72, 0.28, blackMat, 0.3, -0.35, 2.12, true);
+            ring(3.59, 0.095, mountMat, 0.3, -0.35, 2.32);
+            const brandCanvas = document.createElement('canvas');
+            brandCanvas.width = 1024; brandCanvas.height = 128;
+            const brandCtx = brandCanvas.getContext('2d');
+            brandCtx.font = cameraFont(116);
+            brandCtx.fillStyle = '#e7e9eb';
+            brandCtx.textAlign = 'center'; brandCtx.textBaseline = 'middle';
+            brandCtx.fillText('TheDoShoots', 512, 66, 990);
+            const brandTexture = new THREE.CanvasTexture(brandCanvas);
+            brandTexture.encoding = THREE.sRGBEncoding;
+            const brandLabel = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 0.6),
+                new THREE.MeshBasicMaterial({ map: brandTexture, transparent: true, depthWrite: false, toneMapped: false }));
+            brandLabel.name = 'TheDoShoots body label';
+            brandLabel.position.set(0.3, 4.03, 2.14);
+            camGroup.add(brandLabel);
+            cylinder(3.44, 1.35, shellMat, 0.3, -0.35, 2.94, true);
+            const zoomRingStart = camGroup.children.length;
+            cylinder(3.48, 1.0, blackMat, 0.3, -0.35, 3.88, true);
+            for (let i = 0; i < 8; i++) ring(3.47, 0.035, shellMat, 0.3, -0.35, 3.46 + i * 0.12);
+            rounded(0.12, 0.07, 0.65, 0.025, 0.015, metalMat, 0.3, 3.16, 3.88);
+            registerCameraControl('zoom', 'Zoom ring', camGroup.children.slice(zoomRingStart));
+            cameraControls.get('zoom').parts.at(-1).axis = 'z';
+            // The inner sleeve remains nested inside the fixed barrel at every focal length.
+            const lensMiddleStart = camGroup.children.length;
+            cylinder(3.22, 4.8, shellMat, 0.3, -0.35, 3.0, true);
+            ring(3.2, 0.045, blackMat, 0.3, -0.35, 5.35);
+            registerCameraControl('zoom', 'Zoom sleeve', camGroup.children.slice(lensMiddleStart));
+            Object.assign(cameraControls.get('zoom').parts.at(-1), { axis: 'z', extends: 3.4 });
+            const lensFrontStart = camGroup.children.length;
+            cylinder(2.98, 4.8, shellMat, 0.3, -0.35, 3.0, true);
+            cylinder(3.07, 0.24, blackMat, 0.3, -0.35, 5.4, true);
+            ring(2.92, 0.065, metalMat, 0.3, -0.35, 5.54);
             const glassMat = new THREE.MeshPhysicalMaterial({
-                color: 0x222244,
-                metalness: 0.9,
-                roughness: 0,
-                transmission: 0.2,
-                transparent: true,
-                opacity: 0.6
+                color: 0x182535, metalness: 0.6, roughness: 0.12,
+                clearcoat: 1, clearcoatRoughness: 0.08
             });
-            const glass = new THREE.Mesh(glassGeo, glassMat);
-            glass.position.z = 4.01;
+            glassMat.color.convertSRGBToLinear();
+            const glass = new THREE.Mesh(new THREE.CircleGeometry(2.83, 64), glassMat);
+            glass.position.set(0.3, -0.35, 5.56);
             camGroup.add(glass);
+            ring(2.69, 0.028, blackMat, 0.3, -0.35, 5.575);
+            ring(1.91, 0.022, blackMat, 0.3, -0.35, 5.58);
+            registerCameraControl('zoom', 'Zoom lens', camGroup.children.slice(lensFrontStart));
+            Object.assign(cameraControls.get('zoom').parts.at(-1), { axis: 'z', extends: 6.8 });
 
-            // 7. Screen (Back)
+            // Small strap eyes and the rear thumb rest make the body read from the sides too.
+            for (const x of [-7.43, 7.22]) {
+                const lug = ring(0.29, 0.095, metalMat, x, 3.38, 0);
+                lug.rotation.y = Math.PI / 2;
+            }
+            rounded(1.18, 2.1, 0.65, 0.38, 0.15, leatherMat, -6.14, 2.47, -2.01);
+            const wheelStart = camGroup.children.length;
+            const rearWheel = cylinder(0.65, 0.18, blackMat, -6.1, -0.62, -2.04, true);
+            rearWheel.rotation.x = -Math.PI / 2;
+            ring(0.52, 0.055, shellMat, -6.1, -0.62, -2.16);
+            cylinder(0.24, 0.12, metalMat, -6.1, -0.62, -2.18, true);
+            registerCameraControl('collection', 'Rear wheel · Next collection', camGroup.children.slice(wheelStart));
+            registerCameraControl('menu', 'Home button · Collection index', [
+                cylinder(0.22, 0.16, blackMat, -6.1, 1.02, -2.08, true)
+            ]);
+            registerCameraControl('playback', 'Playback button · Last photo', [
+                cylinder(0.22, 0.16, blackMat, -6.1, -2.32, -2.08, true)
+            ]);
+            registerCameraControl('settings', 'Settings · Camera menu', [
+                rounded(2.2, 0.66, 0.34, 0.14, 0.05, blackMat, 4.3, 3.98, -2.04)
+            ]);
+            registerCameraControl('custom', 'Star drift', [
+                rounded(2.5, 0.92, 0.34, 0.16, 0.05, blackMat, -3.9, 3.98, -2.04)
+            ]);
+
+            // Printed legends stay on the body and participate in their control's hit target.
+            const controlLabel = (text, id, x, y, z, width, height, side = 'back') => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512; canvas.height = Math.round(512 * height / width);
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#e0e4e7';
+                cameraBoxText(ctx, text, { x: 0, y: 0, w: canvas.width, h: canvas.height },
+                    { size: canvas.height * 0.85, align: 'center', padding: 3 });
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.encoding = THREE.sRGBEncoding;
+                const label = new THREE.Mesh(new THREE.PlaneGeometry(width, height),
+                    new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }));
+                label.position.set(x, y, z);
+                if (side === 'back') label.rotation.y = Math.PI;
+                else if (side === 'top') { label.rotation.x = -Math.PI / 2; label.rotation.z = Math.PI; }
+                label.name = `${text} control label`;
+                label.userData.cameraControl = id;
+                camGroup.add(label);
+                return label;
+            };
+            controlLabel('MODE', 'collection', -4.15, 4.96, -1.78, 1.65, 0.28, 'top');
+            controlLabel('ZOOM', 'zoom', 4.65, 4.96, -1.4, 1.5, 0.3, 'top');
+            controlLabel('SHUTTER', 'shutter', -6.45, 4.96, 0.95, 1.5, 0.32, 'top');
+            controlLabel('DRIFT', 'custom', -5.65, 4.96, -0.6, 0.9, 0.25, 'top');
+            controlLabel('HOME', 'menu', -6.1, 1.5, -2.4, 1.05, 0.23);
+            controlLabel('MODE', 'collection', -6.1, 0.3, -2.15, 1.05, 0.23);
+            controlLabel('PLAY', 'playback', -6.1, -1.77, -2.15, 1.05, 0.23);
+            controlLabel('EVF', 'viewfinder', 0, 5.65, -2.555, 1.1, 0.22);
+            controlLabel('SETTINGS', 'settings', 4.3, 3.98, -2.23, 1.85, 0.33);
+            controlLabel('STAR DRIFT', 'custom', -3.9, 3.98, -2.23, 2.2, 0.38);
+
+            // Keep the live UI and UV-based hit testing on a planar screen inside a soft bezel.
+            rounded(11.05, 7.65, 0.4, 0.3, 0.1, blackMat, 0.62, -0.48, -2.02);
             createUIScreen();
-            const screenGeo = new THREE.PlaneGeometry(12, 8);
-            const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture }); // Self-illuminated
+            const screenGeo = new THREE.PlaneGeometry(10.55, 7.1);
+            const screenMat = new THREE.MeshBasicMaterial({ map: uiTexture, transparent: true });
             screenMesh = new THREE.Mesh(screenGeo, screenMat);
-            screenMesh.position.set(0, -0.5, -2.01);
-            screenMesh.rotation.y = Math.PI; // Face backwards
+            screenMesh.position.set(0.62, -0.48, -2.24);
+            screenMesh.rotation.y = Math.PI;
             camGroup.add(screenMesh);
+            const finderCanvas = document.createElement('canvas');
+            finderCanvas.width = finderCanvas.height = 1500;
+            finderCtx = finderCanvas.getContext('2d');
+            finderTexture = new THREE.CanvasTexture(finderCanvas);
+            finderTexture.encoding = THREE.sRGBEncoding;
+            // Match the rounded eyepiece opening instead of overlaying square corners.
+            const finderGeometry = new THREE.ShapeGeometry(roundedOutline(1.52, 0.64, 0.14));
+            const finderPositions = finderGeometry.attributes.position;
+            const finderUV = finderGeometry.attributes.uv;
+            for (let i = 0; i < finderPositions.count; i++)
+                finderUV.setXY(i, finderPositions.getX(i) / 1.52 + 0.5, finderPositions.getY(i) / 0.64 + 0.5);
+            Object.assign(finderGeometry.parameters, { width: 1.52, height: 0.64 });
+            finderMesh = new THREE.Mesh(finderGeometry, new THREE.MeshBasicMaterial({ map: finderTexture, transparent: true }));
+            finderMesh.position.set(0, 5.02, -2.71);
+            finderMesh.rotation.y = Math.PI;
+            finderMesh.userData.cameraControl = 'viewfinder';
+            camGroup.add(finderMesh);
+            updateUI();
         }
 
         // --- VIRTUAL SCREEN UI ---
+        function cameraFont(size, numeric = false) {
+            return numeric
+                ? `600 ${size}px "Consolas", "Menlo", monospace`
+                : `600 ${size}px "Bahnschrift", "DIN Alternate", "Arial Narrow", sans-serif`;
+        }
+
         function createUIScreen() {
             const canvas = document.createElement('canvas');
             canvas.width = 1500; canvas.height = 1500;
@@ -3443,8 +4145,35 @@
         }
 
         function updateUI() {
+            const aiButton = document.getElementById('mobile-camera-ai');
+            if (aiButton) {
+                aiButton.hidden = !state.vlmEnabled || !lastCameraPhoto || cameraLiveView || cameraDisplay !== 'photo';
+                aiButton.textContent = cameraAI.visible ? 'Close AI' : 'AI Inspect';
+                aiButton.disabled = cameraPhotoBusy || cameraTravel;
+            }
+            const sourceButton = document.getElementById('mobile-camera-source');
+            if (sourceButton) sourceButton.textContent = cameraSource === 'space' ? 'Photos' : 'Space';
+            const hint = document.querySelector('.mobile-camera-gesture-hint');
+            if (hint) hint.textContent = cameraDisplay !== 'photo' ? 'Choose a collection or tap Space to shoot' : cameraAI.visible ? 'Read the inspection on the camera display'
+                : cameraLiveView ? 'Drag to aim · Pinch to zoom · Shutter to capture'
+                : cameraPhotoCrop() < 1 ? 'Drag to pan · Pinch to zoom · Double-tap to reset' : 'Swipe to browse · Pinch or double-tap to zoom';
+            const collectionDial = document.getElementById('mobile-collection-dial');
+            if (collectionDial) {
+                collectionDial.value = cameraCollections[cameraCollection] || 'all';
+                collectionDial.disabled = cameraPhotoBusy || cameraTravel;
+            }
             if (!uiCtx) return;
+            uiCtx.cameraPhotoLayout = null;
+            uiCtx.cameraAspect = 10.55 / 7.1;
             uiClickZones = [];
+            updateFinderScreen();
+            if (cameraDisplay !== 'menu') {
+                drawCameraDisplay(uiCtx, 10.55 / 7.1, uiClickZones, false);
+                positionCameraLivePlane(screenMesh, uiCtx);
+                uiTexture.needsUpdate = true;
+                return;
+            }
+            positionCameraLivePlane(screenMesh, uiCtx);
 
             // Background
             uiCtx.fillStyle = '#000000';
@@ -3458,7 +4187,7 @@
             uiCtx.scale(1, 1.5);     // STRETCH: 1.5x Taller
 
             uiCtx.fillStyle = '#00e5ff';
-            uiCtx.font = 'bold 40px Roboto';
+            uiCtx.font = cameraFont(40, true);
             uiCtx.fillText("RAW", 50, 0);
 
             uiCtx.fillStyle = '#fff';
@@ -3519,24 +4248,28 @@
 
 
             const btnW = 800;  // Increased for better touch target
-            const btnH = 190;  // Slightly taller
+            const btnH = 178;  // Leave room for the status line below the final row
             const x = 550;     // Shifted slightly to accommodate wider buttons
             let y = 140;
-            const gap = 220;
+            const gap = 208;
 
             // UPDATED BUTTONS
-            drawUIBtn("👤 About", x, y, btnW, btnH, () => handleNav('about.html', true));
+            drawUIBtn("◉ Discover", x, y, btnW, btnH, () => selectCameraCollection(-1));
             y += gap;
-            drawUIBtn("🌌 Astronomy", x, y, btnW, btnH, () => handleNav('./portfolios/astronomy/index.html', true));
+            drawUIBtn("🌌 Astronomy", x, y, btnW, btnH, () => selectCameraCollection(0));
             y += gap;
-            drawUIBtn("🍱 Food", x, y, btnW, btnH, () => handleNav('./portfolios/food/index.html', true));
+            drawUIBtn("🍱 Food", x, y, btnW, btnH, () => selectCameraCollection(1));
             y += gap;
-            drawUIBtn("🏞️ Landscape", x, y, btnW, btnH, () => handleNav('./portfolios/landscape/index.html', true));
+            drawUIBtn("🏞️ Landscape", x, y, btnW, btnH, () => selectCameraCollection(2));
             y += gap;
-            drawUIBtn("✈️ Planes", x, y, btnW, btnH, () => handleNav('./portfolios/planes/index.html', true));
+            drawUIBtn("✈️ Planes", x, y, btnW, btnH, () => selectCameraCollection(3));
             y += gap;
-            drawUIBtn("🐿️ Wildlife", x, y, btnW, btnH, () => handleNav('./portfolios/wildlife/index.html', true));
+            drawUIBtn("🐿️ Wildlife", x, y, btnW, btnH, () => selectCameraCollection(4));
 
+            uiCtx.fillStyle = '#8dd2eb';
+            uiCtx.font = cameraFont(30);
+            cameraBoxText(uiCtx, cameraMessage || 'SHUTTER: LIVE SPACE / VIEWFINDER: PHOTOGRAPHS',
+                { x: 40, y: 1380, w: 1420, h: 100 }, { size: 30 });
             if (uiTexture) uiTexture.needsUpdate = true;
         }
 
@@ -3548,26 +4281,8 @@
             uiCtx.lineWidth = 4;
             uiCtx.strokeRect(x, y, w, h);
 
-            // 2. Draw the Text (Fixed Aspect Ratio)
-            uiCtx.save(); // Save current state
-
-            // Move origin to the center of the button
-            uiCtx.translate(x + w / 2, y + h / 2);
-
-            // SCALE Y by 1.5x
-            // This makes the text taller to counteract the 3D horizontal stretch
-            uiCtx.scale(1, 1.5);
-
             uiCtx.fillStyle = '#fff';
-            // Decreased font size slightly (54 -> 48) because the scaling makes it look bigger
-            uiCtx.font = 'bold 48px "Roboto"';
-            uiCtx.textAlign = 'center';
-            uiCtx.textBaseline = 'middle';
-
-            // Draw text at (0,0) which is now the center of the button
-            uiCtx.fillText(text, 0, 0);
-
-            uiCtx.restore(); // Restore state so next drawing isn't affected
+            cameraBoxText(uiCtx, text, { x, y, w, h }, { size: 48, align: 'center', padding: 20 });
 
             // 3. Register Click Zone
             uiClickZones.push({
@@ -3576,68 +4291,1031 @@
         }
 
         // --- INTERACTION LOGIC ---
+        function frameMobileScene() {
+            if (!camera) return;
+            if (innerWidth <= 768 && !cameraInspection) {
+                const dockHeight = document.querySelector('.mobile-scene-dock').offsetHeight;
+                const headerHeight = document.querySelector('.controls-container').offsetHeight;
+                // Keep the camera centered in the space between the mobile controls.
+                camera.setViewOffset(innerWidth, innerHeight, 0, Math.max(0, (dockHeight - headerHeight) / 2), innerWidth, innerHeight);
+            } else camera.clearViewOffset();
+        }
+
         function onResize() {
             const { width, height } = viewportSize();
 
             if (camera) {
                 camera.aspect = width / height;
                 camera.updateProjectionMatrix();
+                frameMobileScene();
             }
             if (renderer) applyRendererPerformanceProfile();
+            if (camGroup && !state.rendering.cameraMotion)
+                camGroup.scale.setScalar(width < 768 ? 1 : 1.4);
+            if (cameraInspection) focusCameraDisplay(cameraInspection, true);
         }
 
-        function onMouseMove(e) {
-            if (!state.is3D || !renderer || e.target !== renderer.domElement) return;
-
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-            checkIntersections(false);
+        function registerCameraControl(id, label, meshes) {
+            const control = cameraControls.get(id) || { id, label, meshes: [], parts: [] };
+            const pivot = new THREE.Group();
+            pivot.position.copy(meshes[0].position);
+            camGroup.add(pivot);
+            for (const mesh of meshes) {
+                mesh.userData.cameraControl = id;
+                mesh.material = mesh.material.clone();
+                mesh.position.sub(pivot.position);
+                pivot.add(mesh);
+                control.meshes.push(mesh);
+            }
+            control.parts.push({ pivot, rest: pivot.position.clone(), axis: pivot.position.z < -2 ? 'z' : 'y' });
+            cameraControls.set(id, control);
         }
 
-        function onCanvasClick(e) {
-            // The listener is registered on document, but only an actual click on
-            // the WebGL canvas should interact with the camera-screen gallery.
-            // Otherwise UI clicks (notably Settings) reuse the last mouse position
-            // and can accidentally activate a gallery button behind the overlay.
-            if (!state.is3D || !state.hasExplored || !renderer || e.target !== renderer.domElement) return;
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            checkIntersections(true);
+        function cameraAnnouncement(message) {
+            cameraMessage = message;
+            document.getElementById('camera-action-status').textContent = message;
+            updateUI();
         }
 
-        function checkIntersections(isClick) {
-            // Only interact if looking at back of camera roughly
-            if (!camera || !screenMesh) return;
+        function setCameraHover(control) {
+            if (hoveredCameraControl === control) return;
+            hoveredCameraControl?.meshes.forEach((mesh) => mesh.material.emissive?.setHex(0));
+            control?.meshes.forEach((mesh) => mesh.material.emissive?.setHex(0x12303d));
+            hoveredCameraControl = control;
+            if (!cameraPhotoBusy) {
+                cameraMessage = control ? control.label.toUpperCase() : '';
+                updateUI();
+            }
+            if (renderer) renderer.domElement.style.cursor = control ? 'pointer' : '';
+        }
 
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObject(screenMesh);
+        function selectCameraCollection(index) {
+            cancelCameraInspectionAI(); cameraSource = 'portfolio'; cameraLiveView = false;
+            cameraCollection = index;
+            cameraDisplay = 'photo';
+            if (!cameraInspection) focusCameraDisplay('screen');
+            sfx.click(); showCameraPhoto();
+        }
 
-            if (intersects.length > 0) {
-                document.body.style.cursor = 'pointer';
-                if (isClick) {
-                    const uv = intersects[0].uv;
-                    sfx.shutter();
-                    // UV mapping on PlaneGeometry: x=0..1, y=0..1
-                    // Since the mesh is rotated 180 deg (PI), UVs might be flipped depending on implementation.
-                    // For a standard plane rotated y=PI, x is inverted visually.
-                    const canvasX = (1 - uv.x) * 1500;
-                    const canvasY = (1 - uv.y) * 1500;
+        function cameraText(ctx, text, x, y, width) {
+            ctx.save();
+            ctx.scale(1, ctx.cameraAspect || 1);
+            if (width) ctx.fillText(text, x, y / (ctx.cameraAspect || 1), width);
+            else ctx.fillText(text, x, y / (ctx.cameraAspect || 1));
+            ctx.restore();
+        }
 
-                    // Add forgiving padding for touch interactions
-                    const hPadding = 50;
-                    const vPadding = 25;
+        function cameraBoxText(ctx, text, box, { size = 36, align = 'left', numeric = false, padding = 10 } = {}) {
+            const aspect = ctx.cameraAspect || 1;
+            const width = Math.max(1, box.w - padding * 2), height = Math.max(1, box.h - padding * 2);
+            const value = String(text ?? '');
+            ctx.save();
+            ctx.beginPath(); ctx.rect(box.x + padding, box.y + padding, width, height); ctx.clip();
+            ctx.font = cameraFont(size, numeric);
+            const measured = ctx.measureText(value);
+            const glyphHeight = (measured.actualBoundingBoxAscent + measured.actualBoundingBoxDescent) || size;
+            // Fit in both axes after accounting for the physical display's aspect ratio.
+            const fitted = Math.min(size, Math.max(20, size * width / Math.max(1, measured.width)), size * height / (glyphHeight * aspect));
+            ctx.font = cameraFont(fitted, numeric);
+            let label = value;
+            if (ctx.measureText(label).width > width) {
+                const chars = Array.from(value);
+                let low = 0, high = chars.length;
+                while (low < high) {
+                    const mid = Math.ceil((low + high) / 2);
+                    if (ctx.measureText(chars.slice(0, mid).join('') + '…').width <= width) low = mid;
+                    else high = mid - 1;
+                }
+                label = chars.slice(0, low).join('') + '…';
+            }
+            const metrics = ctx.measureText(label);
+            const x = align === 'center' ? box.x + box.w / 2 : align === 'right' ? box.x + box.w - padding : box.x + padding;
+            const y = box.y + box.h / 2 + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) * aspect / 2;
+            ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+            ctx.scale(1, aspect); ctx.fillText(label, x, y / aspect);
+            ctx.restore();
+        }
 
-                    for (let zone of uiClickZones) {
-                        if (canvasX >= zone.x - hPadding && canvasX <= zone.x + zone.w + hPadding &&
-                            canvasY >= zone.y - vPadding && canvasY <= zone.y + zone.h + vPadding) {
-                            zone.action();
-                            break;
+        function cameraScreenButton(ctx, zones, label, x, y, w, h, action) {
+            ctx.strokeStyle = '#557c8d';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = '#d8eaf0';
+            cameraBoxText(ctx, label, { x, y, w, h }, { size: matchMedia('(pointer: coarse)').matches ? 58 : 36, align: 'center', padding: 14 });
+            zones.push({ x, y, w, h, action, label });
+        }
+
+        function cameraMetadataRows(photo) {
+            if (!photo) return [['PHOTO', 'Press the shutter to discover a photograph']];
+            const data = photo.metadata || {};
+            if (photo.gallery === 'space') return [
+                ['PHOTO', photo.name], ['SOURCE', 'Live 3D space scene'], ['CAMERA', 'TheDoShoots virtual camera'],
+                ['FOCAL LENGTH', `${data['EXIF FocalLength']} mm`], ['SIZE', `${data['Image Width']} × ${data['Image Height']}`],
+                ['CAPTURED', data['Image DateTime'] || 'Not recorded']
+            ];
+            const number = value => {
+                const parts = String(value ?? '').split('/').map(Number);
+                const result = parts.length === 2 ? parts[0] / parts[1] : parts[0];
+                return Number.isFinite(result) && result > 0 ? Math.round(result * 100) / 100 : null;
+            };
+            const aperture = number(data['EXIF FNumber']);
+            const focal = number(data['EXIF FocalLength']);
+            const rawExposure = data['EXIF ExposureTime'];
+            const exposure = number(rawExposure) >= 1 ? number(rawExposure) : rawExposure;
+            const settings = [aperture && `f/${aperture}`, exposure && `${exposure} s`, data['EXIF ISOSpeedRatings'] && `ISO ${data['EXIF ISOSpeedRatings']}`].filter(Boolean).join('   ·   ');
+            const date = String(data['EXIF DateTimeOriginal'] || data['Image DateTime'] || '').replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
+            return [
+                ['PHOTO', photo.name],
+                ['CAMERA', [data['Image Make'], data['Image Model']].filter(Boolean).join(' ') || 'Not recorded'],
+                ['LENS', data['EXIF LensModel'] || 'Not recorded'],
+                ['EXPOSURE', settings || 'Not recorded'],
+                ['FOCAL LENGTH', focal ? `${focal} mm` : 'Not recorded'],
+                ['TAKEN', date || 'Not recorded']
+            ];
+        }
+
+        function cameraFocusFrame(area, aspect) {
+            const width = Math.min(300, area.w * 0.55, area.h / aspect * 0.55);
+            const height = width * aspect;
+            return { x: area.x + (area.w - width) / 2, y: area.y + (area.h - height) / 2, w: width, h: height };
+        }
+
+        function ensureCameraLiveView() {
+            if (cameraLiveTarget) return;
+            const width = innerWidth < 768 ? 512 : 768;
+            cameraLiveTarget = new THREE.WebGLRenderTarget(width, width * 0.75, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, stencilBuffer: false });
+            cameraLiveTarget.texture.encoding = THREE.sRGBEncoding;
+            cameraLiveCamera = new THREE.PerspectiveCamera(65, 4 / 3, 0.1, 2000);
+        }
+
+        function positionCameraLivePlane(surface, ctx) {
+            if (!surface) return;
+            let plane = surface.userData.livePlane;
+            const layout = ctx.cameraPhotoLayout;
+            if (!layout?.live) { if (plane) plane.visible = false; return; }
+            ensureCameraLiveView();
+            if (!plane) {
+                plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: cameraLiveTarget.texture, toneMapped: false }));
+                plane.raycast = () => {};
+                surface.add(plane); surface.userData.livePlane = plane;
+            }
+            const rect = layout.photoRect, { width, height } = surface.geometry.parameters;
+            plane.position.set(((rect.x + rect.w / 2) / 1500 - 0.5) * width, (0.5 - (rect.y + rect.h / 2) / 1500) * height, -0.002);
+            plane.scale.set(rect.w / 1500 * width, rect.h / 1500 * height, 1);
+            plane.visible = true;
+        }
+
+        function renderCameraLiveScene() {
+            ensureCameraLiveView();
+            camGroup.updateMatrixWorld(true);
+            cameraLiveCamera.position.copy(camGroup.localToWorld(new THREE.Vector3(0.3, -0.35, 13)));
+            const direction = new THREE.Vector3(Math.sin(cameraAim.yaw) * Math.cos(cameraAim.pitch), Math.sin(cameraAim.pitch), Math.cos(cameraAim.yaw) * Math.cos(cameraAim.pitch)).transformDirection(camGroup.matrixWorld);
+            cameraLiveCamera.lookAt(cameraLiveCamera.position.clone().add(direction));
+            cameraLiveCamera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(27 / (2 * cameraLens.focalLength)));
+            cameraLiveCamera.updateProjectionMatrix();
+            const target = renderer.getRenderTarget(), visible = camGroup.visible;
+            try {
+                camGroup.visible = false;
+                renderer.setRenderTarget(cameraLiveTarget); renderer.render(scene, cameraLiveCamera);
+            } finally { camGroup.visible = visible; renderer.setRenderTarget(target); }
+        }
+
+        function setCameraSource(source) {
+            if (cameraPhotoBusy || cameraTravel) return;
+            cancelCameraInspectionAI(); cameraMetadataVisible = false;
+            cameraSource = source; cameraLiveView = source === 'space'; cameraDisplay = 'photo';
+            if (cameraLiveView) { ensureCameraLiveView(); renderCameraLiveScene(); }
+            if (!cameraInspection) focusCameraDisplay('screen');
+            if (source === 'portfolio' && (!lastCameraPhoto || lastCameraPhoto.gallery === 'space')) showCameraPhoto();
+            else cameraAnnouncement(cameraLiveView ? 'SPACE / DRAG TO AIM / SHUTTER TO CAPTURE' : 'PORTFOLIO / NEXT SHOT TO BROWSE');
+            updateUI();
+        }
+
+        async function captureCameraSpace() {
+            if (cameraPhotoBusy) return;
+            cameraPhotoBusy = true;
+            const request = ++cameraPhotoRequest;
+            cancelCameraInspectionAI();
+            ensureCameraLiveView();
+            const width = 1600, height = 1200, oldWidth = cameraLiveTarget.width, oldHeight = cameraLiveTarget.height;
+            try {
+                cameraLiveTarget.setSize(width, height); renderCameraLiveScene();
+                const pixels = new Uint8Array(width * height * 4);
+                renderer.readRenderTargetPixels(cameraLiveTarget, 0, 0, width, height, pixels);
+                const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d'), data = ctx.createImageData(width, height);
+                for (let y = 0; y < height; y++) data.data.set(pixels.subarray((height - y - 1) * width * 4, (height - y) * width * 4), y * width * 4);
+                ctx.putImageData(data, 0, 0);
+                cameraLiveTarget.setSize(oldWidth, oldHeight);
+                const date = new Date().toISOString();
+                const focal = Math.round(cameraLens.focalLength);
+                await watermarkCameraCapture(ctx, width, height);
+                if (request !== cameraPhotoRequest) return;
+                cameraPhotoBusy = false;
+                cameraLiveView = false; cameraMetadataVisible = false;
+                await showCameraPhoto({ gallery: 'space', name: `Space_${date.replace(/[:.]/g, '-')}`, src: canvas.toDataURL('image/jpeg', 0.94), metadata: {
+                    'EXIF FocalLength': focal, 'Image Width': width, 'Image Height': height, 'Image DateTime': date, 'Image Copyright': 'TheDoShoots / Timothy Do'
+                } }, 'capture');
+            } catch (_) { if (request === cameraPhotoRequest) cameraAnnouncement('CAPTURE FAILED / PLEASE RETRY'); }
+            finally { if (request === cameraPhotoRequest) cameraPhotoBusy = false; cameraLiveTarget.setSize(oldWidth, oldHeight); updateUI(); }
+        }
+
+        async function watermarkCameraCapture(ctx, width, height) {
+            const watermark = document.getElementById('welcome-watermark');
+            if (!watermark.complete || !watermark.naturalWidth) {
+                let timeout;
+                try { await Promise.race([watermark.decode(), new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error('Watermark unavailable')), 8000); })]); }
+                finally { clearTimeout(timeout); }
+            }
+            if (!watermark.naturalWidth) throw new Error('Watermark unavailable');
+            const w = width * 0.25, h = w * watermark.naturalHeight / watermark.naturalWidth;
+            const margin = Math.round(Math.min(width, height) * 0.015), x = width - w - margin, y = height - h - margin;
+            const pixels = ctx.getImageData(Math.floor(x), Math.floor(y), Math.ceil(w), Math.ceil(h)).data;
+            let brightness = 0;
+            for (let i = 0; i < pixels.length; i += 4) brightness += pixels[i] * .2126 + pixels[i + 1] * .7152 + pixels[i + 2] * .0722;
+            ctx.save(); ctx.globalAlpha = .8;
+            if (brightness / (pixels.length / 4) > 128) ctx.filter = 'invert(1)';
+            ctx.drawImage(watermark, x, y, w, h); ctx.restore();
+        }
+
+        function openCameraCapture() {
+            if (lastCameraPhoto?.gallery !== 'space' || cameraPhotoBusy) return;
+            const photo = lastCameraPhoto;
+            let viewer = document.getElementById('camera-capture-viewer');
+            if (!viewer) {
+                viewer = document.createElement('dialog'); viewer.id = 'camera-capture-viewer';
+                viewer.setAttribute('aria-label', 'Captured space photograph');
+                viewer.innerHTML = '<div class="capture-toolbar"><button type="button" data-close>Back to Camera</button><button type="button" data-live>New Shot</button><button type="button" data-tab>Open in New Tab</button><a data-save>Save Photo</a></div><div class="capture-image-wrap"><img alt="Captured view of the virtual stars and asteroids"></div><div class="capture-toolbar"><button type="button" data-previous>Previous Shot</button><span data-count role="status"></span><button type="button" data-next>Next Shot</button></div>';
+                document.body.appendChild(viewer);
+                viewer.querySelector('[data-close]').onclick = () => viewer.close();
+                viewer.querySelector('[data-live]').onclick = () => { viewer.close(); setCameraSource('space'); };
+                viewer.addEventListener('close', () => {
+                    if (document.fullscreenElement === viewer) document.exitFullscreen().catch(() => {});
+                    viewer.querySelector('img').removeAttribute('src'); renderer.domElement.focus({ preventScroll: true });
+                });
+            }
+            viewer.querySelector('img').src = photo.src;
+            const save = viewer.querySelector('[data-save]'); save.href = photo.src; save.download = `${photo.name}.jpg`;
+            viewer.querySelector('[data-tab]').onclick = () => openCameraCaptureTab(photo);
+            const index = cameraCaptures.findIndex(capture => capture.src === photo.src);
+            viewer.querySelector('[data-count]').textContent = `Shot ${index + 1} of ${cameraCaptures.length}`;
+            for (const [selector, direction] of [['[data-previous]', -1], ['[data-next]', 1]]) {
+                const button = viewer.querySelector(selector);
+                button.disabled = cameraPhotoBusy || index + direction < 0 || index + direction >= cameraCaptures.length;
+                button.onclick = async () => {
+                    if (cameraPhotoBusy) return;
+                    viewer.querySelectorAll('[data-previous], [data-next]').forEach(control => { control.disabled = true; });
+                    await showCameraPhoto(cameraCaptures[index + direction], 'history');
+                    if (viewer.open) openCameraCapture();
+                };
+            }
+            if (!viewer.open) viewer.showModal();
+            if (!document.fullscreenElement) viewer.requestFullscreen?.().catch(() => { /* The full-window viewer also works without the Fullscreen API. */ });
+        }
+
+        function openCameraCaptureTab(photo = lastCameraPhoto) {
+            if (photo?.gallery !== 'space' || !photo.src.startsWith('data:image/jpeg;base64,')) return;
+            // Browsers block top-level data: navigation. Embed the base64 JPEG in a new image document instead.
+            const tab = window.open('', '_blank');
+            if (!tab) { cameraAnnouncement('ALLOW NEW TABS TO OPEN THIS PHOTO'); return; }
+            tab.opener = null;
+            const doc = tab.document;
+            doc.title = `${photo.name} / TheDoShoots`;
+            const viewport = doc.createElement('meta'); viewport.name = 'viewport'; viewport.content = 'width=device-width, initial-scale=1'; doc.head.appendChild(viewport);
+            const style = doc.createElement('style');
+            style.textContent = 'body{margin:0;background:#03080b;color:#eef7ff;font:14px system-ui;display:grid;place-items:center;min-height:100vh}img{display:block;max-width:100%;max-height:calc(100vh - 70px);object-fit:contain}a{color:inherit;padding:14px 24px;border:1px solid #557c8d;border-radius:8px;margin:10px;display:inline-block}';
+            doc.head.appendChild(style);
+            const image = doc.createElement('img'); image.src = photo.src; image.alt = 'Watermarked capture of the virtual space scene'; doc.body.appendChild(image);
+            const save = doc.createElement('a'); save.href = photo.src; save.download = `${photo.name}.jpg`; save.textContent = 'Save Photo'; doc.body.appendChild(save);
+        }
+
+        function saveCameraCapture() {
+            if (lastCameraPhoto?.gallery !== 'space') return;
+            const link = document.createElement('a');
+            link.href = lastCameraPhoto.src; link.download = `${lastCameraPhoto.name}.jpg`;
+            document.body.appendChild(link); link.click(); link.remove();
+            cameraAnnouncement('SPACE PHOTO SAVED');
+        }
+
+        function cancelCameraInspectionAI() {
+            if (cameraAI.busy) { cameraAI.photo = null; cameraAI.text = ''; }
+            cameraAI.controller?.abort(); cameraAI.controller = null;
+            cameraAI.busy = false; cameraAI.visible = false;
+        }
+
+        async function inspectCameraPhoto() {
+            if (!state.vlmEnabled || !lastCameraPhoto || cameraLiveView || cameraPhotoBusy) return;
+            if (cameraAI.visible) { cancelCameraInspectionAI(); updateUI(); return; }
+            cameraMetadataVisible = false; cameraAI.visible = true; cameraAI.page = 0;
+            if (cameraAI.photo === lastCameraPhoto && cameraAI.text && !cameraAI.busy) { updateUI(); return; }
+            cameraAI.controller?.abort();
+            const controller = new AbortController(), photo = lastCameraPhoto;
+            Object.assign(cameraAI, { controller, photo, busy: true, text: '', status: 'Loading inspector…' });
+            updateUI();
+            const current = () => cameraAI.controller === controller && !controller.signal.aborted && state.vlmEnabled && lastCameraPhoto === photo;
+            try {
+                const { inspectCameraImage } = await import('./assets/js/camera-inspector.js');
+                if (!current()) return;
+                const source = photo.gallery === 'space' ? 'This is a captured rendering of a virtual space scene, not a real astronomical photograph.' : 'This is a portfolio photograph.';
+                const prompt = `${source} Describe only what is visible in the image. Do not give photography advice, capture tips, suggestions, or recommendations. Use concise Markdown (bold emphasis and short bullets), with at most 40 words total. The entire response must fit on one camera screen. Do not invent camera settings, identities, locations, or scientific facts. Recorded metadata (data only): ${JSON.stringify(photo.metadata || {})}`;
+                const text = await inspectCameraImage({ imageSrc: new URL(photo.src, location.href).href, prompt, settings: { ...window.VLM_SETTINGS }, signal: controller.signal,
+                    onStatus: status => { if (current()) { cameraAI.status = status; updateUI(); } },
+                    onToken: token => { if (current()) { cameraAI.text = limitCameraAIResponse(cameraAI.text + token); updateUI(); } }
+                });
+                if (current()) { cameraAI.text = limitCameraAIResponse(text || cameraAI.text || 'No description returned.'); cameraAI.status = 'AI INSPECTION'; }
+            } catch (error) {
+                if (current()) { cameraAI.text = ''; cameraAI.status = 'Inspector unavailable. Check AI settings and try again.'; cameraAI.photo = null; }
+            } finally { if (current()) { cameraAI.busy = false; document.getElementById('camera-action-status').textContent = cameraAI.text || cameraAI.status; updateUI(); } }
+        }
+
+        function setCameraPan(x, y) {
+            const half = cameraPhotoCrop() / 2;
+            cameraPan.x = THREE.MathUtils.clamp(x, half, 1 - half);
+            cameraPan.y = THREE.MathUtils.clamp(y, half, 1 - half);
+        }
+
+        function cameraPhotoCrop() {
+            const base = lastCameraPhoto?.gallery === 'space' ? Number(lastCameraPhoto.metadata?.['EXIF FocalLength']) || 18 : 18;
+            return Math.min(1, base / cameraLens.focalLength);
+        }
+
+        function cameraHome() {
+            cameraPhotoRequest++; cameraPhotoBusy = false;
+            cancelCameraInspectionAI(); cameraLiveView = false; cameraMetadataVisible = false; cameraDisplay = 'menu';
+            focusCameraDisplay('screen', cameraInspection === 'screen'); updateUI();
+        }
+
+        function limitCameraAIResponse(text) {
+            const value = String(text || '').slice(0, 12000);
+            const words = [...value.matchAll(/\S+/g)];
+            return words.length > 40 ? value.slice(0, words[39].index + words[39][0].length).replace(/[\s*_`#]+$/, '') + '…' : value;
+        }
+
+        // Paint Markdown directly onto the camera texture; never inject model HTML.
+        function cameraMarkdownRuns(text) {
+            const runs = [];
+            const pattern = /\*\*(.+?)\*\*|__(.+?)__|\*([^*]+)\*|_([^_]+)_|`([^`]+)`|!?\[([^\]]+)\]\([^)]*\)/g;
+            for (const raw of limitCameraAIResponse(text).split('\n')) {
+                if (/^\s*```/.test(raw)) continue;
+                const heading = /^\s*#{1,6}\s+/.test(raw);
+                const line = raw.replace(/^\s*#{1,6}\s+/, '').replace(/^\s*[-*+]\s+/, '• ').replace(/^\s*>\s?/, '');
+                let start = 0;
+                for (const match of line.matchAll(pattern)) {
+                    if (match.index > start) runs.push({ text: line.slice(start, match.index), bold: heading });
+                    runs.push({ text: match[1] ?? match[2] ?? match[3] ?? match[4] ?? match[5] ?? match[6],
+                        bold: heading || !!(match[1] || match[2]), italic: !!(match[3] || match[4]), code: !!match[5], accent: heading || !!match[6] });
+                    start = match.index + match[0].length;
+                }
+                if (start < line.length) runs.push({ text: line.slice(start).replace(/(?:\*\*|__|`)/g, ''), bold: heading });
+                runs.push({ break: true });
+            }
+            return runs;
+        }
+
+        function drawCameraAI(ctx, area, zones, touchDisplay) {
+            const panel = { x: 525, y: area.y, w: 920, h: area.h };
+            ctx.fillStyle = '#03080b'; ctx.fillRect(panel.x, panel.y, panel.w, panel.h);
+            ctx.fillStyle = '#8ed9e5';
+            cameraBoxText(ctx, cameraAI.status, { x: 545, y: 165, w: 880, h: 110 }, { size: touchDisplay ? 46 : 36 });
+            const runs = cameraMarkdownRuns(cameraAI.text || (cameraAI.busy ? 'Your selected AI inspector is looking at this image.' : 'Tap Close AI, then AI Inspect to retry.'));
+            const box = { x: 550, y: 295, w: 860, h: touchDisplay ? 565 : 790 };
+            const font = (run, size) => `${run.italic ? 'italic ' : ''}${run.bold ? 750 : 400} ${size}px ${run.code ? 'Consolas, monospace' : 'Bahnschrift, "Arial Narrow", sans-serif'}`;
+            const wrap = size => {
+                const lines = [[]]; let width = 0;
+                const newline = () => { if (lines.at(-1).length) lines.push([]); width = 0; };
+                for (const run of runs) {
+                    if (run.break) { newline(); continue; }
+                    for (const word of run.text.split(/(\s+)/).filter(Boolean)) {
+                        ctx.font = font(run, size);
+                        if (!word.trim() && !width) continue;
+                        if (width + ctx.measureText(word).width > box.w) newline();
+                        if (!word.trim() && !width) continue;
+                        // Even a long unbroken model token must stay in its text box.
+                        let piece = '';
+                        for (const char of word) {
+                            if (width + ctx.measureText(piece + char).width > box.w && piece) {
+                                lines.at(-1).push({ ...run, text: piece, x: width }); newline(); piece = '';
+                            }
+                            piece += char;
                         }
+                        if (piece) { lines.at(-1).push({ ...run, text: piece, x: width }); width += ctx.measureText(piece).width; }
                     }
                 }
+                if (!lines.at(-1).length) lines.pop();
+                return lines;
+            };
+            let size = touchDisplay ? 52 : 44, lines;
+            do { lines = wrap(size); if (lines.length * size * ctx.cameraAspect * 1.35 <= box.h) break; size -= 1; } while (size > 20);
+            const height = size * ctx.cameraAspect * 1.35;
+            ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+            ctx.scale(1, ctx.cameraAspect); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            lines.forEach((line, i) => line.forEach(run => {
+                ctx.font = font(run, size); ctx.fillStyle = run.accent ? '#8ed9e5' : '#e4edf0';
+                if (run.code) { ctx.fillStyle = '#243a45'; ctx.fillRect(box.x + run.x, (box.y + i * height) / ctx.cameraAspect, ctx.measureText(run.text).width, size * 1.15); ctx.fillStyle = '#a2ede0'; }
+                ctx.fillText(run.text, box.x + run.x, (box.y + i * height) / ctx.cameraAspect);
+            }));
+            ctx.restore();
+            ctx.cameraAILayout = { size, lines: lines.length, height: lines.length * height, box };
+            cameraScreenButton(ctx, zones, cameraAI.busy ? 'STOP INSPECTION' : 'CLOSE AI', 350, touchDisplay ? 900 : 1130, 800, touchDisplay ? 205 : 100,
+                () => { cancelCameraInspectionAI(); updateUI(); });
+        }
+
+        function cameraDisplayPoint(event, surface) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
+            raycaster.setFromCamera(mouse, camera);
+            const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+                new THREE.Vector3(0, 0, 1).transformDirection(surface.matrixWorld), surface.getWorldPosition(new THREE.Vector3()));
+            const hit = raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+            if (!hit) return null;
+            surface.worldToLocal(hit);
+            return { x: (hit.x / surface.geometry.parameters.width + 0.5) * 1500,
+                y: (0.5 - hit.y / surface.geometry.parameters.height) * 1500 };
+        }
+
+        function cameraPointInRect(point, rect) {
+            return point && rect && point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
+        }
+
+        function drawCameraDisplay(ctx, aspect, zones, finder) {
+            ctx.cameraAspect = aspect;
+            ctx.cameraPhotoLayout = null;
+            ctx.fillStyle = '#03080b';
+            ctx.fillRect(0, 0, 1500, 1500);
+            ctx.fillStyle = '#9dd8e9';
+            ctx.font = cameraFont(38);
+            const touchDisplay = matchMedia('(pointer: coarse)').matches;
+            const gallery = cameraCollection < 0 ? 'ALL COLLECTIONS' : cameraCollections[cameraCollection].toUpperCase();
+            const headerY = finder ? 115 : 75;
+            const headerTop = headerY - 57;
+            cameraScreenButton(ctx, zones, cameraSource === 'space' ? 'SPACE / LIVE' : 'PORTFOLIO', finder ? 105 : 45, headerTop, finder ? 430 : 490, 88,
+                () => setCameraSource(cameraSource === 'space' ? 'portfolio' : 'space'));
+            if (state.vlmEnabled && lastCameraPhoto && !cameraLiveView && cameraDisplay !== 'settings')
+                cameraScreenButton(ctx, zones, cameraAI.visible ? 'CLOSE AI' : 'AI INSPECT', 965, headerTop, finder ? 430 : 490, 88, () => inspectCameraPhoto());
+            else if (cameraLiveView && cameraCaptures.length)
+                cameraScreenButton(ctx, zones, `REVIEW / ${cameraCaptures.length}`, 965, headerTop, finder ? 430 : 490, 88, () => showCameraPhoto(cameraCaptures.at(-1), 'history'));
+            else cameraBoxText(ctx, cameraLiveView ? 'LIVE SCENE' : gallery, { x: 965, y: headerTop, w: finder ? 430 : 490, h: 88 }, { size: 38, align: 'right' });
+            ctx.fillStyle = '#d8eaf0'; ctx.font = cameraFont(36, true); ctx.textAlign = 'center';
+            cameraBoxText(ctx, `${Math.round(cameraLens.focalLength)} mm`, { x: 650, y: headerTop, w: 200, h: 88 }, { size: 36, numeric: true, align: 'center' });
+            ctx.textAlign = 'left';
+            if (cameraDisplay === 'settings' && !finder) {
+                const choices = [
+                    [`SOURCE / ${cameraSource === 'space' ? 'SPACE' : 'PORTFOLIO'}`, () => setCameraSource(cameraSource === 'space' ? 'portfolio' : 'space')],
+                    [`COLLECTION / ${gallery}`, () => runCameraAction('collection')],
+                    [`STAR DRIFT / ${state.rendering.starMotion ? 'ON' : 'OFF'}`, () => runCameraAction('custom')],
+                    [`ASTEROIDS / ${state.rendering.asteroids ? 'ON' : 'OFF'}`, () => {
+                        state.rendering.asteroids = !state.rendering.asteroids;
+                        applySceneRenderingSettings(); saveRenderingPreferences(); syncRenderingSettings(); updateUI();
+                    }],
+                    ['BROWSE PHOTOGRAPHS', () => setCameraSource('portfolio')],
+                    ['COLLECTION INDEX', () => cameraHome()],
+                    ['ABOUT THEDOSHOOTS', () => handleNav('about.html', true)]
+                ];
+                choices.forEach(([label, action], i) => cameraScreenButton(ctx, zones, label, 90, 170 + i * 150, 1320, 125, action));
             } else {
-                document.body.style.cursor = 'default';
+                const isLive = cameraLiveView && cameraSource === 'space';
+                const image = isLive ? null : lastCameraPhoto?.image;
+                const area = { x: 55, y: 145, w: 1390, h: touchDisplay ? 940 : 1080 };
+                if (isLive) {
+                    const ratio = (4 / 3) / aspect, hLimit = touchDisplay ? 725 : 1080;
+                    const w = Math.min(area.w, hLimit * ratio), h = w / ratio;
+                    const photoRect = { x: area.x + (area.w - w) / 2, y: area.y + (hLimit - h) / 2, w, h };
+                    ctx.clearRect(photoRect.x, photoRect.y, w, h);
+                    ctx.cameraPhotoLayout = { photoRect, map: null, crop: 1, live: true };
+                } else if (image) {
+                    // Canvas pixels are stretched by the physical display; compensate to
+                    // keep landscape and portrait photographs in their original proportions.
+                    const ratio = image.naturalWidth / image.naturalHeight / aspect;
+                    const mapW = Math.min(touchDisplay ? 420 : 300, (touchDisplay ? 420 : 250) * ratio), mapH = mapW / ratio;
+                    const map = { x: area.x + area.w - mapW - 20, y: (touchDisplay ? 870 : area.y + area.h - 20) - mapH, w: mapW, h: mapH };
+                    // Reserve a separate right-hand rail for the overview, including its border.
+                    const photoArea = { ...area, w: cameraAI.visible ? 425 : area.w - mapW - 60, h: touchDisplay ? 725 : area.h };
+                    const w = Math.min(photoArea.w, photoArea.h * ratio), h = w / ratio;
+                    const crop = cameraPhotoCrop();
+                    const sw = image.naturalWidth * crop, sh = image.naturalHeight * crop;
+                    const photoRect = { x: photoArea.x + (photoArea.w - w) / 2, y: photoArea.y + (photoArea.h - h) / 2, w, h };
+                    ctx.drawImage(image, (cameraPan.x - crop / 2) * image.naturalWidth, (cameraPan.y - crop / 2) * image.naturalHeight, sw, sh,
+                        photoRect.x, photoRect.y, w, h);
+                    if (!cameraMetadataVisible && !cameraAI.visible) {
+                        ctx.cameraPhotoLayout = { photoRect, map, crop };
+                    }
+                } else {
+                    ctx.textAlign = 'center'; ctx.font = cameraFont(48); ctx.fillStyle = '#d8eaf0';
+                    cameraText(ctx, cameraPhotoBusy ? 'FOCUSING...' : 'PRESS THE SHUTTER', 750, 650);
+                    ctx.font = cameraFont(34);
+                    cameraText(ctx, 'Discover a photograph from the portfolio', 750, 730);
+                    ctx.textAlign = 'left';
+                }
+                ctx.strokeStyle = cameraPhotoBusy ? '#dbb575' : '#99cfad';
+                ctx.lineWidth = 4;
+                const frame = cameraFocusFrame(ctx.cameraPhotoLayout?.photoRect || area, aspect);
+                for (const [dx, dy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+                    const x = frame.x + (dx < 0 ? frame.w : 0), y = frame.y + (dy < 0 ? frame.h : 0);
+                    ctx.beginPath(); ctx.moveTo(x + dx * 38, y); ctx.lineTo(x, y); ctx.lineTo(x, y + dy * 38 * aspect); ctx.stroke();
+                }
+                if (cameraMetadataVisible) {
+                    ctx.fillStyle = '#03080bee'; ctx.fillRect(area.x, area.y, area.w, area.h);
+                    cameraMetadataRows(lastCameraPhoto).forEach(([label, value], i) => {
+                        const y = 170 + i * (touchDisplay ? 118 : 170);
+                        ctx.fillStyle = '#7eb2c4'; ctx.font = cameraFont(touchDisplay ? 40 : 28);
+                        cameraBoxText(ctx, label, { x: 85, y, w: touchDisplay ? 340 : 1330, h: touchDisplay ? 112 : 62 }, { size: touchDisplay ? 40 : 28 });
+                        ctx.fillStyle = '#e3eef2'; ctx.font = cameraFont(touchDisplay ? 48 : 40);
+                        cameraBoxText(ctx, value, { x: touchDisplay ? 435 : 85, y: y + (touchDisplay ? 0 : 62), w: touchDisplay ? 980 : 1330, h: touchDisplay ? 112 : 104 }, { size: touchDisplay ? 48 : 40 });
+                    });
+                }
+                if (ctx.cameraPhotoLayout?.map) {
+                    const { map, crop } = ctx.cameraPhotoLayout;
+                    ctx.fillStyle = '#03080be8'; ctx.fillRect(map.x - 10, map.y - 10, map.w + 20, map.h + 20);
+                    ctx.drawImage(image, map.x, map.y, map.w, map.h);
+                    ctx.fillStyle = '#03080b55'; ctx.fillRect(map.x, map.y, map.w, map.h);
+                    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
+                    ctx.strokeRect(map.x, map.y, map.w, map.h);
+                    ctx.strokeStyle = '#82e5e3'; ctx.lineWidth = 6;
+                    ctx.strokeRect(map.x + (cameraPan.x - crop / 2) * map.w, map.y + (cameraPan.y - crop / 2) * map.h, map.w * crop, map.h * crop);
+                    if (lastCameraPhoto?.gallery === 'space') {
+                        cameraScreenButton(ctx, zones, 'FULL SCREEN', map.x, 170, map.w, touchDisplay ? 205 : 105, () => openCameraCapture());
+                        if (!touchDisplay) cameraScreenButton(ctx, zones, 'NEW TAB', map.x, 305, map.w, 105, () => openCameraCaptureTab());
+                    }
+                }
+                if (cameraFlashAmount > 0) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${cameraFlashAmount * 0.85})`;
+                    ctx.fillRect(area.x, area.y, area.w, area.h);
+                }
+                ctx.fillStyle = '#aec4ce'; ctx.font = cameraFont(30);
+                cameraBoxText(ctx, cameraMessage || (lastCameraPhoto ? `${lastCameraPhoto.gallery.toUpperCase()} / FRAME ${String(cameraHistoryIndex + 1).padStart(3, '0')}` : 'V: VIEWFINDER / ENTER: SHUTTER'),
+                    { x: 45, y: touchDisplay ? 1120 : 1240, w: 1410, h: 90 }, { size: 30 });
+                if (touchDisplay && !cameraAI.visible) {
+                    ctx.fillStyle = '#03080bcc';
+                    ctx.fillRect(55, 900, 230, 205); ctx.fillRect(1215, 900, 230, 205);
+                }
+                if (!cameraAI.visible || !touchDisplay) {
+                    cameraScreenButton(ctx, zones, '−', touchDisplay ? 55 : 560, touchDisplay ? 900 : headerY - 57, touchDisplay ? 230 : 90, touchDisplay ? 205 : 88, () => setCameraLensZoom(cameraZoom - 5));
+                    cameraScreenButton(ctx, zones, '+', touchDisplay ? 1215 : 850, touchDisplay ? 900 : headerY - 57, touchDisplay ? 230 : 90, touchDisplay ? 205 : 88, () => setCameraLensZoom(cameraZoom + 5));
+                }
+                const savedSpace = !isLive && lastCameraPhoto?.gallery === 'space';
+                if (!touchDisplay) cameraScreenButton(ctx, zones, savedSpace ? 'SAVE PHOTO' : 'PREVIOUS', 55, 1350, 230, 105, () => savedSpace ? saveCameraCapture() : browseCameraPhoto(-1));
+                cameraScreenButton(ctx, zones, cameraPhotoBusy ? 'FOCUSING' : isLive ? 'CAPTURE' : cameraSource === 'space' ? 'CAPTURE AGAIN' : 'NEXT SHOT', touchDisplay ? 55 : 315, touchDisplay ? 1250 : 1350, touchDisplay ? 425 : 250, touchDisplay ? 205 : 105,
+                    () => isLive ? runCameraAction('shutter') : cameraSource === 'space' ? setCameraSource('space') : showCameraPhoto());
+                if (!cameraAI.visible) cameraScreenButton(ctx, zones, isLive ? 'AIM / RESET' : cameraMetadataVisible ? 'HIDE INFO' : 'METADATA', touchDisplay ? 350 : 595, touchDisplay ? 900 : 1350, touchDisplay ? (savedSpace ? 370 : 800) : 250, touchDisplay ? 205 : 105, () => {
+                    if (isLive) { cameraAim.yaw = cameraAim.pitch = 0; return; }
+                    cameraMetadataVisible = !cameraMetadataVisible; updateUI();
+                    document.getElementById('camera-action-status').textContent = cameraMetadataVisible
+                        ? cameraMetadataRows(lastCameraPhoto).map(row => row.join(': ')).join('. ') : 'Photo metadata hidden';
+                });
+                if (touchDisplay && savedSpace && !cameraAI.visible)
+                    cameraScreenButton(ctx, zones, 'SAVE PHOTO', 770, 900, 380, 205, () => saveCameraCapture());
+                if (cameraAI.visible) {
+                    drawCameraAI(ctx, area, zones, touchDisplay);
+                    if (savedSpace) cameraScreenButton(ctx, zones, 'FULL SCREEN', 55, touchDisplay ? 900 : 1130, 230, touchDisplay ? 205 : 100, () => openCameraCapture());
+                }
+            }
+            cameraScreenButton(ctx, zones, 'HOME', touchDisplay ? 535 : 875, touchDisplay ? 1250 : 1350, touchDisplay ? 430 : 250, touchDisplay ? 205 : 105, () => cameraHome());
+            cameraScreenButton(ctx, zones, 'STEP BACK', touchDisplay ? 1015 : 1155, touchDisplay ? 1250 : 1350, touchDisplay ? 430 : 290, touchDisplay ? 205 : 105, () => leaveCameraInspection());
+        }
+
+        function updateFinderScreen() {
+            if (!finderCtx) return;
+            finderClickZones = [];
+            drawCameraDisplay(finderCtx, 1.52 / 0.64, finderClickZones, true);
+            positionCameraLivePlane(finderMesh, finderCtx);
+            finderTexture.needsUpdate = true;
+        }
+
+        function animateCameraControl(id) {
+            const control = cameraControls.get(id);
+            if (!control) return;
+            control.meshes.forEach((mesh) => mesh.material.emissive?.setHex(0x245465));
+            setTimeout(() => control.meshes.forEach((mesh) => mesh.material.emissive?.setHex(hoveredCameraControl === control ? 0x12303d : 0)), 180);
+            for (const part of control.parts) {
+                if (id === 'collection') {
+                    const angle = part.pivot.rotation[part.axis] + Math.PI / 5;
+                    if (sceneMotionPreference.matches) part.pivot.rotation[part.axis] = angle;
+                    else new TWEEN.Tween(part.pivot.rotation).to({ [part.axis]: angle }, 260).easing(TWEEN.Easing.Quadratic.Out).start();
+                } else if (id === 'shutter' && !sceneMotionPreference.matches) {
+                    part.press?.stop();
+                    part.pivot.position.copy(part.rest);
+                    part.press = new TWEEN.Tween(part.pivot.position).to({ y: part.rest.y - 0.16 }, 90).yoyo(true).repeat(1).start();
+                }
+            }
+            if (id === 'shutter' && !sceneMotionPreference.matches) {
+                cameraFlashTween?.stop();
+                const flash = { amount: 1 };
+                const applyFlash = () => {
+                    cameraFlashAmount = sceneMotionPreference.matches ? 0 : flash.amount;
+                    cameraFlashLight.intensity = cameraFlashAmount * 14;
+                    cameraFlashPanel.material.color.setHex(0x75818a).lerp(new THREE.Color(0xffffff), cameraFlashAmount);
+                    updateUI();
+                };
+                applyFlash();
+                cameraFlashTween = new TWEEN.Tween(flash).to({ amount: 0 }, 240)
+                    .easing(TWEEN.Easing.Quadratic.Out).onUpdate(applyFlash)
+                    .onComplete(() => { flash.amount = 0; applyFlash(); cameraFlashTween = null; }).start();
+            }
+        }
+
+        function stopCameraTravel() {
+            cameraTravelTweens.forEach((tween) => tween.stop());
+            cameraTravelTweens = [];
+        }
+
+        function setCameraLensZoom(focalLength, immediate = false) {
+            cameraZoom = THREE.MathUtils.clamp(focalLength, 18, 300);
+            cameraLensTween?.stop();
+            cameraLensTween = null;
+            const apply = () => {
+                const extension = (cameraLens.focalLength - 18) / 282;
+                setCameraPan(cameraPan.x, cameraPan.y);
+                for (const part of cameraControls.get('zoom').parts) {
+                    part.pivot.rotation[part.axis] = extension * Math.PI * 0.8;
+                    if (part.extends) part.pivot.position.z = part.rest.z + extension * part.extends;
+                }
+                updateUI();
+            };
+            cameraAnnouncement(`ZOOM / ${Math.round(cameraZoom)} mm`);
+            if (immediate || sceneMotionPreference.matches || window.SitePerformance?.current?.animations === false) {
+                cameraLens.focalLength = cameraZoom; apply();
+            } else {
+                cameraLensTween = new TWEEN.Tween(cameraLens).to({ focalLength: cameraZoom }, 360)
+                    .easing(TWEEN.Easing.Cubic.Out).onUpdate(apply).onComplete(() => { cameraLensTween = null; }).start();
+            }
+        }
+
+        function moveCameraTo(position, target, duration, complete) {
+            const start = camera.position.clone(), fromTarget = controls.target.clone(), progress = { t: 0 };
+            const apply = () => {
+                camera.position.lerpVectors(start, position, progress.t);
+                controls.target.lerpVectors(fromTarget, target, progress.t);
+                camera.lookAt(controls.target);
+            };
+            if (sceneMotionPreference.matches || window.SitePerformance?.current?.animations === false || duration === 0) { progress.t = 1; apply(); complete?.(); return; }
+            const tween = new TWEEN.Tween(progress).to({ t: 1 }, duration).easing(TWEEN.Easing.Cubic.InOut)
+                .onUpdate(apply).onComplete(() => complete?.()).start();
+            cameraTravelTweens.push(tween);
+        }
+
+        function focusCameraDisplay(mode, immediate = false) {
+            if (!screenMesh || !finderMesh) return;
+            if (!cameraInspection) cameraReturnPose = { position: camera.position.clone(), target: controls.target.clone(), minDistance: controls.minDistance };
+            cameraInspection = mode;
+            document.body.classList.add('camera-inspecting');
+            frameMobileScene();
+            cameraTravel = true;
+            stopCameraTravel();
+            controls.enabled = false;
+            controls.minDistance = 0.25;
+            const surface = mode === 'viewfinder' ? finderMesh : screenMesh;
+            camGroup.updateMatrixWorld(true);
+            const target = surface.getWorldPosition(new THREE.Vector3());
+            const normal = new THREE.Vector3(0, 0, 1).transformDirection(surface.matrixWorld);
+            const size = surface.getWorldScale(new THREE.Vector3());
+            const width = surface.geometry.parameters.width * size.x, height = surface.geometry.parameters.height * size.y;
+            const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+            const distance = Math.max(width / (2 * tangent * camera.aspect * 0.88), height / (2 * tangent * 0.8));
+            const position = target.clone().addScaledVector(normal, distance);
+            const approach = () => moveCameraTo(position, target, immediate ? 0 : 900, () => { cameraTravel = false; });
+            if (!immediate && !sceneMotionPreference.matches && window.SitePerformance?.current?.animations !== false && camera.position.z > 0) {
+                // Orbit around the body before approaching its back; never fly through it.
+                const radius = Math.max(camera.position.length(), innerWidth < 768 ? 44 : 26);
+                const orbit = { angle: Math.atan2(camera.position.x, camera.position.z), y: camera.position.y };
+                const end = orbit.angle > 0 ? Math.PI : -Math.PI;
+                const tween = new TWEEN.Tween(orbit).to({ angle: end, y: 0 }, 900).easing(TWEEN.Easing.Cubic.InOut)
+                    .onUpdate(() => { camera.position.set(Math.sin(orbit.angle) * radius, orbit.y, Math.cos(orbit.angle) * radius); camera.lookAt(target); })
+                    .onComplete(approach).start();
+                cameraTravelTweens.push(tween);
+            } else approach();
+            cameraAnnouncement(`${mode === 'viewfinder' ? 'VIEWFINDER' : 'LCD'} / ${matchMedia('(pointer: coarse)').matches ? 'PINCH TO ZOOM / EXIT CAMERA VIEW: TOP LEFT' : 'ARROWS BROWSE / H: HOME / ESC: STEP BACK'}`);
+        }
+
+        function leaveCameraInspection(immediate = false) {
+            cancelCameraInspectionAI(); cameraLiveView = false;
+            cameraPhotoRequest++;
+            cameraPhotoBusy = false;
+            if (!cameraInspection || !cameraReturnPose) { cameraMessage = ''; updateUI(); return; }
+            stopCameraTravel();
+            cameraTravel = true;
+            const saved = cameraReturnPose;
+            moveCameraTo(saved.position, saved.target, immediate ? 0 : 700, () => {
+                controls.minDistance = saved.minDistance;
+                controls.enabled = true;
+                cameraInspection = null;
+                document.body.classList.remove('camera-inspecting');
+                frameMobileScene();
+                cameraReturnPose = null;
+                cameraTravel = false;
+                cameraMessage = '';
+                updateUI();
+            });
+        }
+
+        function checkIntersections(isClick, event) {
+            if (!state.is3D || !state.hasExplored || !camera || !camGroup || cameraTravel ||
+                els.settingsOverlay.classList.contains('visible') || els.iframeOverlay.classList.contains('active')) return;
+            raycaster.setFromCamera(mouse, camera);
+            const hit = raycaster.intersectObjects(camGroup.children, true)[0];
+            cameraPointerOverBody = event?.pointerType !== 'touch' && !!hit;
+            if (hit?.object === screenMesh || (hit?.object === finderMesh && cameraInspection === 'viewfinder')) {
+                setCameraHover(null);
+                const zones = hit.object === finderMesh ? finderClickZones : uiClickZones;
+                const x = hit.uv.x * 1500, y = (1 - hit.uv.y) * 1500;
+                const zone = zones.find((zone) => x >= zone.x - 15 && x <= zone.x + zone.w + 15 && y >= zone.y - 15 && y <= zone.y + zone.h + 15);
+                const layout = (hit.object === finderMesh ? finderCtx : uiCtx).cameraPhotoLayout;
+                renderer.domElement.style.cursor = zone ? 'pointer' : cameraPointInRect({ x, y }, layout?.map) ? 'crosshair'
+                    : cameraInspection && (layout?.live || layout?.crop < 1) && cameraPointInRect({ x, y }, layout.photoRect) ? 'grab' : '';
+                if (isClick && zone) { sfx.click(); zone.action(); }
+                else if (isClick && cameraDisplay === 'photo' && !cameraInspection) focusCameraDisplay('screen');
+                return;
+            }
+            const control = hit && cameraControls.get(hit.object.userData.cameraControl);
+            if (cameraInspection && (!control || (cameraInspection === 'viewfinder' && control.id === 'viewfinder'))) {
+                if (isClick && event?.pointerType !== 'touch') leaveCameraInspection();
+                return;
+            }
+            setCameraHover(control || null);
+            if (isClick && control) runCameraAction(control.id);
+        }
+
+        function setupCameraInteractions() {
+            document.querySelectorAll('[data-camera-action]').forEach((button) => {
+                button.addEventListener('click', () => runCameraAction(button.dataset.cameraAction));
+            });
+            if (!renderer) return;
+            const canvas = renderer.domElement;
+            canvas.tabIndex = 0;
+            // Own touch gestures even while OrbitControls is disabled for a close-up.
+            canvas.style.touchAction = 'none';
+            canvas.setAttribute('aria-label', 'Interactive camera');
+            canvas.setAttribute('aria-describedby', 'camera-keyboard-help');
+            // Capture lens gestures before OrbitControls can dolly the whole scene.
+            canvas.addEventListener('wheel', (event) => {
+                if (!state.is3D || !state.hasExplored || cameraTravel || event.ctrlKey || event.metaKey ||
+                    Math.abs(event.deltaX) > Math.abs(event.deltaY) || !event.deltaY ||
+                    els.settingsOverlay.classList.contains('visible') || els.iframeOverlay.classList.contains('active')) return;
+                if (!cameraInspection) {
+                    const rect = canvas.getBoundingClientRect();
+                    mouse.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
+                    raycaster.setFromCamera(mouse, camera);
+                    const hit = raycaster.intersectObjects(camGroup.children, true)[0]?.object;
+                    if (hit?.userData.cameraControl !== 'zoom' && hit !== screenMesh && hit !== finderMesh) return;
+                }
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? canvas.clientHeight : 1;
+                const delta = THREE.MathUtils.clamp(event.deltaY * unit, -600, 600);
+                setCameraLensZoom(cameraZoom * Math.exp(-delta * 0.0015));
+            }, { capture: true, passive: false });
+            canvas.addEventListener('keydown', (event) => {
+                if (!state.is3D || !state.hasExplored) return;
+                const layout = (cameraInspection === 'viewfinder' ? finderCtx : uiCtx)?.cameraPhotoLayout;
+                if (cameraInspection && !cameraTravel && !cameraPhotoBusy && layout &&
+                    (event.key === 'Home' || (event.shiftKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)))) {
+                    event.preventDefault();
+                    if (layout.live) {
+                        if (event.key === 'Home') cameraAim.yaw = cameraAim.pitch = 0;
+                        else {
+                            const step = THREE.MathUtils.degToRad(cameraLiveCamera?.fov || 65) * 0.15;
+                            cameraAim.yaw += event.key === 'ArrowLeft' ? step : event.key === 'ArrowRight' ? -step : 0;
+                            cameraAim.pitch = THREE.MathUtils.clamp(cameraAim.pitch + (event.key === 'ArrowUp' ? step : event.key === 'ArrowDown' ? -step : 0), -1.35, 1.35);
+                        }
+                        return;
+                    }
+                    const step = layout.crop * 0.15;
+                    if (event.key === 'Home') setCameraPan(0.5, 0.5);
+                    else setCameraPan(cameraPan.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0),
+                        cameraPan.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0));
+                    updateUI(); return;
+                }
+                const actions = { v: 'viewfinder', c: 'collection', m: 'menu', h: 'menu', l: 'live', i: 'inspect', s: 'settings', z: 'zoom', d: 'custom', ' ': 'shutter', Enter: 'shutter' };
+                const action = actions[event.key] || actions[event.key.toLowerCase()];
+                if (event.key === 'Escape') { event.preventDefault(); leaveCameraInspection(); }
+                else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); browseCameraPhoto(event.key === 'ArrowLeft' ? -1 : 1); }
+                else if (action && !event.repeat) { event.preventDefault(); runCameraAction(action); }
+            });
+            let gesture = null, lastPhotoTap = null;
+            const pointers = new Map();
+            canvas.addEventListener('pointerdown', (event) => {
+                pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                cameraPointerPressed = true;
+                if (pointers.size > 1 && gesture) {
+                    gesture.moved = true; gesture.multi = true; lastPhotoTap = null;
+                    if (pointers.size === 2 && gesture.photoArea && cameraInspection && !cameraTravel && !cameraPhotoBusy) {
+                        const [a, b] = [...pointers.values()];
+                        gesture.pinch = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), focal: cameraZoom };
+                        canvas.setPointerCapture(event.pointerId);
+                    }
+                    return;
+                }
+                gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, time: performance.now(), moved: false };
+                setCameraHover(null);
+                canvas.focus({ preventScroll: true });
+                if (!cameraInspection || cameraTravel || cameraPhotoBusy || event.button > 0) return;
+                const surface = cameraInspection === 'viewfinder' ? finderMesh : screenMesh;
+                const ctx = cameraInspection === 'viewfinder' ? finderCtx : uiCtx;
+                const layout = ctx.cameraPhotoLayout;
+                const point = cameraDisplayPoint(event, surface);
+                const zones = cameraInspection === 'viewfinder' ? finderClickZones : uiClickZones;
+                if (!layout || zones.some(zone => cameraPointInRect(point, zone))) return;
+                gesture.photoArea = cameraPointInRect(point, layout.photoRect);
+                if (gesture.photoArea) canvas.setPointerCapture(event.pointerId);
+                if (layout.live && gesture.photoArea) {
+                    gesture.aim = { surface, layout, point, yaw: cameraAim.yaw, pitch: cameraAim.pitch,
+                        fov: THREE.MathUtils.degToRad(cameraLiveCamera?.fov || 65) };
+                    return;
+                }
+                const map = cameraPointInRect(point, layout.map);
+                if (!map && (layout.crop >= 1 || !cameraPointInRect(point, layout.photoRect))) return;
+                gesture.pan = { surface, layout, point, center: { ...cameraPan }, map, photo: lastCameraPhoto };
+                canvas.setPointerCapture(event.pointerId);
+                canvas.style.cursor = map ? 'crosshair' : 'grabbing';
+                if (map) {
+                    setCameraPan((point.x - layout.map.x) / layout.map.w, (point.y - layout.map.y) / layout.map.h);
+                    updateUI();
+                }
+            });
+            document.addEventListener('pointermove', (event) => {
+                if (pointers.has(event.pointerId)) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                if (gesture?.pinch && pointers.size === 2 && cameraInspection && !cameraTravel && !cameraPhotoBusy) {
+                    const [a, b] = [...pointers.values()];
+                    setCameraLensZoom(gesture.pinch.focal * Math.hypot(a.x - b.x, a.y - b.y) / gesture.pinch.distance, true);
+                    return;
+                }
+                if (gesture && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 8) gesture.moved = true;
+                if (gesture?.aim && gesture.id === event.pointerId && !gesture.multi && cameraLiveView && !cameraTravel) {
+                    const { surface, layout, point, yaw, pitch, fov } = gesture.aim;
+                    const current = cameraDisplayPoint(event, surface);
+                    if (current && gesture.moved) {
+                        cameraAim.yaw = yaw + (current.x - point.x) / layout.photoRect.w * fov * 4 / 3;
+                        cameraAim.pitch = THREE.MathUtils.clamp(pitch + (current.y - point.y) / layout.photoRect.h * fov, -1.35, 1.35);
+                    }
+                    return;
+                }
+                if (gesture?.pan && gesture.id === event.pointerId && !gesture.multi && !cameraTravel && !cameraPhotoBusy && gesture.pan.photo === lastCameraPhoto) {
+                    const { surface, layout, point, center, map } = gesture.pan;
+                    const current = cameraDisplayPoint(event, surface);
+                    if (current && (gesture.moved || map)) {
+                        if (map) setCameraPan((current.x - layout.map.x) / layout.map.w, (current.y - layout.map.y) / layout.map.h);
+                        else setCameraPan(center.x - (current.x - point.x) / layout.photoRect.w * layout.crop,
+                            center.y - (current.y - point.y) / layout.photoRect.h * layout.crop);
+                        updateUI();
+                    }
+                    return;
+                }
+                if (event.target !== canvas || gesture) return;
+                const rect = canvas.getBoundingClientRect();
+                mouse.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
+                checkIntersections(false, event);
+            });
+            document.addEventListener('pointerup', (event) => {
+                if (pointers.delete(event.pointerId)) {
+                    cameraPointerPressed = pointers.size > 0;
+                    cameraInteractionUntil = performance.now() + 1200;
+                }
+                if (!gesture || gesture.id !== event.pointerId) return;
+                const tap = gesture;
+                gesture = null;
+                if (!tap.multi && !tap.moved && tap.photoArea && event.pointerType === 'touch' && !cameraPhotoBusy && !cameraTravel) {
+                    const now = performance.now();
+                    if (lastPhotoTap && now - lastPhotoTap.time < 330 && Math.hypot(event.clientX - lastPhotoTap.x, event.clientY - lastPhotoTap.y) < 28) {
+                        setCameraLensZoom(cameraZoom > 18.5 ? 18 : 50, true); setCameraPan(0.5, 0.5); updateUI(); lastPhotoTap = null;
+                    } else lastPhotoTap = { time: now, x: event.clientX, y: event.clientY };
+                    return;
+                }
+                if (tap.pan || tap.aim) { canvas.style.cursor = ''; return; }
+                if (tap.multi || pointers.size || event.target !== canvas || cameraTravel || event.button > 0) return;
+                if (cameraInspection && tap.photoArea && tap.moved && Math.abs(event.clientX - tap.x) > 35 &&
+                    Math.abs(event.clientX - tap.x) > Math.abs(event.clientY - tap.y) * 1.4) {
+                    browseCameraPhoto(event.clientX < tap.x ? 1 : -1); return;
+                }
+                if (tap.moved || performance.now() - tap.time > 700) return;
+                const rect = canvas.getBoundingClientRect();
+                mouse.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
+                checkIntersections(true, event);
+            });
+            document.addEventListener('pointercancel', (event) => {
+                pointers.delete(event.pointerId); cameraPointerPressed = pointers.size > 0;
+                cameraInteractionUntil = performance.now() + 1200; gesture = null; canvas.style.cursor = '';
+            });
+            canvas.addEventListener('pointerleave', () => { cameraPointerOverBody = false; setCameraHover(null); });
+        }
+
+        function runCameraAction(id) {
+            if (!state.is3D || !state.hasExplored || cameraTravel) return;
+            if (cameraPhotoBusy && ['viewfinder', 'shutter', 'playback'].includes(id)) return;
+            setCameraHover(null);
+            if (id === 'shutter' && (cameraDisplay !== 'photo' || cameraSource !== 'space')) {
+                sfx.click(); setCameraSource('space'); return;
+            }
+            animateCameraControl(id);
+            if (id === 'viewfinder') {
+                sfx.click(); cameraDisplay = 'photo';
+                focusCameraDisplay('viewfinder');
+                if (cameraSource === 'space') { cameraLiveView = true; cancelCameraInspectionAI(); updateUI(); }
+                else showCameraPhoto();
+            } else if (id === 'shutter') {
+                sfx.shutter(); cameraDisplay = 'photo';
+                if (!cameraInspection) focusCameraDisplay('screen');
+                captureCameraSpace();
+            } else if (id === 'playback') {
+                cancelCameraInspectionAI(); cameraLiveView = false;
+                sfx.click(); cameraDisplay = 'photo';
+                focusCameraDisplay('screen');
+                if (!lastCameraPhoto) showCameraPhoto(); else updateUI();
+            } else if (id === 'collection') {
+                cancelCameraInspectionAI(); cameraSource = 'portfolio'; cameraLiveView = false;
+                sfx.click(); cameraCollection = (cameraCollection + 2) % (cameraCollections.length + 1) - 1;
+                cameraAnnouncement(cameraCollection < 0 ? 'ALL COLLECTIONS' : `${cameraCollections[cameraCollection].toUpperCase()} / NEXT SHOT TO BROWSE`);
+            } else if (id === 'zoom') {
+                sfx.click();
+                setCameraLensZoom([18, 24, 35, 50, 70, 100, 135, 200, 300].find(value => value > cameraZoom) || 18);
+            } else if (id === 'menu') {
+                sfx.click(); cameraHome();
+            } else if (id === 'live') {
+                sfx.click(); setCameraSource('space');
+            } else if (id === 'inspect') {
+                inspectCameraPhoto();
+            } else if (id === 'settings') {
+                cancelCameraInspectionAI(); cameraLiveView = false;
+                sfx.click(); cameraDisplay = 'settings';
+                focusCameraDisplay('screen'); updateUI();
+            } else if (id === 'custom') {
+                state.rendering.starMotion = !state.rendering.starMotion;
+                applySceneRenderingSettings(); saveRenderingPreferences(); syncRenderingSettings();
+                cameraAnnouncement(`STAR DRIFT / ${state.rendering.starMotion ? 'ON' : 'OFF'}`); sfx.click();
+            }
+        }
+
+        function browseCameraPhoto(direction) {
+            if (cameraPhotoBusy || cameraTravel) return;
+            cameraDisplay = 'photo';
+            const index = cameraHistoryIndex + direction;
+            if (index >= 0 && index < cameraHistory.length) {
+                cameraHistoryIndex = index;
+                showCameraPhoto(cameraHistory[index], 'history');
+            } else if (direction > 0 || !lastCameraPhoto) showCameraPhoto();
+            else cameraAnnouncement('FIRST PHOTOGRAPH / NEXT SHOT FOR ANOTHER');
+        }
+
+        async function randomCameraPhoto() {
+            await portfolioBaseReady;
+            const galleries = cameraCollection < 0 ? [...cameraCollections] : [cameraCollections[cameraCollection]];
+            const start = Math.floor(Math.random() * galleries.length);
+            for (let i = 0; i < galleries.length; i++) {
+                const gallery = galleries[(start + i) % galleries.length];
+                try {
+                    if (!cameraPhotoCatalogs.has(gallery)) {
+                        const response = await fetch(`${portfolioBase}${gallery}/metadata/metadata.json`, { signal: AbortSignal.timeout(10000) });
+                        if (!response.ok) throw new Error('Collection unavailable');
+                        const metadata = await response.json();
+                        const names = (metadata.image_order || Object.keys(metadata)).filter((name) => typeof name === 'string' && name !== 'image_order');
+                        if (!names.length) throw new Error('Collection is empty');
+                        cameraPhotoCatalogs.set(gallery, names);
+                        cameraPhotoMetadata.set(gallery, metadata);
+                    }
+                    const names = cameraPhotoCatalogs.get(gallery);
+                    const candidates = names.filter((name) => gallery !== lastCameraPhoto?.gallery || name !== lastCameraPhoto.name);
+                    const pool = candidates.length ? candidates : names;
+                    const name = pool[Math.floor(Math.random() * pool.length)];
+                    return { gallery, name, metadata: cameraPhotoMetadata.get(gallery)?.[name] || {}, src: `${portfolioBase}${gallery}/fulls/${encodeURIComponent(name)}.jpg` };
+                } catch (_) { /* Try another collection when one cannot be loaded. */ }
+            }
+            throw new Error('COLLECTION UNAVAILABLE / NEXT SHOT TO RETRY');
+        }
+
+        async function showCameraPhoto(photo = null, kind = 'discover') {
+            if (cameraPhotoBusy) return;
+            cancelCameraInspectionAI(); cameraLiveView = false;
+            cameraPhotoBusy = true;
+            cameraDisplay = 'photo';
+            const request = ++cameraPhotoRequest;
+            cameraAnnouncement('FOCUSING...');
+            try {
+                const selected = photo || await randomCameraPhoto();
+                if (request !== cameraPhotoRequest) return;
+                const loaded = new Image();
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => { loaded.src = ''; reject(new Error('PHOTO UNAVAILABLE / NEXT SHOT TO RETRY')); }, 12000);
+                    loaded.onload = () => { clearTimeout(timeout); resolve(); };
+                    loaded.onerror = () => { clearTimeout(timeout); reject(new Error('PHOTO UNAVAILABLE / NEXT SHOT TO RETRY')); };
+                    loaded.src = kind === 'preview' ? selected.src.replace('/fulls/', '/thumbs/') : selected.src;
+                });
+                if (request !== cameraPhotoRequest) return;
+                lastCameraPhoto = { ...selected, image: loaded };
+                cameraSource = selected.gallery === 'space' ? 'space' : 'portfolio';
+                setCameraPan(0.5, 0.5);
+                if (kind !== 'history') {
+                    cameraHistory = cameraHistory.slice(0, cameraHistoryIndex + 1);
+                    cameraHistory.push({ gallery: selected.gallery, name: selected.name, src: selected.src, metadata: selected.metadata });
+                    if (cameraHistory.length > 12) cameraHistory.shift();
+                    cameraHistoryIndex = cameraHistory.length - 1;
+                }
+                if (kind === 'capture') {
+                    cameraCaptureCount++;
+                    if (selected.gallery === 'space') cameraCaptures.push({ gallery: selected.gallery, name: selected.name, src: selected.src, metadata: selected.metadata });
+                }
+                cameraAnnouncement(kind === 'capture' ? `CAPTURED / ${String(cameraCaptureCount).padStart(3, '0')} / ${selected.gallery.toUpperCase()}` : `${selected.gallery.toUpperCase()} / FRAME ${String(cameraHistoryIndex + 1).padStart(3, '0')}`);
+            } catch (error) {
+                if (request === cameraPhotoRequest) cameraAnnouncement(error.message);
+            } finally {
+                if (request === cameraPhotoRequest) { cameraPhotoBusy = false; updateUI(); }
             }
         }
 
@@ -3653,7 +5331,7 @@
                 : url;
         }
 
-        fetch('./portfolios/astronomy/index.html', { method: 'HEAD', cache: 'no-store' })
+        const portfolioBaseReady = fetch('./portfolios/astronomy/index.html', { method: 'HEAD', cache: 'no-store' })
             .then((response) => {
                 if (response.ok) return false;
                 return fetch('./build/portfolios/astronomy/index.html', { method: 'HEAD', cache: 'no-store' })
@@ -3669,7 +5347,7 @@
             .catch(() => { });
 
         // --- UPDATED NAVIGATION LOGIC ---
-        window.handleNav = function (url, isInternal) {
+        window.handleNav = function (url, isInternal, embed = false) {
             url = applyPortfolioBase(url);
             const params = new URLSearchParams();
 
@@ -3689,7 +5367,9 @@
             const separator = url.includes('?') ? '&' : '?';
             const finalUrl = `${url}${separator}${params.toString()}`;
 
-            if (state.directLinks || !isInternal) {
+            if (!embed && isInternal && matchMedia('(max-width: 768px), (pointer: coarse)').matches && !state.directLinks) {
+                location.assign(finalUrl);
+            } else if (!embed && (state.directLinks || !isInternal)) {
                 window.open(finalUrl, '_blank');
             } else {
                 // 1. Load the Iframe
@@ -3758,25 +5438,30 @@
             TWEEN.update();
             if (controls) controls.update();
 
-            const decorativeAnimations = window.SitePerformance?.current?.animations !== false;
+            const decorativeAnimations = window.SitePerformance?.current?.animations !== false && !sceneMotionPreference.matches;
 
-            // Dramatic Cam Pulse & Float
-            if (camGroup && decorativeAnimations) {
-                const isMobile = window.innerWidth < 768;
-                const baseScale = isMobile ? 1.0 : 1.4; // Smaller base scale for mobile
-                const pulseAmt = isMobile ? 0.05 : 0.2; // Subtler pulse for mobile
-                const pulse = Math.sin(now * 0.001) * pulseAmt;
-
-                camGroup.position.y = Math.sin(now * 0.0005) * 0.5;
-                camGroup.rotation.z = Math.sin(now * 0.0002) * .02;
-                camGroup.scale.set(baseScale + pulse, baseScale + pulse, baseScale + pulse);
+            const motionDelta = Math.min(now - (cameraMotionLastFrame || now), 50);
+            cameraMotionLastFrame = now;
+            if (camGroup && !cameraInspection) camGroup.scale.setScalar(innerWidth < 768 ? 1 : 1.4);
+            // Keep controls at a fixed size; pause gentle idle motion while being targeted.
+            if (camGroup && decorativeAnimations && state.rendering.cameraMotion && !cameraInspection &&
+                !cameraPointerOverBody && !cameraPointerPressed && now > cameraInteractionUntil) {
+                cameraMotionTime += motionDelta;
+                camGroup.position.y = Math.sin(cameraMotionTime * 0.0005) * (innerWidth < 768 ? 0.08 : 0.2);
+                camGroup.rotation.z = Math.sin(cameraMotionTime * 0.0002) * 0.004;
             }
 
-            if (starSystem && decorativeAnimations) {
-                // FASTER ROTATION
-                starSystem.rotation.y += 0.0005;
+            if (starSystem && decorativeAnimations && state.rendering.starMotion) {
+                // Gentle, frame-rate-independent drift; quality settings can freeze it.
+                const previous = starSystem.userData.lastFrame ?? now;
+                starSystem.rotation.y += Math.min((now - previous) / 1000, 0.05) * 0.003;
+                starSystem.userData.lastFrame = now;
             }
 
+            animateAsteroids(now, decorativeAnimations);
+            if (cameraLiveView && cameraDisplay === 'photo' && now - cameraLiveLastFrame > 80) {
+                renderCameraLiveScene(); cameraLiveLastFrame = now;
+            }
             renderer.render(scene, camera);
         }
         // --- ADVANCED AUDIO ENGINE ---
@@ -3867,6 +5552,10 @@
 
 
         function initSpaceIntro() {
+            if (!state.is3D || matchMedia('(max-width: 768px)').matches) {
+                document.getElementById('space-intro').style.display = 'none';
+                return;
+            }
             const canvas = document.getElementById('space-canvas');
             const intro = document.getElementById('space-intro');
             const flash = document.getElementById('hyper-flash');

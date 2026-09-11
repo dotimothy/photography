@@ -1,0 +1,79 @@
+/* Outside the gallery's auto-hiding controls so there is always a way home. */
+#portfolio-return {
+    position: fixed;
+    top: max(15px, env(safe-area-inset-top));
+    left: max(15px, env(safe-area-inset-left));
+    z-index: 10050;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border: 1px solid #ffffff50;
+    border-radius: 24px;
+    background: #08121eef;
+    color: #f0f7fc;
+    font: 600 14px/1.4 'Roboto', sans-serif;
+    text-decoration: none;
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+#portfolio-return:hover { background: #193349; color: white; opacity: 1; }
+#portfolio-return:focus-visible { outline: 2px solid #b8eaff; outline-offset: 3px; }
+/* Keep portfolio navigation in its own row, clear of gallery controls. */
+@media (max-width: 768px) {
+    body:has(#portfolio-return) {
+        --gallery-controls-top: calc(max(15px, env(safe-area-inset-top)) + 56px);
+    }
+    body:has(#portfolio-return) #title {
+        top: var(--gallery-controls-top);
+        box-sizing: border-box;
+    }
+    body:has(#portfolio-return) #controls-container,
+    body:has(#portfolio-return) #viewer-controls-container {
+        top: var(--gallery-controls-top);
+    }
+    body:has(#controls-container) #title { padding-right: 76px; }
+    body:has(#portfolio-return) #top-controls {
+        top: calc(var(--gallery-controls-top) + 48px);
+        max-width: calc(100vw - 24px);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    body:has(#top-controls) #gallery-2d { padding-top: calc(var(--gallery-controls-top) + 104px); }
+    body:has(#portfolio-return) #viewer-controls {
+        top: var(--gallery-controls-top);
+        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+    #ui-layer:has(#controls-container.expanded),
+    #imageViewer:has(#viewer-controls-container.expanded) { z-index: 12000; }
+    #controls-container.expanded,
+    #viewer-controls-container.expanded { z-index: 12001; }
+}
+body:has(#portfolio-return) #fps-counter { display: none !important; }
+#portfolio-inspector {
+    position: fixed; right: max(16px, env(safe-area-inset-right));
+    bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 4501;
+    min-height: 48px; padding: 12px 18px; border: 1px solid #a4d8f0;
+    border-radius: 24px; background: #102638; color: white;
+    font: 600 14px 'Roboto', sans-serif; pointer-events: auto;
+}
+#portfolio-inspector[hidden] { display: none; }
+#portfolio-inspector:focus-visible { outline: 2px solid #b8eaff; outline-offset: 3px; }
+@media (max-width: 768px) {
+    #portfolio-return { padding: 10px 12px; font-size: 13px; }
+    #portfolio-inspector {
+        top: max(15px, env(safe-area-inset-top));
+        bottom: auto;
+        right: max(12px, env(safe-area-inset-right));
+        min-height: 44px;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}

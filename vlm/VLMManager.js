@@ -232,7 +232,8 @@ class VLMManager {
      * @param {string}   imageSrc      Absolute URL or data-URI of the image.
      * @param {string}   prompt        User's question.
      * @param {Array}    chatHistory   Prior {role, content} turns (may be empty).
-     * @param {object}   callbacks     { onStart?, onToken?, onDone?, onError? }
+     * @param {object}   callbacks     { onStart?, onToken?, onDone?, onError?, signal?, systemPrompt? }
+     * systemPrompt overrides the shared prompt for this request without changing other clients.
      * @returns {number}               Request ID.
      */
     query(imageSrc, prompt, chatHistory, callbacks = {}) {
@@ -244,7 +245,8 @@ class VLMManager {
 
         const id = ++this._nextId;
         this._callbacks.set(id, callbacks);
-        this._worker.postMessage({ type: 'generate', id, imageSrc, prompt, chatHistory });
+        const requestPrompt = callbacks.systemPrompt ? `${callbacks.systemPrompt}\n\n${prompt}` : prompt;
+        this._worker.postMessage({ type: 'generate', id, imageSrc, prompt: requestPrompt, chatHistory });
 
         // Forward abort signal to the worker so local inference can stop mid-stream
         if (callbacks.signal) {
@@ -333,8 +335,9 @@ class VLMManager {
         const messages = [];
 
         // Prepend system prompt if configured
-        if (this._systemPrompt) {
-            messages.push({ role: 'system', content: this._systemPrompt });
+        const systemPrompt = callbacks.systemPrompt ?? this._systemPrompt;
+        if (systemPrompt) {
+            messages.push({ role: 'system', content: systemPrompt });
         }
 
         let imageInserted = false;
@@ -477,8 +480,9 @@ class VLMManager {
 
         // Build messages — image attached to the first user turn only
         const messages = [];
-        if (this._systemPrompt) {
-            messages.push({ role: 'system', content: this._systemPrompt });
+        const systemPrompt = callbacks.systemPrompt ?? this._systemPrompt;
+        if (systemPrompt) {
+            messages.push({ role: 'system', content: systemPrompt });
         }
 
         let imageInserted = false;
