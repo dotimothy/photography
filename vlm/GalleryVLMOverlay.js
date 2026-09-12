@@ -1818,7 +1818,7 @@ class GalleryVLMOverlay {
         <button class="vlm-close-btn" id="${this._id}-close" title="Close panel" aria-label="Close">×</button>
     </div>
     <div class="vlm-header-row vlm-header-btns">
-        <button class="vlm-new-btn" id="${this._id}-new" title="Start new conversation">New</button>
+        <button class="vlm-new-btn" id="${this._id}-new" type="button" title="Clear conversation and stop the current response" aria-label="Clear chat">Clear chat</button>
         <div class="vlm-font-btns" title="Adjust font size">
             <button class="vlm-font-btn vlm-font-btn-sm" id="${this._id}-font-dn" aria-label="Decrease font size">A−</button>
             <button class="vlm-font-btn vlm-font-btn-lg" id="${this._id}-font-up" aria-label="Increase font size">A+</button>
