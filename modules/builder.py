@@ -3,6 +3,7 @@ import shutil
 import json
 import re
 import time
+import html
 
 # Per-gallery accent tints used for <meta name="theme-color">.
 GALLERY_THEME_COLORS = {
@@ -35,7 +36,7 @@ def add_gallery_return_navigation(content):
                   content, count=1, flags=re.IGNORECASE)
 
 
-def generate_site(target_keys, gallery_map, results_map, portfolios_root, gallery_emojis, template_src='./tmp/gallery'):
+def generate_site(target_keys, gallery_map, results_map, portfolios_root, gallery_emojis, template_src='./tmp/gallery', shape_emojis=None):
     """
     Generates the static site structure for each target gallery.
     """
@@ -51,10 +52,6 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
         # Metadata
         g_root = os.path.join(portfolios_root, gallery)
         
-        # Sync local overrides into template
-        if os.path.exists('license.html') and os.path.exists(template_src):
-            shutil.copy2('license.html', os.path.join(template_src, 'license.html'))
-
         gallery_meta = {}
         file_list = []
         
@@ -91,10 +88,20 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
                     else:
                         shutil.copy2(src, dst)
             
+            # Apply portfolio overrides to output, never modify the source repo.
+            if os.path.exists('license.html'):
+                shutil.copy2('license.html', os.path.join(g_root, 'license.html'))
+
             # Inject Titles + per-gallery theme color
             html_path = os.path.join(g_root, 'index.html')
             if os.path.exists(html_path):
                 with open(html_path, 'r', encoding='utf-8') as f: content = f.read()
+                # Separate from display emojis; omitted configuration means sphere.
+                content = re.sub(r'<meta\s+name="gallery-shape-emoji"[^>]*>\s*', '', content)
+                shape_emoji = (shape_emojis or {}).get(gallery, '')
+                if shape_emoji:
+                    tag = '<meta name="gallery-shape-emoji" content="' + html.escape(shape_emoji, quote=True) + '">\n'
+                    content = content.replace('</head>', tag + '</head>', 1)
                 content = re.sub(r'<title>.*?</title>', f'<title>{title}</title>', content, flags=re.DOTALL)
                 content = re.sub(r'<h1 id="title">.*?</h1>', f'<h1 id="title">{title}</h1>', content, flags=re.DOTALL)
                 tint = GALLERY_THEME_COLORS.get(gallery)

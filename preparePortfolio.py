@@ -55,6 +55,12 @@ WATERMARK_PATH = './assets/watermark.png'
 PORTFOLIOS_ROOT = './build/portfolios'
 CACHE_ROOT = './.cache/images'
 
+# Optional 3D layouts, independent of the emojis used in page titles.
+GALLERY_SHAPE_EMOJIS = {
+    'astronomy': '⭐', 'food': '🍎', 'landscape': '🌳',
+    'planes': '✈️', 'wildlife': '🐕',
+}
+
 GALLERY_EMOJIS = {
     'astronomy': '🌌', 'food': '🍱', 'landscape': '🏞️', 'planes': '✈️', 'wildlife':  '🐿️ '
 }
@@ -253,6 +259,7 @@ def main():
     parser.add_argument('--select', nargs='+', help='Build specific galleries')
     parser.add_argument('--watermark', action='store_true', help='Apply watermark')
     parser.add_argument('--skip-repo', action='store_true', help='Skip git updates')
+    parser.add_argument('--gallery-source', help='Use a local gallery repo instead of downloading the template')
     parser.add_argument('--clean', action='store_true', help='Clean builds')
     parser.add_argument('--full-clean', action='store_true', help='Wipe everything')
     parser.add_argument('--force-download', action='store_true', help='Force verify downloads')
@@ -304,7 +311,9 @@ def main():
     step1_start = time.time()
     
     # Git
-    if not args.skip_repo:
+    if args.gallery_source and not os.path.isfile(os.path.join(args.gallery_source, 'js', 'view3d.js')):
+        parser.error('--gallery-source must contain js/view3d.js')
+    if not args.skip_repo and not args.gallery_source:
         profiler.start('Git Update')
         update_gallery_repo()
         profiler.stop('Git Update')
@@ -391,7 +400,8 @@ def main():
                     with open(meta_path, 'r') as f:
                         meta = json.load(f)
                         results_map[g] = meta
-                        gallery_map[g] = meta.get('image_order', [])
+                        # generate_site expects filenames and removes one extension.
+                        gallery_map[g] = [name + '.jpg' for name in meta.get('image_order', [])]
                 except Exception as e:
                     print(f" - Error loading {g} metadata: {e}")
         
@@ -497,7 +507,9 @@ def main():
     step3_start = time.time()
     profiler.start('Site Generation')
     
-    count = build_module.generate_site(target_keys, gallery_map, results_map, PORTFOLIOS_ROOT, GALLERY_EMOJIS)
+    count = build_module.generate_site(target_keys, gallery_map, results_map, PORTFOLIOS_ROOT, GALLERY_EMOJIS,
+                                      template_src=args.gallery_source or './tmp/gallery',
+                                      shape_emojis=GALLERY_SHAPE_EMOJIS)
 
     profiler.stop('Site Generation', count=count)
     print(f"{color.BOLD}*** Step 3 Completed in {time.time() - step3_start:.2f}s ***{color.END}")

@@ -111,3 +111,17 @@ See the `LICENSE` file in this repository for the full legal text.
 ## 📬 Contact
 
 Timothy Do - [@dotimothy](https://github.com/dotimothy) on GitHub
+
+## 3D gallery shapes
+
+`GALLERY_SHAPE_EMOJIS` in `preparePortfolio.py` configures optional 3D shapes independently of title emojis. The builder passes each value through `<meta name="gallery-shape-emoji" content="...">`. Remove a mapping to use a sphere. The gallery repository owns shape layouts and controls; 2D stays a grid.
+
+To build with a local gallery checkout before its changes are published:
+
+```sh
+python preparePortfolio.py --gallery-source ../gallery --html-only
+```
+
+Normal builds use the downloaded gallery template, so publish the gallery changes before deploying this portfolio. Existing image counts are preserved; shape layouts do not curate or duplicate photos.
+
+Verification: `python -X utf8 -m unittest discover -s tests`. Browser coverage is in `scripts/browser-gallery-shapes.mjs`; it expects the local build served on port 8765, Playwright in `.cache/browser`, Chrome, and local copies of the template's Three.js r128 and GSAP 3.12.2 CDN scripts at `tmp/three.min.js` and `tmp/gsap.min.js`.
