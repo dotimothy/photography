@@ -537,32 +537,21 @@ window.PrintOrbit = (function () {
         return { pos: new THREE.Vector3(0, 0, -distance), target: new THREE.Vector3(0, mobile ? 0 : -0.5, mobile ? 0 : -2) };
     }
 
-    // Make one complete orbit from the welcome view, then move in to the LCD.
+    // Spiral inward through one full turn and line up with the rear screen.
     function arrive() {
         if (!camera || !controls) return;
         const pose = homePose();
-        if (!o.built || motionOff()) {
-            camera.position.copy(pose.pos);
-            controls.target.copy(pose.target);
-            controls.update();
-            return;
-        }
-
-        const orbitEnd = camera.position.clone();
-        orbitEnd.y = Math.min(orbitEnd.y, 12);
-        const easing = (t) => (1 - Math.cos(Math.PI * t)) / 2;
+        if (!o.built) { camera.position.copy(pose.pos); controls.target.copy(pose.target); controls.update(); return; }
         controls.enabled = false;
         holdTravel(true);
         fly({
-            toPos: orbitEnd, toTarget: controls.target.clone(), duration: 3800, arc: true, turns: -1, easing,
-            done: () => fly({
-                toPos: pose.pos, toTarget: pose.target, duration: 1600, arc: true, easing,
-                done: () => {
-                    controls.enabled = true;
-                    holdTravel(false);
-                    controls.update();
-                }
-            })
+            toPos: pose.pos, toTarget: pose.target, duration: 2700, arc: true, turns: -1,
+            easing: (t) => smooth(0, 1, t),
+            done: () => {
+                controls.enabled = true;
+                holdTravel(false);
+                controls.update();
+            }
         });
     }
 
