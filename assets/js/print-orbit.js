@@ -546,7 +546,8 @@ window.PrintOrbit = (function () {
         holdTravel(true);
         fly({
             toPos: pose.pos, toTarget: pose.target, duration: 2700, arc: true, turns: -1,
-            easing: (t) => smooth(0, 1, t),
+            // Smootherstep keeps both velocity and acceleration at zero at the endpoints.
+            easing: (t) => t ** 3 * (10 + t * (6 * t - 15)),
             done: () => {
                 controls.enabled = true;
                 holdTravel(false);
