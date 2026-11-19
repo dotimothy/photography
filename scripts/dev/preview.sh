@@ -35,6 +35,12 @@ for g in pp.GALLERIES:
     p = os.path.join(root, 'immersive.html')
     if os.path.exists(p):
         page = builder.add_gallery_return_navigation(open(p, encoding='utf-8').read()); open(p, 'w', encoding='utf-8').write(page)
+    view_path = os.path.join(root, 'js', 'view3d.js')
+    if os.path.isfile(view_path):
+        with open(view_path, encoding='utf-8') as view_file:
+            view = builder.customize_gallery_view3d(view_file.read())
+        with open(view_path, 'w', encoding='utf-8') as view_file:
+            view_file.write(view)
     p = os.path.join(root, 'js', 'app.js')
     if os.path.exists(p):
         metadata_path = os.path.join(root, 'metadata', 'metadata.json')

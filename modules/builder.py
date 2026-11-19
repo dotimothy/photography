@@ -77,6 +77,15 @@ def customize_gallery_app(source, title, has_selects=False):
             }""", 1)
 
 
+def customize_gallery_view3d(source):
+    """Start the gallery overview closer while keeping the template's zoom limits."""
+    return re.sub(
+        r'this\.baseDistance\s*=\s*this\.getOptimalDistance\(\);',
+        'this.baseDistance = this.getOptimalDistance() * 0.9;',
+        source,
+    )
+
+
 def generate_site(target_keys, gallery_map, results_map, portfolios_root, template_src='./tmp/gallery', shape_emojis=None, selects=None):
     """
     Generates the static site structure for each target gallery.
@@ -164,6 +173,13 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, templa
                 with open(immersive_path, 'r', encoding='utf-8') as f: content = f.read()
                 with open(immersive_path, 'w', encoding='utf-8') as f:
                     f.write(add_gallery_return_navigation(content))
+
+            view_path = os.path.join(g_root, 'js/view3d.js')
+            if os.path.exists(view_path):
+                with open(view_path, 'r', encoding='utf-8') as f:
+                    view_source = customize_gallery_view3d(f.read())
+                with open(view_path, 'w', encoding='utf-8') as f:
+                    f.write(view_source)
 
             js_path = os.path.join(g_root, 'js/app.js')
             if os.path.exists(js_path):
