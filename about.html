@@ -441,9 +441,25 @@
             -webkit-backdrop-filter: blur(8px);
         }
 
+        .extra-socials { margin-top: .45rem; }
+        .extra-socials a svg { width: 16px; height: 16px; }
+        .extra-socials .pixieset-logo { width: 16px; height: 16px; }
+
         .social-btn svg {
             width: 22px;
             height: 22px;
+        }
+
+        .about-contact {
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+
+        .about-contact a {
+            display: inline-flex;
+            min-height: 44px;
+            align-items: center;
+            margin-inline: .6rem;
         }
 
         .social-btn .pixieset-logo {
@@ -941,12 +957,17 @@
                 <h1>TheDoShoots</h1>
             <div class="subtitle">Photographer • Engineer • Explorer</div>
 
-            <nav class="social-row" aria-label="Social profiles">
-                <!-- Inline SVGs for Maximum Performance (No external FontAwesome req) -->
+            <nav class="social-row" aria-label="Featured Social Profiles">
                 <a href="https://instagram.com/thedoshoots" target="_blank" class="social-btn" aria-label="Instagram">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
                         <path fill="currentColor"
                             d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z" />
+                    </svg>
+                </a>
+                <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="YouTube">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                        <path fill="currentColor"
+                            d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z" />
                     </svg>
                 </a>
                 <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" class="social-btn"
@@ -956,15 +977,11 @@
                             d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM144.5 319c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5zm159 0c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5z" />
                     </svg>
                 </a>
+            </nav>
+            <nav class="social-row extra-socials" aria-label="More Profiles And Contact">
                 <a href="https://thedoshoots.pixieset.com/" target="_blank" rel="me noopener" class="social-btn"
                     aria-label="Pixieset">
                     <span class="pixieset-logo" aria-hidden="true"></span>
-                </a>
-                <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="YouTube">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                        <path fill="currentColor"
-                            d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z" />
-                    </svg>
                 </a>
                 <a href="https://tiktok.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="TikTok">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
@@ -985,7 +1002,7 @@
                             d="m219 142.7c-27 2-33-11.4-38.5-27-4-11-8-25-10-32 12.5-19 27-42 48.5-76h-40.3c-7 11-14 22.6-21 33.7-2-5.6-4.7-11.6-8-16.7-10.4-15-25-25-46.7-23.7-28.7 1.8-50.5 15.6-68 33-16 16.1-31.7 39.6-33.5 66.2-2.4 35.6 23.6 56 53 58.3 23.3 1.8 40.8-4.4 55.5-12.1 10-5.2 31-23 37.5-30.8 4.7 21.8 17 42.8 44.3 42.8 17 0 27.7-9.3 33.5-16.5-2 .2-4.3.4-6.8.5zM88.6 129.5c-6.3 4.5-14.4 9.4-22.8 10.7-21 3.3-30.4-13.1-28.9-35 1.1-17 7.9-32.8 15.8-46.6 8.1-14 17.6-26.5 28.4-34 3.9-2.7 9.7-5.9 17.7-6.5 19.4-1.6 26.5 19.4 31.4 37 2.3 8.2 3.8 16.6 4.6 21-5.5 8.1-22.7 36.3-46.3 53.4z" />
                     </svg>
                 </a>
-                <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" class="social-btn" aria-label="Email">
+                <a href="./contact.html" class="social-btn" aria-label="Contact">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                         <path fill="currentColor"
                             d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z" />
@@ -1194,6 +1211,11 @@
                             shutter to click.</p>
                     </div>
                 </div>
+                <section class="about-contact scroll-reveal" aria-labelledby="about-contact-title">
+                    <h2 id="about-contact-title">Let’s Make Something</h2>
+                    <a href="./contact.html">Contact</a>
+                    <a href="./index.html" target="_top">See The Work</a>
+                </section>
             </main>
         </section>
 

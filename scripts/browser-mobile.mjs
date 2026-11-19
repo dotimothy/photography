@@ -24,7 +24,6 @@ try {
         await page.goto(base, { waitUntil: 'domcontentloaded' });
         assert.equal(await page.evaluate(() => state.is3D), true);
         assert.equal(await page.evaluate(() => state.hasExplored), true);
-        assert.equal(await page.locator('#space-intro').isVisible(), false);
         assert.equal(await page.locator('#welcome-screen').isVisible(), false);
         // The camera is the interface: one Menu key, no dock of duplicate buttons.
         assert.equal(await page.locator('#btn-controls-toggle').isVisible(), true);

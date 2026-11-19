@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,7 +14,7 @@ class GalleryNavigationTests(unittest.TestCase):
             for name in ['index.html', 'immersive.html']:
                 (template / name).write_text('<html><head><title>Gallery</title></head><body><h1 id="title">Gallery</h1></body></html>')
             builder.generate_site(['astronomy'], {'astronomy': ['photo.jpg']},
-                                  {'astronomy': {'photo': {}}}, str(root / 'portfolios'), {}, str(template))
+                                  {'astronomy': {'photo': {}}}, str(root / 'portfolios'), str(template))
             for name in ['index.html', 'immersive.html']:
                 content = (root / 'portfolios/astronomy' / name).read_text(encoding='utf-8')
                 self.assertIn('href="../../index.html?mode=3d" target="_top"', content)
@@ -28,6 +29,28 @@ class GalleryNavigationTests(unittest.TestCase):
                 self.assertEqual(content.count('id="portfolio-inspector"'), 1)
                 self.assertIn('>AI Inspector</button>', content)
                 self.assertEqual(builder.add_gallery_return_navigation(content), content)
+
+    def test_selects_keep_the_configured_order_and_the_full_archive(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            template = root / 'template'
+            (template / 'js').mkdir(parents=True)
+            (template / 'js/app.js').write_text(
+                "this.images = data.image_order || Object.keys(data).filter(k => k !== 'image_order');",
+                encoding='utf-8',
+            )
+            builder.generate_site(
+                ['astronomy'], {'astronomy': ['first.jpg', 'second.jpg', 'third.jpg']},
+                {'astronomy': {}}, str(root / 'portfolios'), str(template),
+                selects={'astronomy': ['third', 'missing', 'first', 'third']},
+            )
+            gallery = root / 'portfolios/astronomy'
+            metadata = json.loads((gallery / 'metadata/metadata.json').read_text(encoding='utf-8'))
+            self.assertEqual(metadata['image_order'], ['first', 'second', 'third'])
+            self.assertEqual(metadata['selects_order'], ['third', 'first'])
+            app = (gallery / 'js/app.js').read_text(encoding='utf-8')
+            self.assertIn("get('view') === 'selects'", app)
+            self.assertIn('this.images = data.selects_order', app)
 
 
 if __name__ == '__main__':

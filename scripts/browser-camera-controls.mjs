@@ -120,7 +120,7 @@ try {
         });
         await page.goto(base+'/?mode=3d',{waitUntil:'networkidle'});
         await page.evaluate(()=>{
-            document.getElementById('space-intro').style.display='none';els.welcome.style.display='none';state.hasExplored=true;
+            els.welcome.classList.add('hidden');state.hasExplored=true;
             state.rendering.cameraMotion=false;applySceneRenderingSettings();
         });
         assert.ok(await page.evaluate(()=>{

@@ -91,15 +91,87 @@
         }))).observe(scene, { childList: true });
     }
 
-    // --- The frame line shows exposure the way a camera does: "f/1.7", not the stored "f/17/10". ---
+    const metadataPanel = byId('metadataViewer');
     const strip = byId('viewer-exif-strip');
-    if (strip) {
-        const tidy = () => strip.querySelectorAll('span').forEach((chip) => {
-            const text = chip.textContent.replace(/(\d+)\/(\d+)/, (match, top, bottom) => (Number(bottom) ? String(Math.round((top / bottom) * 10) / 10) : match));
-            if (text !== chip.textContent) chip.textContent = text;
-        });
-        new MutationObserver(tidy).observe(strip, { childList: true });
-        tidy();
+    const gallery = location.pathname.split('/').at(-2)?.replace(/^[a-z]/, (letter) => letter.toUpperCase()) || '';
+    const contact = new URL('../../contact.html', location.href);
+
+    function exposureNumber(value) {
+        const parts = /^(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?$/.exec(String(value ?? '').trim());
+        const number = parts ? Number(parts[1]) / Number(parts[2] ?? 1) : NaN;
+        return Number.isFinite(number) && number > 0 ? number : null;
+    }
+
+    function addLink(parent, label, href, newTab = true) {
+        const link = document.createElement('a');
+        link.className = 'gallery-contact-link';
+        link.textContent = label;
+        link.href = href;
+        if (newTab) {
+            link.target = '_blank';
+            link.rel = 'noopener';
+        }
+        parent.append(link);
+    }
+
+    function updateCaption() {
+        const app = window.galleryApp;
+        const heading = metadataPanel.querySelector('h2:not([data-frame-caption])');
+        const frame = heading?.textContent.replace(/\.jpg$/i, '');
+        const index = app?.images.indexOf(frame) ?? -1;
+        if (index < 0) return;
+        const metadata = app.metadata[frame] || {};
+        const model = String(metadata['Image Model'] || '').trim();
+        const cameraNames = { 'ILCE-7M4': 'Sony A7 IV', 'ILCE-7RM5': 'Sony A7R V', 'ILCE-6700': 'Sony A6700' };
+        const focal = exposureNumber(metadata['EXIF FocalLength']);
+        const aperture = exposureNumber(metadata['EXIF FNumber']);
+        const shutter = exposureNumber(metadata['EXIF ExposureTime']);
+        const iso = exposureNumber(metadata['EXIF ISOSpeedRatings']);
+        const date = String(metadata['EXIF DateTimeOriginal'] || metadata['Image DateTime'] || '')
+            .match(/^\d{4}[:-]\d{2}[:-]\d{2}/)?.[0].replaceAll(':', '-');
+        const formatted = (value) => String(Number(value.toPrecision(3)));
+        const count = String(app.images.length);
+        const caption = [
+            `${String(index + 1).padStart(count.length, '0')} / ${count}`,
+            cameraNames[model] || model,
+            focal && `${formatted(focal)}mm`,
+            aperture && `f/${formatted(aperture)}`,
+            shutter && (shutter < 1 ? `1/${formatted(1 / shutter)}` : `${formatted(shutter)}s`),
+            iso && `ISO ${iso}`,
+        ].filter(Boolean).join(' · ');
+        heading.dataset.frameCaption = '';
+        heading.textContent = caption;
+        if (strip) {
+            strip.dataset.frameCaption = '';
+            strip.textContent = caption;
+            if (date) {
+                const stripDate = document.createElement('span');
+                stripDate.className = 'viewer-frame-date';
+                stripDate.textContent = date;
+                strip.append(stripDate);
+            }
+        }
+
+        // Keep the template's map action alongside the date and inquiry.
+        const map = metadataPanel.querySelector('p:has([onclick])');
+        metadataPanel.replaceChildren(heading);
+        if (date) {
+            const dateLine = document.createElement('p');
+            dateLine.textContent = date;
+            metadataPanel.append(dateLine);
+        }
+        if (map) {
+            map.firstChild.textContent = 'Location: ';
+            metadataPanel.append(map);
+        }
+        const inquiry = new URL(contact);
+        inquiry.search = new URLSearchParams({ collection: gallery, frame });
+        addLink(metadataPanel, 'Ask About This Photo', inquiry);
+        addLink(metadataPanel, 'Browse Prints', 'https://thedoshoots.pixieset.com/');
+    }
+    if (metadataPanel) {
+        new MutationObserver(updateCaption).observe(metadataPanel, { childList: true });
+        window.addEventListener('load', () => setTimeout(updateCaption, 0), { once: true });
     }
 
     // --- Credits and the frame-rate readout move from the page edges into the menu. ---
@@ -107,8 +179,28 @@
     if (list) {
         const footer = byId('gallery-footer');
         const fps = byId('fps-counter');
+        addLink(list, 'Contact', contact);
         if (footer) list.append(footer);
         if (fps) list.append(fps);
+    }
+
+    const galleryTitle = byId('title');
+    if (list && galleryTitle) {
+        const addSelectsLink = () => {
+            if (!window.galleryApp?.metadata?.selects_order?.length) return;
+            const url = new URL(location.href);
+            const curated = url.searchParams.get('view') === 'selects';
+            url.searchParams.delete('img');
+            if (curated) url.searchParams.delete('view');
+            else url.searchParams.set('view', 'selects');
+            addLink(list, curated ? 'Full Gallery' : 'Selects', url, false);
+            list.prepend(list.lastElementChild);
+            if (curated) document.title = `${gallery} Selects`;
+            watcher.disconnect();
+        };
+        const watcher = new MutationObserver(addSelectsLink);
+        watcher.observe(galleryTitle, { childList: true, characterData: true, subtree: true });
+        addSelectsLink();
     }
 
     // --- Menus behave like menus: they close after a choice, on an outside tap, and on Escape. ---

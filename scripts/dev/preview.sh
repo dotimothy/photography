@@ -11,13 +11,13 @@ cp index.html about.html linktree.html license.html manifest.json sw.js build/
 rsync -a --delete vlm/ build/vlm/
 rsync -a assets/ build/assets/
 .venv/bin/python - <<'PY'
-import os, re, shutil, html
+import os, re, shutil, html, json
 from modules import builder
 import preparePortfolio as pp
-for g, e in pp.GALLERY_EMOJIS.items():
+for g in pp.GALLERIES:
     root = os.path.join('build', 'portfolios', g)
     if not os.path.isdir(root): continue
-    title = f"{e} {g.title()} {e}"
+    title = g.title()
     for a in ['index.html', 'immersive.html', 'css', 'js', 'templates']:
         src, dst = os.path.join('tmp', 'gallery', a), os.path.join(root, a)
         if os.path.isdir(src): shutil.rmtree(dst, ignore_errors=True); shutil.copytree(src, dst)
@@ -37,7 +37,12 @@ for g, e in pp.GALLERY_EMOJIS.items():
         page = builder.add_gallery_return_navigation(open(p, encoding='utf-8').read()); open(p, 'w', encoding='utf-8').write(page)
     p = os.path.join(root, 'js', 'app.js')
     if os.path.exists(p):
-        js = re.sub(r'const titleText = ".*Gallery Template.*";', f'const titleText = "{title}";', open(p, encoding='utf-8').read())
+        metadata_path = os.path.join(root, 'metadata', 'metadata.json')
+        has_selects = False
+        if os.path.isfile(metadata_path):
+            with open(metadata_path, encoding='utf-8') as metadata_file:
+                has_selects = bool(json.load(metadata_file).get('selects_order'))
+        js = builder.customize_gallery_app(open(p, encoding='utf-8').read(), title, has_selects)
         open(p, 'w', encoding='utf-8').write(js)
 PY
 if ! curl -s -o /dev/null "http://127.0.0.1:$PORT/index.html"; then

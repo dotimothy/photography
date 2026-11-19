@@ -12,8 +12,7 @@ const pointCount = (page) => page.evaluate(() => starSystem.children
     .reduce((total, stars) => total + stars.geometry.attributes.position.count, 0));
 async function openRendering(page, mobile) {
     await page.evaluate(() => {
-        document.getElementById('space-intro').style.display = 'none';
-        els.welcome.style.display = 'none';
+        els.welcome.classList.add('hidden');
     });
     // Settings lives in the one Menu at the top right on every screen size.
     await page.locator('#btn-controls-toggle').click();

@@ -40,9 +40,11 @@ def add_gallery_return_navigation(content):
         ('js/gallery-return.js', '<script src="{}" defer></script>'),
         ('js/gallery-layout.js', '<script src="{}" defer></script>'),
         ('css/portfolio-controls.css', '<link rel="stylesheet" href="{}">'),
+        ('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap', '<link rel="stylesheet" href="{}">'),
         ('css/gallery-return.css', '<link rel="stylesheet" href="{}">'),
     ]:
-        content = _inject_gallery_markup(content, assets + path, tag.format(assets + path), True)
+        url = path if path.startswith("https://") else assets + path
+        content = _inject_gallery_markup(content, url, tag.format(url), True)
     content = _inject_gallery_markup(
         content, 'id="portfolio-inspector"',
         '<button type="button" id="portfolio-inspector">AI Inspector</button>', False)
@@ -53,7 +55,29 @@ def add_gallery_return_navigation(content):
     return _inject_gallery_markup(content, 'id="portfolio-return"', link, False)
 
 
-def generate_site(target_keys, gallery_map, results_map, portfolios_root, gallery_emojis, template_src='./tmp/gallery', shape_emojis=None):
+def customize_gallery_app(source, title, has_selects=False):
+    """Apply portfolio-specific overrides only to the generated copy of app.js."""
+    label = json.dumps(title)
+    if has_selects:
+        selects_label = json.dumps(f"{title} Selects")
+        label = f"this.images === this.metadata.selects_order ? {selects_label} : {label}"
+    source = re.sub(r'const titleText = ".*Gallery Template.*";',
+                    lambda _: f'const titleText = {label};', source)
+    if not has_selects:
+        return source
+
+    # The same gallery app powers the archive and Selects so that keyboard,
+    # slideshow, thumbnail and deep-link behavior all use the chosen sequence.
+    load_order = "this.images = data.image_order || Object.keys(data).filter(k => k !== 'image_order');"
+    if source.count(load_order) != 1:
+        raise ValueError("The gallery template's photo loading code changed. Update Selects integration.")
+    return source.replace(load_order, load_order + """
+            if (new URLSearchParams(location.search).get('view') === 'selects' && data.selects_order?.length) {
+                this.images = data.selects_order;
+            }""", 1)
+
+
+def generate_site(target_keys, gallery_map, results_map, portfolios_root, template_src='./tmp/gallery', shape_emojis=None, selects=None):
     """
     Generates the static site structure for each target gallery.
     """
@@ -62,8 +86,7 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
         if gallery not in gallery_map or not gallery_map[gallery]:
             continue
 
-        emoji = gallery_emojis.get(gallery, '')
-        title = f"{emoji} {gallery.title()} {emoji}"
+        title = gallery.title()
         print(f" - Building {title}")
 
         # Metadata
@@ -89,6 +112,11 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
                 gallery_meta[name_no_ext] = clean_meta
         
         gallery_meta['image_order'] = file_list
+        available = set(file_list)
+        ordered_selects = list(dict.fromkeys((selects or {}).get(gallery, ())))
+        selected = [name for name in ordered_selects if name in available]
+        if selected:
+            gallery_meta['selects_order'] = selected
         os.makedirs(os.path.join(g_root, 'metadata'), exist_ok=True)
         with open(os.path.join(g_root, 'metadata', 'metadata.json'), 'w') as f:
             json.dump(gallery_meta, f, indent=4)
@@ -113,7 +141,7 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
             html_path = os.path.join(g_root, 'index.html')
             if os.path.exists(html_path):
                 with open(html_path, 'r', encoding='utf-8') as f: content = f.read()
-                # Separate from display emojis; omitted configuration means sphere.
+                # Omitted shape configuration means sphere.
                 content = re.sub(r'<meta\s+name="gallery-shape-emoji"[^>]*>\s*', '', content)
                 shape_emoji = (shape_emojis or {}).get(gallery, '')
                 if shape_emoji:
@@ -140,7 +168,7 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
             js_path = os.path.join(g_root, 'js/app.js')
             if os.path.exists(js_path):
                 with open(js_path, 'r', encoding='utf-8') as f: js_content = f.read()
-                js_content = re.sub(r'const titleText = ".*Gallery Template.*";', f'const titleText = "{title}";', js_content)
+                js_content = customize_gallery_app(js_content, title, has_selects=bool(selected))
                 with open(js_path, 'w', encoding='utf-8') as f: f.write(js_content)
         
         generated_count += 1

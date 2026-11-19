@@ -326,13 +326,10 @@ body.browsing-photos .orbit-rail { opacity: 0; visibility: hidden; }
     right: 18px;
     bottom: 14px;
     display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 12px;
-    align-items: center;
+    gap: 2px;
     text-align: left;
     transform: translateZ(32px);
 }
-.card-emoji { grid-row: 1 / span 2; font-size: 1.7rem; line-height: 1; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .7)); }
 .nav-card h3 { margin: 0; font-size: 1.45rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.15; color: #fff; text-shadow: 0 2px 14px rgba(0, 0, 0, .8); }
 .nav-card .card-meta { font: 400 .85rem/1.3 'Roboto', sans-serif; letter-spacing: 0; color: #b9cbd8; text-shadow: 0 1px 8px rgba(0, 0, 0, .8); }
 
@@ -361,8 +358,7 @@ body.browsing-photos .orbit-rail { opacity: 0; visibility: hidden; }
     .card-stack, .card-shine { display: none; }
     .card-photo { box-shadow: 0 0 0 1px rgba(255, 255, 255, .2); }
     .card-photo::after { background: linear-gradient(180deg, rgba(5, 5, 5, .1) 30%, rgba(5, 5, 5, .9) 100%); }
-    .card-caption { left: 12px; right: 12px; bottom: 12px; grid-template-columns: 1fr; row-gap: 2px; transform: none; }
-    .card-emoji { grid-row: auto; font-size: 22px; }
+    .card-caption { left: 12px; right: 12px; bottom: 12px; transform: none; }
     .nav-card h3 { font-size: 19px; }
     .nav-card .card-meta { font-size: 13px; color: #d5dfe6; }
     @keyframes card-arrive { from { opacity: 0; transform: translateY(26px) scale(.94); } }

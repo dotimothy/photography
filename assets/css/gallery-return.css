@@ -336,17 +336,43 @@ body:has(#controls-container.expanded) #gallery-3d > button { opacity: 0; pointe
     max-width: calc(100% - 24px - 2 * var(--pg-ai-reserve));
     transition: opacity .2s ease;
 }
-#viewer-exif-strip span {
-    padding: 3px 8px;
-    border: 1px solid var(--pc-line);
-    border-radius: 999px;
-    background: var(--pc-glass);
-    color: var(--pc-text-dim);
-    font: 500 11px/1.3 'Roboto', sans-serif;
+#viewer-exif-strip,
+#metadataViewer h2[data-frame-caption] {
+    font: 500 12px/1.45 'Roboto Mono', ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
-    letter-spacing: .06em;
-    white-space: nowrap;
 }
+
+#viewer-exif-strip {
+    padding: 4px 8px;
+    text-align: center;
+    color: var(--pc-text);
+    background: var(--pc-glass);
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+#viewer-exif-strip:empty { padding: 0; }
+
+#viewer-exif-strip[data-frame-caption] {
+    bottom: calc(var(--pc-bottom) + var(--pg-stack));
+    flex-direction: column;
+    gap: 2px;
+}
+
+#imageViewer:has(#viewer-exif-strip[data-frame-caption]) #image-counter { opacity: 0; }
+.viewer-frame-date { font-size: 11px; color: var(--pc-text-dim); }
+
+.gallery-contact-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 .6rem;
+    color: var(--pc-text);
+    text-underline-offset: .2em;
+}
+
+.gallery-contact-link:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -2px; }
+
 /* The info card repeats the same exposure data in full, and so does the AI panel's sheet on a phone. */
 body:has(#metadataViewer.visible) #viewer-exif-strip { opacity: 0; }
 @media (max-width: 600px) {

@@ -10,6 +10,11 @@ const CORE_ASSETS = [
     './index.html',
     './about.html',
     './linktree.html',
+    './contact.html',
+    './assets/css/contact.css',
+    './assets/js/contact.js',
+    './assets/starshalo.jpg',
+    './assets/watermark.png',
     './manifest.json',
     './assets/icon-192.png',
     './assets/icon-512.png'
@@ -41,7 +46,7 @@ function isMetadataRequest(url) {
 function isCoreAsset(url) {
     if (url.origin !== location.origin) return false;
     const p = url.pathname;
-    if (p === '/' || p.endsWith('/index.html') || p.endsWith('/about.html') || p.endsWith('/linktree.html') || p.endsWith('/license.html')) return true;
+    if (p === '/' || p.endsWith('/index.html') || p.endsWith('/about.html') || p.endsWith('/linktree.html') || p.endsWith('/contact.html') || p.endsWith('/license.html')) return true;
     if (p.endsWith('.css') || p.endsWith('.js')) return true;
     if (/\/portfolios\/[^/]+\/(index|immersive|license)\.html$/.test(p)) return true;
     if (/\/portfolios\/[^/]+\/(css|js)\//.test(p)) return true;

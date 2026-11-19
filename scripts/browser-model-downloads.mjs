@@ -75,7 +75,7 @@ try {
         silent('on page load');
 
         await page.evaluate(async () => {
-            document.getElementById('space-intro').style.display = 'none'; els.welcome.style.display = 'none'; state.hasExplored = true;
+            els.welcome.classList.add('hidden'); state.hasExplored = true;
             if (!lastCameraPhoto && !cameraPhotoBusy) await showCameraPhoto(null, 'preview');
         });
         await page.waitForFunction(() => lastCameraPhoto?.image && !cameraPhotoBusy);

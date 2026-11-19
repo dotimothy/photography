@@ -52,7 +52,7 @@
 
     let selectedProfile = safeGet(PROFILE_KEY) || 'auto';
     if (selectedProfile !== 'auto' && !profiles[selectedProfile]) selectedProfile = 'auto';
-    let fpsVisible = safeGet(FPS_KEY) !== 'false';
+    let fpsVisible = new URLSearchParams(location.search).has('debug') || safeGet(FPS_KEY) === 'true';
     let current = null;
     let rafId = 0;
     let frameCount = 0;
