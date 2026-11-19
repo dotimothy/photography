@@ -147,8 +147,27 @@
             <option value="quality">Quality</option>`;
     }
 
+    function mountSettingsRow() {
+        const generalPane = document.getElementById('rendering-quality-controls') || document.getElementById('settings-pane-general');
+        if (generalPane && !document.getElementById('site-performance-settings-row')) {
+            const settings = document.createElement('div');
+            settings.id = 'site-performance-settings-row';
+            settings.innerHTML = `
+                <div class="setting-category" style="margin-top:14px">Performance</div>
+                <div class="setting-row">
+                    <label class="setting-label" for="settings-performance-profile">Rendering quality</label>
+                    <select class="setting-select" id="settings-performance-profile" data-site-performance-select>${profileOptions()}</select>
+                </div>
+                <label class="setting-row" style="cursor:pointer">
+                    <span class="setting-label">${document.querySelector('[data-site-performance-slot]') ? 'Frame Rate In Menu' : 'Live FPS Overlay'}</span>
+                    <input type="checkbox" data-site-fps-toggle style="accent-color:#00e5ff">
+                </label>`;
+            generalPane.appendChild(settings);
+        }
+    }
+
     function mount() {
-        if (document.getElementById('site-performance-hud')) return;
+        if (document.getElementById('site-performance-hud') || document.getElementById('site-performance-settings-row')) return;
 
         const style = document.createElement('style');
         style.textContent = `
@@ -158,12 +177,12 @@
                 color: #fff; font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             }
             #site-performance-hud button, #site-performance-hud select, #site-performance-hud input { font: inherit; }
-            #site-fps-readout, #site-performance-button {
+            #site-performance-hud #site-fps-readout, #site-performance-button {
                 min-height: 32px; border: 1px solid rgba(255,255,255,.22); border-radius: 9px;
                 background: rgba(5,8,14,.82); color: #bff8ff; box-shadow: 0 7px 24px rgba(0,0,0,.3);
                 backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); cursor: pointer;
             }
-            #site-fps-readout { min-width: 64px; padding: 7px 10px; letter-spacing: .04em; }
+            #site-performance-hud #site-fps-readout { min-width: 64px; padding: 7px 10px; letter-spacing: .04em; }
             #site-performance-button { width: 34px; padding: 0; font-size: 15px; }
             #site-performance-panel {
                 position: absolute; left: 0; bottom: 42px; width: min(300px, calc(100vw - 28px));
@@ -202,6 +221,23 @@
         `;
         document.head.appendChild(style);
 
+        // A page can give the readout a home (the homepage puts it in its menu); then nothing floats over the page
+        // and the profile lives in Settings only.
+        const slot = document.querySelector('[data-site-performance-slot]');
+        if (slot) {
+            slot.innerHTML = '<span id="site-fps-readout">FPS --</span>';
+            mountSettingsRow();
+            document.querySelectorAll('[data-site-performance-select]').forEach((select) => {
+                select.addEventListener('change', () => setProfile(select.value));
+            });
+            document.querySelectorAll('[data-site-fps-toggle]').forEach((toggle) => {
+                toggle.addEventListener('change', () => setFpsVisible(toggle.checked));
+            });
+            syncControls();
+            setFpsVisible(fpsVisible, false);
+            return;
+        }
+
         const hud = document.createElement('div');
         hud.id = 'site-performance-hud';
         hud.innerHTML = `
@@ -218,23 +254,7 @@
             </section>`;
         document.body.appendChild(hud);
 
-        const generalPane = document.getElementById('rendering-quality-controls') || document.getElementById('settings-pane-general');
-        if (generalPane && !document.getElementById('site-performance-settings-row')) {
-            const settings = document.createElement('div');
-            settings.id = 'site-performance-settings-row';
-            settings.innerHTML = `
-                <div class="setting-category" style="margin-top:14px">Performance</div>
-                <div class="setting-row">
-                    <label class="setting-label" for="settings-performance-profile">Rendering quality</label>
-                    <select class="setting-select" id="settings-performance-profile" data-site-performance-select>${profileOptions()}</select>
-                </div>
-                <label class="setting-row" style="cursor:pointer">
-                    <span class="setting-label">Live FPS Overlay</span>
-                    <input type="checkbox" data-site-fps-toggle style="accent-color:#00e5ff">
-                </label>`;
-            generalPane.appendChild(settings);
-        }
-
+        mountSettingsRow();
         const button = document.getElementById('site-performance-button');
         const panel = document.getElementById('site-performance-panel');
         button.addEventListener('click', (event) => {

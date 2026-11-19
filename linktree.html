@@ -709,7 +709,19 @@
             .content { margin: 0; }
             .link-row { grid-template-columns: 34px 1fr auto; gap: 10px; min-height: 72px; }
             h1 { font-size: 1.85rem; }
+            /* Row descriptions wrap instead of being cut off mid-sentence. */
+            .link-label small { max-width: none; overflow: visible; text-overflow: clip; white-space: normal; line-height: 1.35; }
         }
+
+        /* One focus ring across the site. */
+        .feature-link:focus-visible,
+        .link-row:focus-visible,
+        .socials a:focus-visible,
+        footer a:focus-visible,
+        .content-inner > a:focus-visible { outline: 2px solid #00e5ff; outline-offset: 3px; }
+
+        /* The last line of the page can scroll clear of the site's FPS readout in the bottom-left corner. */
+        .content { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
     </style>
 </head>
 <body>

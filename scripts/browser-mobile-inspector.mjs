@@ -23,9 +23,12 @@ try {
                 if (!lastCameraPhoto && !cameraPhotoBusy) await showCameraPhoto(null, 'preview');
             });
             await page.waitForFunction(() => lastCameraPhoto?.image && !cameraPhotoBusy);
-            if (mobile) await page.locator('#btn-controls-toggle').click();
+            await page.locator('#btn-controls-toggle').click();
             await page.locator('#btn-open-inspector').click();
         } else {
+            // AI Inspector is a row of the gallery menu, which fades in once the gallery has loaded.
+            await page.waitForFunction(() => getComputedStyle(document.getElementById('controls-container')).opacity === '1');
+            await page.locator('#controls-toggle').click();
             await page.locator('#portfolio-inspector').click();
         }
         await page.locator('.vlm-panel.vlm-open').waitFor({ state: 'visible' });
@@ -36,17 +39,28 @@ try {
                 photo.src = new URL('../../assets/photographer.jpg', location.href).href;
                 photo.alt = 'Selected gallery photo';
                 document.querySelector('#full-image-container').replaceChildren(photo);
+                document.querySelector('#full-image-container').style.display = 'flex'; // a loaded gallery hides its empty viewer
             });
         }
         await page.locator('.vlm-input').fill('What is in this photograph?');
         assert.ok(await page.locator('.vlm-send-btn').isVisible());
         await page.waitForFunction(() => !document.querySelector('.vlm-send-btn').disabled);
+        // Let the sheet finish sliding in before measuring it.
+        await page.waitForFunction(() => document.querySelector('.vlm-panel').getAnimations().length === 0);
         const bounds = await page.locator('.vlm-input').boundingBox();
         assert.ok(bounds.x >= 0 && bounds.y + bounds.height <= (mobile ? 844 : 1000));
-        await page.locator('.vlm-toggle-btn').click();
+        // The launcher hides while the panel is open; the panel's own Close Panel button closes it.
+        assert.equal(await page.locator('.vlm-toggle-btn').isVisible(), false, 'Launcher hides while the panel is open');
+        await page.locator('.vlm-panel [id$="-close"]').click();
         assert.equal(await page.locator('.vlm-panel.vlm-open').count(), 0);
         await page.locator('.vlm-toggle-btn').click();
         assert.equal(await page.locator('.vlm-panel.vlm-open').count(), 1);
+        assert.equal(await page.locator('.vlm-toggle-btn').isVisible(), false);
+        // Every button label in the panel is Title Case (each word capitalised).
+        const lowerLabels = await page.evaluate(() => [...document.querySelectorAll('.vlm-panel button, .vlm-toggle-btn')]
+            .flatMap(button => [button.textContent.trim(), button.title, button.getAttribute('aria-label') || ''])
+            .filter(label => label && label.split(/[\s\-/]+/).some(word => /^[(\[]*\p{Ll}/u.test(word))));
+        assert.deepEqual(lowerLabels, [], 'Button labels are Title Case');
         if (mobile && route.startsWith('/index')) {
             if (mobile) await page.locator('#btn-controls-toggle').click();
             await page.waitForTimeout(350);

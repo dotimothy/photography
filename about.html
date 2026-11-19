@@ -16,7 +16,9 @@
     <!-- Preconnect to Google Fonts for faster handshake -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap' rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;600;700;900&display=swap' rel='stylesheet'>
+    <link rel="stylesheet" href="./assets/css/portfolio-controls.css">
+    <script src="./assets/js/gallery-return.js" defer></script>
 
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
@@ -680,15 +682,18 @@
 
         .lightbox-close {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: var(--pc-top);
+            right: var(--pc-right);
             width: 44px;
             height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.1);
+            padding: 0;
+            color: var(--pc-text);
+            font: 400 24px/1 'Roboto', sans-serif;
+            background: var(--pc-glass);
+            border: 1px solid var(--pc-line);
             border-radius: 50%;
             cursor: pointer;
         }
@@ -819,25 +824,7 @@
             .section-heading { padding: 16px 18px; }
         }
 
-        .about-view-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 20px; background: var(--glass-bg); border-inline: 1px solid var(--glass-border); }
-        .about-view-controls button { min-height: 44px; padding: 8px 16px; border: 1px solid rgba(0,229,255,.3); border-radius: 8px; background: rgba(0,229,255,.07); color: #e0f7fa; font: 700 13px 'Roboto', sans-serif; cursor: pointer; }
-        .about-view-controls button:hover, .about-view-controls button[aria-pressed="true"] { background: rgba(0,229,255,.2); border-color: var(--accent-cyan); }
-        .about-view-controls button:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
-        .about-rotate-controls { display: flex; gap: 8px; align-items: center; }
-        .about-rotate-controls[hidden] { display: none; }
-        .about-rotate-status { color: #b0bec5; font-size: 12px; }
         body.about-3d-active { overflow: hidden; }
-        .about-view-controls { align-self: center; border: 1px solid var(--glass-border); border-radius: 12px; margin-top: 36px; max-width: 100%; }
-        .about-view-controls p { margin: 0; color: #b0bec5; font-size: 12px; }
-        body:not(.about-3d-active) .about-view-controls { padding: 0; background: none; border: 0; }
-        #about-3d-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 10px 18px; border: 1px solid rgba(0,229,255,.4); border-radius: 999px; background: linear-gradient(135deg, rgba(0,229,255,.12), rgba(12,18,28,.85)); color: #e0f7fa; letter-spacing: .4px; box-shadow: inset 0 1px 0 #ffffff12, 0 4px 18px #0004; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: background .2s ease, border-color .2s ease, box-shadow .2s ease; }
-        #about-3d-toggle svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--accent-cyan); }
-        #about-3d-toggle:hover { border-color: var(--accent-cyan); background: rgba(0,229,255,.18); box-shadow: 0 0 18px rgba(0,229,255,.18), inset 0 1px 0 #ffffff20; }
-        #about-3d-toggle[aria-pressed="true"] { border-color: var(--accent-cyan); background: rgba(0,229,255,.15); }
-        #about-3d-toggle .mode-grid, #about-3d-toggle[aria-pressed="true"] .mode-cube { display: none; }
-        #about-3d-toggle[aria-pressed="true"] .mode-grid { display: block; }
-        .about-3d-active .about-view-controls { position: fixed; top: 16px; left: 80px; right: 16px; margin: 0; z-index: 100; justify-content: center; background: rgba(8,18,24,.95); }
-        .container.about-3d { position: fixed; inset: 100px 0 64px; width: 100%; max-width: none; perspective: 1600px; overflow: hidden; animation: none; touch-action: pan-y; }
         .container.about-3d > .about-plane { position: absolute; top: 0; left: 50%; width: min(78%, 1040px); height: 100%; max-height: 100%; margin: 0; padding: 28px; overflow: auto; overscroll-behavior: contain; border: 1px solid rgba(0,229,255,.3); border-radius: 20px; background: rgba(8,16,21,.97); box-shadow: 0 20px 60px #0008; transform: translateX(calc(-50% + var(--card-slot) * 105%)) translateZ(calc(var(--card-distance) * -380px)) rotateY(calc(var(--card-slot) * -24deg)); opacity: 1; transition: transform .45s ease, filter .45s ease; filter: brightness(var(--card-brightness)); z-index: var(--card-layer); backface-visibility: hidden; }
         .container.about-3d > .about-plane[aria-hidden="true"] { pointer-events: none; }
         .container.about-3d > .about-intro { align-content: center; }
@@ -848,12 +835,7 @@
         .container:not(.about-3d) > .about-plane { transition: opacity .8s ease; }
         .about-3d:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -3px; }
         @media (max-width: 600px) {
-            .about-view-controls { padding: 10px; }
-            .about-3d-active .about-view-controls { left: 64px; right: 8px; top: 8px; gap: 6px; }
-            .about-view-controls p { flex-basis: 100%; text-align: center; font-size: 10px; line-height: 1.4; }
-            .about-rotate-controls { gap: 4px; }
-            .about-view-controls button { padding: 8px 10px; }
-            .container.about-3d { top: 176px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); perspective: 1000px; }
+            .container.about-3d { perspective: 1000px; }
             .container.about-3d > .about-plane { width: 90%; padding: 16px; border-radius: 16px; }
             .container.about-3d > .about-intro { align-content: start; }
             .container.about-3d > .story-feature { display: block; }
@@ -862,19 +844,57 @@
             .container.about-3d .info-grid, .container.about-3d .gear-bag-body { padding: 12px; }
         }
         @media (prefers-reduced-motion: reduce) { .container.about-3d > .about-plane { transition: none; } }
-        .about-section-picker, .about-touch-hint, .about-touch-label { display: none; }
-        @media (max-width: 768px), (pointer: coarse) {
-            .about-3d-active .about-view-controls { top: 8px; left: 64px; right: 8px; padding: 8px; gap: 6px; }
-            .about-3d-active #about-3d-help { display: none; }
-            .about-3d-active .about-touch-hint { display: block; font-size: 11px; }
-            .about-3d-active .about-rotate-controls { position: fixed; left: 12px; right: 12px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 64px minmax(0, 1fr) 64px; gap: 8px; padding: 10px; border: 1px solid rgba(0,229,255,.3); border-radius: 16px; background: rgba(8,18,24,.97); box-shadow: 0 8px 24px #0008; }
-            .about-3d-active .about-rotate-status { display: none; }
-            .about-3d-active .about-section-picker { display: block; min-width: 0; width: 100%; min-height: 52px; padding: 8px; color: #e0f7fa; border: 1px solid rgba(0,229,255,.3); border-radius: 8px; background: #10242c; font: 13px 'Roboto', sans-serif; }
-            .about-section-picker:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
-            .about-rotate-controls button { min-height: 52px; padding: 6px; touch-action: manipulation; }
-            .about-touch-label { display: block; font-size: 10px; margin-top: 3px; }
-            .container.about-3d { top: 104px; bottom: calc(148px + env(safe-area-inset-bottom, 0px)); }
+
+        /* --- CONTROLS ---
+           Back sits top-left (portfolio-controls.css). The page's two actions share that row on the
+           right and scroll away with the page; in the 3D carousel they stay put and the bottom edge
+           gains the carousel's own bar. Nothing else floats over the page. */
+        /* The carousel bar rises above whatever the rest of the site parks in the bottom corners, whenever
+           it is wide enough to reach them (--about-corner-reserve is measured by the script below). */
+        body { --about-pane: var(--vlm-pane-width, 0px); --about-bar-bottom: max(var(--pc-bottom), calc(var(--about-corner-reserve, 0px) + 8px)); }
+        .about-view-controls { position: absolute; top: var(--pc-top); right: calc(var(--pc-right) + var(--about-pane)); z-index: 100; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+        body.about-3d-active .about-view-controls { position: fixed; }
+        .about-view-controls button, .about-rotate-controls button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--pc-line); border-radius: 999px; background: var(--pc-glass); -webkit-backdrop-filter: var(--pc-blur); backdrop-filter: var(--pc-blur); color: var(--pc-text); font: 600 14px/1 'Roboto', sans-serif; white-space: nowrap; cursor: pointer; touch-action: manipulation; transition: background-color .18s ease, border-color .18s ease, color .18s ease; }
+        .about-view-controls button[hidden] { display: none; }
+        @media (max-width: 1279px) {
+            /* Beside the AI panel the row is short: Back folds to its arrow so the two never meet. */
+            body:has(.vlm-panel.vlm-open) #portfolio-return { width: 44px; padding: 0; }
+            body:has(.vlm-panel.vlm-open) .portfolio-return-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
         }
+        .about-view-controls button:hover, .about-rotate-controls button:hover { border-color: var(--pc-line-strong); background: var(--pc-glass-hover); }
+        .about-view-controls button[aria-pressed="true"] { border-color: var(--pc-accent); color: var(--pc-accent); }
+        .about-view-controls button:focus-visible, .about-rotate-controls button:focus-visible, .about-section-picker:focus-visible, .lightbox-close:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 3px; }
+        .about-view-controls button:disabled { opacity: .6; cursor: progress; }
+        #about-3d-toggle svg { width: 20px; height: 20px; flex-shrink: 0; }
+        #about-3d-toggle .mode-grid, #about-3d-toggle[aria-pressed="true"] .mode-cube { display: none; }
+        #about-3d-toggle[aria-pressed="true"] .mode-grid { display: block; }
+
+        .container.about-3d { position: fixed; inset: calc(var(--pc-top) + 60px) var(--about-pane) calc(var(--about-bar-bottom) + 98px) 0; width: auto; max-width: none; perspective: 1600px; overflow: hidden; animation: none; touch-action: pan-y; }
+        .about-rotate-controls { position: fixed; left: calc((100% - var(--about-pane)) / 2); bottom: var(--about-bar-bottom); z-index: 100; transform: translateX(-50%); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; box-sizing: border-box; width: min(520px, calc(100% - var(--about-pane) - var(--pc-left) - var(--pc-right))); padding: 8px; border: 1px solid var(--pc-line); border-radius: 14px; background: var(--pc-glass); -webkit-backdrop-filter: var(--pc-blur); backdrop-filter: var(--pc-blur); box-shadow: var(--pc-shadow); }
+        .about-rotate-controls[hidden] { display: none; }
+        #about-next { flex-direction: row-reverse; }
+        .about-rotate-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+        .about-section-picker { min-width: 0; width: 100%; min-height: 44px; padding: 0 38px 0 16px; border: 1px solid var(--pc-line); border-radius: 999px; background: rgba(255, 255, 255, .06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23eef4f8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 12px center / 18px no-repeat; color: var(--pc-text); font: 600 14px/1 'Roboto', sans-serif; text-overflow: ellipsis; -webkit-appearance: none; appearance: none; cursor: pointer; }
+        .about-section-picker option { background: #0b1118; color: var(--pc-text); }
+        /* One quiet line above the bar: keys for a keyboard, gestures for touch. */
+        #about-3d-help, .about-touch-hint { position: fixed; left: calc((100% - var(--about-pane)) / 2); bottom: calc(var(--about-bar-bottom) + 70px); z-index: 99; transform: translateX(-50%); width: max-content; max-width: calc(100% - var(--about-pane) - 32px); margin: 0; overflow: hidden; color: var(--pc-text-dim); font: 400 12px/18px 'Roboto', sans-serif; text-align: center; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+        .about-touch-hint { display: none; }
+        @media (max-width: 768px), (pointer: coarse) {
+            body.about-3d-active #about-3d-help { display: none; }
+            body.about-3d-active .about-touch-hint { display: block; }
+        }
+        @media (max-width: 479px) {
+            /* Phones: arrow over label, so the section picker keeps the middle of the bar. */
+            .about-rotate-controls { gap: 6px; padding: 6px; }
+            .about-rotate-controls button, #about-next { flex-direction: column; gap: 3px; min-width: 60px; padding: 0 8px; border-radius: 12px; font-size: 11px; }
+            .about-section-picker { padding: 0 30px 0 12px; border-radius: 12px; background-position: right 8px center; font-size: 13px; }
+        }
+        @media (max-height: 480px) {
+            /* Phone landscape: the hint line gives its height to the carousel. */
+            body.about-3d-active #about-3d-help, body.about-3d-active .about-touch-hint { display: none; }
+            .container.about-3d { bottom: calc(var(--about-bar-bottom) + 70px); }
+        }
+        @media (prefers-reduced-motion: reduce) { .about-view-controls button, .about-rotate-controls button { transition: none; } }
     </style>
 </head>
 
@@ -884,22 +904,26 @@
     <div class="bg-layer bg-stars"></div>
     <div class="bg-layer bg-aurora"></div>
 
-            <div class="about-view-controls">
-                <button type="button" id="about-3d-toggle" aria-pressed="false" aria-controls="about-page" title="Explore the About page in 3D">
-                    <svg class="mode-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></svg>
-                    <svg class="mode-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-                    <span class="mode-label">3D View</span>
-                </button>
-                <button type="button" id="about-inspector" title="Ask AI about the current photo">AI Inspector</button>
-                <div class="about-rotate-controls" id="about-rotate-controls" hidden>
-                    <button type="button" id="about-previous" aria-label="Previous About section">&#8592;<span class="about-touch-label">Previous</span></button>
-                    <span class="about-rotate-status" id="about-rotate-status" role="status" aria-live="polite"></span>
-                    <select class="about-section-picker" id="about-section-picker" aria-label="Jump to About section"></select>
-                    <button type="button" id="about-next" aria-label="Next About section">&#8594;<span class="about-touch-label">Next</span></button>
-                </div>
-                <p id="about-3d-help" hidden>Left/Right or Swipe: Navigate. Home/End: First/Last. 2/3: View. Esc: Exit. Scroll Within Each Section.</p>
-                <p class="about-touch-hint">Swipe to explore. Scroll to read.</p>
-            </div>
+    <a id="portfolio-return" href="./index.html?mode=3d" target="_top"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span class="portfolio-return-label">Back To Camera</span></a>
+
+    <div class="about-view-controls">
+        <button type="button" id="about-3d-toggle" aria-pressed="false" aria-controls="about-page" title="Explore The About Page In 3D">
+            <svg class="mode-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></svg>
+            <svg class="mode-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            <span class="mode-label">3D View</span>
+        </button>
+        <button type="button" id="about-inspector" title="Ask AI About The Current Photo">AI Inspector</button>
+    </div>
+
+    <!-- Carousel controls: on the bottom edge, and only while the 3D view is open. -->
+    <div class="about-rotate-controls" id="about-rotate-controls" hidden>
+        <button type="button" id="about-previous" aria-label="Previous About Section" title="Previous"><span aria-hidden="true">&#8592;</span><span class="about-touch-label">Previous</span></button>
+        <span class="about-rotate-status" id="about-rotate-status" role="status" aria-live="polite"></span>
+        <select class="about-section-picker" id="about-section-picker" aria-label="Jump To About Section"></select>
+        <button type="button" id="about-next" aria-label="Next About Section" title="Next"><span aria-hidden="true">&#8594;</span><span class="about-touch-label">Next</span></button>
+    </div>
+    <p id="about-3d-help" hidden>Left/Right or Swipe: Navigate. Home/End: First/Last. 2/3: View. Esc: Exit. Scroll Within Each Section.</p>
+    <p class="about-touch-hint">Swipe to explore. Scroll to read.</p>
 
     <div class="container" id="about-page">
 
@@ -1179,7 +1203,7 @@
 
     <!-- LIGHTBOX -->
     <div class="lightbox" id="lightbox">
-        <div class="lightbox-close" onclick="closeLightbox()">&times;</div>
+        <button type="button" class="lightbox-close" onclick="closeLightbox()" aria-label="Close" title="Close">&times;</button>
         <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Full View"
             class="lightbox-img" id="lightbox-img">
         <div class="lightbox-caption" id="lightbox-caption"></div>
@@ -1312,7 +1336,7 @@
                 document.getElementById('about-3d-help').hidden = !enabled;
                 toggle.setAttribute('aria-pressed', String(enabled));
                 toggle.querySelector('.mode-label').textContent = enabled ? '2D View' : '3D View';
-                toggle.title = enabled ? 'Return to the scrolling About page' : 'Explore the About page in 3D';
+                toggle.title = enabled ? 'Return To The Scrolling About Page' : 'Explore The About Page In 3D';
                 controls.hidden = !enabled;
                 if (enabled) {
                     stage.tabIndex = 0;
@@ -1411,6 +1435,58 @@
         });
     </script>
     <script src="./assets/js/live-fps.js"></script>
+    <script>
+        // The FPS readout (bottom-left) and the AI panel's round toggle (bottom-right) belong to other
+        // parts of the site, here or on the homepage framing this page. Whenever the carousel bar is wide
+        // enough to reach one of them, it is told how much of the bottom edge that control is using.
+        (() => {
+            const parked = '#site-performance-hud, .vlm-toggle-btn:not(.vlm-toggle-docked)';
+            const docs = [document];
+            try {
+                if (window.parent !== window && window.frameElement) docs.push(window.parent.document);
+            } catch (_) { /* Cross-origin embed: nothing of ours to dodge. */ }
+            const root = document.documentElement;
+            const watched = new WeakSet();
+            const watcher = new MutationObserver(() => measure());
+            let current = '';
+            function measure() {
+                // Where the bar sits: centred in the width the AI panel leaves free, at most 520px wide.
+                const free = window.innerWidth - (parseFloat(getComputedStyle(root).getPropertyValue('--vlm-pane-width')) || 0);
+                const half = Math.min(520, free - 24) / 2;
+                let reserve = 0;
+                docs.forEach((doc) => {
+                    const frame = doc === document ? null : window.frameElement.getBoundingClientRect();
+                    const edge = frame ? frame.bottom : window.innerHeight;
+                    doc.querySelectorAll(parked).forEach((control) => {
+                        if (!watched.has(control)) {
+                            watched.add(control);
+                            watcher.observe(control, { attributes: true, attributeFilter: ['class', 'style', 'hidden'], childList: true, subtree: true });
+                        }
+                        const rect = control.getBoundingClientRect();
+                        const style = doc.defaultView.getComputedStyle(control);
+                        if (!rect.height || style.display === 'none' || style.visibility === 'hidden') return;
+                        const left = rect.left - (frame ? frame.left : 0);
+                        if (left + rect.width < free / 2 - half || left > free / 2 + half) return;
+                        if (rect.bottom > edge - 140 && rect.top < edge) reserve = Math.max(reserve, edge - rect.top);
+                    });
+                });
+                const value = `${Math.round(reserve)}px`;
+                if (value === current) return;
+                current = value;
+                root.style.setProperty('--about-corner-reserve', value);
+            }
+            // The AI panel announces its width on the root element.
+            watcher.observe(root, { attributes: true, attributeFilter: ['style'] });
+            docs.forEach((doc) => {
+                watcher.observe(doc.body, { childList: true });
+                const frame = doc.getElementById('iframe-container');
+                if (frame) watcher.observe(frame, { childList: true });
+            });
+            window.addEventListener('resize', measure);
+            window.addEventListener('load', measure);
+            measure();
+        })();
+    </script>
     <script>
         // Service Worker registration (PWA install + offline)
         if ('serviceWorker' in navigator) {

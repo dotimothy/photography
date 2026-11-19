@@ -28,6 +28,8 @@ function applyConfig() {
     manager = overlay.manager;
   if (c.type === "api") manager.setApiMode(c.apiEndpoint, c.apiKey, c.apiModel);
   else if (c.type === "ollama") manager.setOllamaMode(c.ollamaEndpoint, c.ollamaModel, c.ollamaThink);
+  // init/restart only load a local model that was already downloaded in Settings > AI Inspector;
+  // otherwise they report 'not-downloaded' and the panel points the visitor at settings.
   else if (manager._modelId && manager._modelId !== c.model) manager.restart(c.model);
   else manager.init(c.model);
   overlay._customSystemPrompt = c.systemPrompt;

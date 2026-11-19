@@ -17,11 +17,16 @@ class GalleryNavigationTests(unittest.TestCase):
             for name in ['index.html', 'immersive.html']:
                 content = (root / 'portfolios/astronomy' / name).read_text(encoding='utf-8')
                 self.assertIn('href="../../index.html?mode=3d" target="_top"', content)
-                self.assertIn('Back to Camera', content)
-                self.assertIn('../../assets/css/gallery-return.css', content)
-                self.assertIn('../../assets/js/gallery-return.js', content)
-                self.assertIn('../../assets/js/gallery-inspector.js', content)
-                self.assertIn('id="portfolio-inspector"', content)
+                self.assertIn('<span class="portfolio-return-label">Back To Camera</span>', content)
+                self.assertNotIn('Back to Camera', content)
+                for asset in ['css/portfolio-controls.css', 'css/gallery-return.css', 'js/gallery-return.js',
+                              'js/gallery-layout.js', 'js/gallery-inspector.js']:
+                    self.assertEqual(content.count('../../assets/' + asset), 1, asset)
+                # The shared control styles load first; the gallery layout builds on their tokens.
+                self.assertLess(content.index('css/portfolio-controls.css'), content.index('css/gallery-return.css'))
+                self.assertEqual(content.count('id="portfolio-return"'), 1)
+                self.assertEqual(content.count('id="portfolio-inspector"'), 1)
+                self.assertIn('>AI Inspector</button>', content)
                 self.assertEqual(builder.add_gallery_return_navigation(content), content)
 
 

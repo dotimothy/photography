@@ -179,7 +179,9 @@ try {
         assert.equal(await page.evaluate(()=>state.isAnimating),true);
         assert.ok(await page.evaluate(()=>finderMesh.material.map===finderTexture&&screenMesh.material.map===uiTexture));
         assert.ok(await page.evaluate(()=>{
-            const original=lastCameraPhoto.image;
+            const original=lastCameraPhoto.image, focal=cameraLens.focalLength;
+            // Touch displays show the overview only while zoomed in, so measure it zoomed.
+            if(matchMedia('(pointer: coarse)').matches) cameraLens.focalLength=85;
             try {
                 for(const [width,height] of [[1600,400],[400,1600],[1200,900]]) {
                     const image=document.createElement('canvas');image.width=width;image.height=height;
@@ -188,12 +190,15 @@ try {
                     drawCameraDisplay(uiCtx,10.55/7.1,[],false);updateFinderScreen();
                     for(const ctx of [uiCtx,finderCtx]) {
                         const {photoRect:p,map:m}=ctx.cameraPhotoLayout;
-                        if(p.x+p.w>m.x-10||m.x+m.w+10>1500) return false;
-                        if(matchMedia('(pointer: coarse)').matches&&Math.max(p.y+p.h,m.y+m.h+10)>=900) return false;
+                        if(matchMedia('(pointer: coarse)').matches) {
+                            // Touch: the overview is a small inset in the photo's lower right corner, inside the display.
+                            if(!m||m.x<0||m.y<0||m.x+m.w>1500||m.y+m.h>1500||p.x<0||p.x+p.w>1500) return false;
+                            if(m.w*m.h>p.w*p.h*.25) return false;
+                        } else if(p.x+p.w>m.x-10||m.x+m.w+10>1500) return false;
                     }
                 }
                 return true;
-            } finally {lastCameraPhoto.image=original;updateUI();}
+            } finally {lastCameraPhoto.image=original;cameraLens.focalLength=focal;updateUI();}
         }),'Overview map and its border stay outside portrait, landscape, and panoramic photos on both displays');
         if(!mobile) await checkWheelZoom(page,await screenPoint(page,'+',true));
         assert.ok(await page.evaluate(()=>{
@@ -206,11 +211,14 @@ try {
             return Math.abs(frame.w*1.52/0.64-frame.h)<0.001&&Math.abs(frame.y+frame.h/2-area.y-area.h/2)<0.001;
         }),'Eyepiece corners are inset and focus square stays centered at the display aspect ratio');
         const wideImage=await page.evaluate(()=>finderCtx.getImageData(350,350,800,500).data.toString());
-        await tap(page,mobile,await screenPoint(page,'+',true));
+        // Touch displays zoom by pinch (browser-camera-live) and have no -/+ keys; step the lens the same way.
+        if(mobile) await page.evaluate(()=>setCameraLensZoom(cameraZoom+5));
+        else await tap(page,mobile,await screenPoint(page,'+',true));
         await page.waitForFunction(()=>cameraLens.focalLength===23);
         assert.equal(await page.evaluate(()=>cameraInspection),'viewfinder','Lens zoom keeps the visitor in the viewfinder');
         assert.notEqual(await page.evaluate(()=>finderCtx.getImageData(350,350,800,500).data.toString()),wideImage,'Zoom changes the photograph framing');
-        await tap(page,mobile,await screenPoint(page,'−',true));
+        if(mobile) await page.evaluate(()=>setCameraLensZoom(cameraZoom-5));
+        else await tap(page,mobile,await screenPoint(page,'−',true));
         await page.waitForFunction(()=>cameraLens.focalLength===18);
         await tap(page,mobile,await screenPoint(page,'METADATA',true));
         assert.equal(await page.evaluate(()=>cameraMetadataVisible),true);
@@ -242,7 +250,8 @@ try {
         await settle(page);
         assert.equal(await page.evaluate(()=>lastCameraPhoto.src),first);
         assert.equal(await page.evaluate(()=>Object.fromEntries(cameraMetadataRows(lastCameraPhoto)).EXPOSURE),metadataRows.EXPOSURE,'History retains each photo metadata');
-        await tap(page,mobile,await screenPoint(page,'STEP BACK',true));
+        // The way out of the viewfinder is the one Exit Camera View key at the top left (or Escape).
+        await page.locator('.mobile-camera-exit').click();
         await page.waitForFunction(()=>!cameraInspection&&!cameraTravel);
         assert.ok(await page.evaluate(p=>camera.position.distanceTo(new THREE.Vector3(...p))<0.001,original));
         assert.equal(await page.evaluate(()=>controls.enabled),true);
@@ -329,7 +338,7 @@ try {
 
         // Loading failures and retries stay on the camera's display.
         failedPhoto=true;
-        await page.evaluate(()=>cameraPhotoCatalogs.set(cameraCollections[cameraCollection],['Missing_photo_fixture']));
+        await page.evaluate(()=>(cameraCollection<0?cameraCollections:[cameraCollections[cameraCollection]]).forEach(name=>cameraPhotoCatalogs.set(name,['Missing_photo_fixture'])));
         await tap(page,mobile,await screenPoint(page,'NEXT SHOT'));
         await settle(page);
         assert.match(await page.evaluate(()=>cameraMessage),/UNAVAILABLE/);

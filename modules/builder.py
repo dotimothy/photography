@@ -14,26 +14,43 @@ GALLERY_THEME_COLORS = {
     'wildlife':  '#2e2a1a',  # earthy gold
 }
 
-def add_gallery_return_navigation(content):
-    """Keep a route back to the portfolio in generated gallery/viewer pages."""
-    stylesheet = '<link rel="stylesheet" href="../../assets/css/gallery-return.css">'
-    script = '<script src="../../assets/js/gallery-return.js" defer></script>'
-    inspector_script = '<script src="../../assets/js/gallery-inspector.js" type="module"></script>'
-    if '../../assets/js/gallery-inspector.js' not in content:
-        content = re.sub(r'</head\s*>', inspector_script + '\n</head>', content, count=1, flags=re.IGNORECASE)
-    if 'id="portfolio-inspector"' not in content:
-        button = '<button type="button" id="portfolio-inspector">AI Inspector</button>'
-        content = re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + button,
-                         content, count=1, flags=re.IGNORECASE)
-    if '../../assets/js/gallery-return.js' not in content:
-        content = re.sub(r'</head\s*>', script + '\n</head>', content, count=1, flags=re.IGNORECASE)
-    if 'id="portfolio-return"' in content:
+def _inject_gallery_markup(content, marker, markup, into_head):
+    """Insert markup once: before </head>, or directly after <body>. `marker` proves it is already there."""
+    if marker in content:
         return content
-    link = ('<a id="portfolio-return" href="../../index.html?mode=3d" target="_top">'
-            '<span aria-hidden="true">&#8592;</span> Back to Camera</a>')
-    content = re.sub(r'</head\s*>', stylesheet + '\n</head>', content, count=1, flags=re.IGNORECASE)
-    return re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + link,
+    if into_head:
+        return re.sub(r'</head\s*>', lambda match: markup + '\n</head>', content, count=1, flags=re.IGNORECASE)
+    return re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + markup,
                   content, count=1, flags=re.IGNORECASE)
+
+
+def add_gallery_return_navigation(content):
+    """Keep a route back to the portfolio in generated gallery/viewer pages.
+
+    The template is not ours to edit, so everything the portfolio adds to a
+    gallery page goes in here: one "back" link (top-left), the AI Inspector
+    button (gallery-inspector.js files it into the template's own menu), and
+    the stylesheets/scripts that lay the template's controls out as one set.
+    Stylesheets land before </head>, after the template's own, so they win
+    ties without needing extra specificity.
+    """
+    assets = '../../assets/'
+    for path, tag in [
+        ('js/gallery-inspector.js', '<script src="{}" type="module"></script>'),
+        ('js/gallery-return.js', '<script src="{}" defer></script>'),
+        ('js/gallery-layout.js', '<script src="{}" defer></script>'),
+        ('css/portfolio-controls.css', '<link rel="stylesheet" href="{}">'),
+        ('css/gallery-return.css', '<link rel="stylesheet" href="{}">'),
+    ]:
+        content = _inject_gallery_markup(content, assets + path, tag.format(assets + path), True)
+    content = _inject_gallery_markup(
+        content, 'id="portfolio-inspector"',
+        '<button type="button" id="portfolio-inspector">AI Inspector</button>', False)
+    link = ('<a id="portfolio-return" href="../../index.html?mode=3d" target="_top">'
+            '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '
+            'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>'
+            '<span class="portfolio-return-label">Back To Camera</span></a>')
+    return _inject_gallery_markup(content, 'id="portfolio-return"', link, False)
 
 
 def generate_site(target_keys, gallery_map, results_map, portfolios_root, gallery_emojis, template_src='./tmp/gallery', shape_emojis=None):

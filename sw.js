@@ -54,7 +54,7 @@ function isHtmlPage(url) {
 function isModelAsset(url) {
     // Hands-off: large ML weights, hosted on huggingface, ollama endpoints, etc.
     if (url.host.includes('huggingface.co')) return true;
-    if (url.host.includes('cdn-lfs')) return true;
+    if (url.host.includes('cdn-lfs') || url.host.endsWith('hf.co')) return true;   // weight CDNs behind huggingface.co redirects
     if (url.pathname.endsWith('.onnx') || url.pathname.endsWith('.bin')) return true;
     if (url.pathname.startsWith('/vlm/') || url.pathname.includes('/vlm/')) return true;
     if (url.host === 'localhost' && url.port === '11434') return true;  // ollama
