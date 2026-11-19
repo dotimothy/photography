@@ -98,6 +98,10 @@ body:has(#viewer-controls-container.fade-out) #portfolio-return:not(:focus-visib
 #controls-toggle svg,
 #viewer-controls-toggle svg { width: 20px; height: 20px; color: inherit; }
 
+/* The template wires its menu trigger only once the page has loaded (window.onload) and keeps the
+   trigger transparent until then; while the loading screen is up it must not swallow taps. */
+body:has(#loading-screen:not(.hidden)) #controls-container button { pointer-events: none; }
+
 /* ---------- Menu panel: the template's icon column, with a name on every row ---------- */
 #controls-list,
 #viewer-controls-list { visibility: hidden; }

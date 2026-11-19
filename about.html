@@ -889,6 +889,13 @@
             .about-rotate-controls button, #about-next { flex-direction: column; gap: 3px; min-width: 60px; padding: 0 8px; border-radius: 12px; font-size: 11px; }
             .about-section-picker { padding: 0 30px 0 12px; border-radius: 12px; background-position: right 8px center; font-size: 13px; }
         }
+        /* The same, wherever the width left beside a docked AI panel is phone-sized (set by the script below). */
+        body.about-narrow .about-rotate-controls { gap: 6px; padding: 6px; }
+        body.about-narrow .about-rotate-controls button, body.about-narrow #about-next { flex-direction: column; gap: 3px; min-width: 60px; padding: 0 8px; border-radius: 12px; font-size: 11px; }
+        body.about-narrow .about-section-picker { padding: 0 30px 0 12px; border-radius: 12px; background-position: right 8px center; font-size: 13px; }
+        /* When the top row would run into Back, the view toggle folds to its icon (its name stays for assistive tech). */
+        .about-view-controls.about-tight #about-3d-toggle { width: 44px; padding: 0; }
+        .about-view-controls.about-tight #about-3d-toggle .mode-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
         @media (max-height: 480px) {
             /* Phone landscape: the hint line gives its height to the carousel. */
             body.about-3d-active #about-3d-help, body.about-3d-active .about-touch-hint { display: none; }
@@ -1485,6 +1492,36 @@
             window.addEventListener('resize', measure);
             window.addEventListener('load', measure);
             measure();
+        })();
+    </script>
+    <script>
+        // Layout that follows the width actually free for the page: the viewport minus a docked AI panel,
+        // or a narrow frame. Viewport media queries cannot see the panel, so this sets two classes.
+        (() => {
+            const root = document.documentElement;
+            const row = document.querySelector('.about-view-controls');
+            const back = document.getElementById('portfolio-return');
+            let queued = false;
+            function fit() {
+                queued = false;
+                const pane = parseFloat(getComputedStyle(root).getPropertyValue('--vlm-pane-width')) || 0;
+                document.body.classList.toggle('about-narrow', window.innerWidth - pane < 480);
+                if (!row || !back) return;
+                // Measure the row at full size, then fold the toggle only if it would reach Back.
+                row.classList.remove('about-tight');
+                const backBox = back.getBoundingClientRect();
+                const tight = !back.hidden && backBox.width > 0 && row.getBoundingClientRect().left < backBox.right + 8;
+                row.classList.toggle('about-tight', tight);
+            }
+            const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(fit); } };
+            // The AI panel announces its width on the root element and adds itself to the body.
+            new MutationObserver(schedule).observe(root, { attributes: true, attributeFilter: ['style', 'class'] });
+            new MutationObserver(schedule).observe(document.body, { childList: true });
+            if (row) new MutationObserver(schedule).observe(row, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-pressed'] });
+            window.addEventListener('resize', schedule);
+            window.addEventListener('load', schedule);
+            document.fonts?.ready.then(schedule);
+            fit();
         })();
     </script>
     <script>

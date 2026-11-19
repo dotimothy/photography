@@ -148,7 +148,19 @@ function measure(touch) {
         const a = items[i], b = items[j];
         if (a.el && b.el && (a.el.contains(b.el) || b.el.contains(a.el))) continue;
         const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x), dy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-        if (dx > 1 && dy > 1) problems.push(`overlap: ${a.label} x ${b.label} (${Math.round(dx)}x${Math.round(dy)})`);
+        if (dx <= 1 || dy <= 1) continue;
+        // A camera key is drawn on the canvas, so a layer above the canvas (the AI panel, say) hides the
+        // part of it underneath: where no point of the shared area reaches the canvas, the key cannot be
+        // tapped there and nothing collides.
+        if (a.kind === 'lcd' || b.kind === 'lcd') {
+            const left = Math.max(a.x, b.x), top = Math.max(a.y, b.y), probes = [.1, .5, .9];
+            const reachable = probes.some(fx => probes.some(fy => {
+                const x = Math.min(Math.max(left + dx * fx, 0), vw - 1), y = Math.min(Math.max(top + dy * fy, 0), vh - 1);
+                return document.elementFromPoint(x, y) === canvas;
+            }));
+            if (!reachable) continue;
+        }
+        problems.push(`overlap: ${a.label} x ${b.label} (${Math.round(dx)}x${Math.round(dy)})`);
     }
     return { count: items.length, lcd: items.filter(item => item.kind === 'lcd').length, problems, notes, horizontalScroll: document.documentElement.scrollWidth > vw + 1 };
 }

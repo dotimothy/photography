@@ -261,6 +261,8 @@ export const PANEL_CSS = `
 .vlm-mode-tabs { display: flex; flex-shrink:0; gap: 2px; padding: 2px; border: 1px solid var(--vlm-line); border-radius: 999px; }
 .vlm-mode-tab.vlm-btn { border-color: transparent; min-height: calc(var(--vlm-hit) - 6px); padding: 0 12px; }
 .vlm-mode-tab.vlm-btn[aria-selected="true"] { border-color: var(--vlm-accent-line); }
+/* Touch: the tabs themselves are full-size targets; the pill grows around them. */
+@media (pointer: coarse), (max-width: 768px) { .vlm-mode-tab.vlm-btn { min-height: var(--vlm-hit); } }
 .vlm-toolbar-spacer { flex: 1; min-width: 0; }
 
 /* ── Options tray (text size, EXIF auto, direct links, export) ─ */
@@ -750,7 +752,7 @@ export const PANEL_CSS = `
 .vlm-input {
     display: block;
     width: 100%;
-    min-height: 40px;
+    min-height: max(40px, var(--vlm-hit));
     max-height: 120px;
     padding: 10px 12px 4px;
     border: 0;
@@ -898,6 +900,10 @@ export const PANEL_CSS = `
         transform: translateY(105%);
     }
     .vlm-panel.vlm-open:not(.vlm-iframe-mode):not(.vlm-fullscreen) { transform: none; }
+    /* Until the model can answer, the sheet is the download notice: it rises far enough that the
+       notice and its action button fit above the composer instead of scrolling under it. */
+    .vlm-panel.vlm-gated:not(.vlm-iframe-mode):not(.vlm-fullscreen) { height: min(calc(var(--vlm-vvh, 100dvh) - 12px), max(72dvh, 520px)); }
+    .vlm-gate > .vlm-notice { margin: 8px var(--vlm-gutter); padding: 12px; }
     .vlm-panel.vlm-fullscreen { bottom: var(--vlm-kb, 0px) !important; height: auto !important; top: 0 !important; }
     .vlm-panel.vlm-kb-open { padding-bottom: 0 !important; }
     .vlm-panel.vlm-dragging { transition: none !important; }

@@ -1661,7 +1661,7 @@ class GalleryVLMOverlay {
                     continue;
                 }
                 const control = node.closest?.(selector);
-                if (!control) continue;
+                if (!control || !this._isAnchored(control)) continue;
                 const box = control.getBoundingClientRect();
                 if (box.width && box.height) return { top: box.top + offsetY, bottom: box.bottom + offsetY };
             }
@@ -1672,6 +1672,26 @@ class GalleryVLMOverlay {
             if (hit) return hit;
         }
         return null;
+    }
+
+    /**
+     * Whether a control is page chrome pinned to the viewport (fixed or sticky) rather than
+     * content that scrolls under the launcher. Only chrome is worth climbing over: photos in a
+     * grid fill the whole page, and climbing over them would carry the launcher up onto the
+     * top-right menu trigger of a framed gallery.
+     */
+    _isAnchored(el) {
+        const view = el.ownerDocument.defaultView;
+        if (!view) return false;
+        for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+            const style = view.getComputedStyle(node);
+            // Inside a scrolling box (the gallery's photo grid, say) it is content, wherever the box sits.
+            const scrolls = node !== el && /auto|scroll/.test(style.overflowY + style.overflowX)
+                && (node.scrollHeight > node.clientHeight + 1 || node.scrollWidth > node.clientWidth + 1);
+            if (scrolls) return false;
+            if (style.position === 'fixed' || style.position === 'sticky') return true;
+        }
+        return false;
     }
 
     /**
@@ -3045,6 +3065,8 @@ class GalleryVLMOverlay {
             box.textContent = '';
             box.hidden = view === 'none' || view === 'checking';
             this._panel.classList.toggle('vlm-gated', !box.hidden);
+            // The phone sheet is taller while gated; keep the photo viewer's reserved space in step.
+            if (this._viewportApplied) this._syncViewport();
             if (!box.hidden) {
                 const notice = Object.assign(document.createElement('div'), { className: `vlm-notice${view === 'error' ? ' vlm-notice-error' : ''}` });
                 notice.setAttribute('role', view === 'error' ? 'alert' : 'status');
