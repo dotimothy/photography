@@ -451,15 +451,75 @@
         }
 
         .about-contact {
-            padding: 3rem 1rem;
-            text-align: center;
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+            margin-top: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            background: #0a131a;
         }
 
-        .about-contact a {
+        .about-contact-copy {
+            align-self: center;
+            padding: clamp(22px, 4vw, 48px);
+        }
+
+        .about-contact h2 {
+            margin: 0 0 12px;
+            color: #eef4f8;
+            font-size: clamp(1.65rem, 4vw, 2.75rem);
+            line-height: 1.08;
+        }
+
+        .about-contact p {
+            max-width: 34ch;
+            margin: 0 0 22px;
+            color: #b9cbd5;
+            line-height: 1.65;
+        }
+
+        .about-contact-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .about-contact-actions a {
             display: inline-flex;
-            min-height: 44px;
             align-items: center;
-            margin-inline: .6rem;
+            justify-content: center;
+            box-sizing: border-box;
+            min-height: 44px;
+            padding: 8px 15px;
+            border: 1px solid var(--glass-border);
+            border-radius: 9px;
+            background: rgba(8, 12, 20, .72);
+            color: #eef4f8;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .about-contact-actions a:first-child {
+            border-color: rgba(0, 229, 255, .45);
+            color: var(--accent-cyan);
+        }
+
+        .about-contact-actions a:hover { background: #12232e; }
+        .about-contact-actions a:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+
+        .about-contact-image {
+            min-height: 180px;
+            background: linear-gradient(90deg, #0a131a 0%, transparent 35%), url('./assets/starshalo.jpg') center 45% / cover;
+        }
+
+        @media (max-width: 600px) {
+            .about-contact { grid-template-columns: minmax(0, 1fr); }
+            .about-contact-image {
+                grid-row: 1;
+                min-height: 132px;
+                background: linear-gradient(0deg, #0a131a, transparent 42%), url('./assets/starshalo.jpg') center 40% / cover;
+            }
         }
 
         .social-btn .pixieset-logo {
@@ -1211,12 +1271,18 @@
                             shutter to click.</p>
                     </div>
                 </div>
-                <section class="about-contact scroll-reveal" aria-labelledby="about-contact-title">
-                    <h2 id="about-contact-title">Let’s Make Something</h2>
-                    <a href="./contact.html">Contact</a>
-                    <a href="./index.html" target="_top">See The Work</a>
-                </section>
             </main>
+            <section class="about-contact scroll-reveal" aria-labelledby="about-contact-title">
+                <div class="about-contact-copy">
+                    <h2 id="about-contact-title">Let’s Make Something</h2>
+                    <p>Get in touch about a photoshoot, a print, licensing a photograph, or a collaboration.</p>
+                    <div class="about-contact-actions">
+                        <a href="./contact.html">Get In Touch</a>
+                        <a href="./index.html" target="_top">See The Work</a>
+                    </div>
+                </div>
+                <div class="about-contact-image" aria-hidden="true"></div>
+            </section>
         </section>
 
         <footer class="scroll-reveal">
