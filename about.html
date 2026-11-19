@@ -868,9 +868,9 @@
         .container { max-width: 1120px; }
         .about-intro { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: 28px 40px; text-align: left; align-items: center; padding: 44px 12px 0; margin-bottom: 36px; }
         .about-intro .profile-img { width: 176px; height: 176px; margin: 0; }
-        .intro-copy { min-width: 0; }
+        .intro-copy { min-width: 0; container-type: inline-size; }
         .intro-name { margin: 0 0 10px; color: #d0e9ee; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .about-intro h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.1; }
+        .about-intro h1 { font-size: clamp(20px, min(max(32px, 5vw), 12cqi), 56px); line-height: 1.1; overflow-wrap: anywhere; }
         .about-intro .subtitle { margin: 12px 0 20px; line-height: 1.8; }
         .about-intro .social-row { justify-content: flex-start; flex-wrap: wrap; gap: 10px; }
         .about-intro .social-btn { width: 44px; height: 44px; }
@@ -891,6 +891,7 @@
         footer { padding: 12px 8px 24px; line-height: 2; }
         @media (max-width: 720px) {
             .about-intro { grid-template-columns: 1fr; justify-items: center; gap: 18px; padding: 48px 0 0; margin-bottom: 24px; text-align: center; }
+            .intro-copy { justify-self: stretch; }
             .about-intro .profile-img { width: 132px; height: 132px; }
             .about-intro .social-row { justify-content: center; gap: 8px; }
             .about-intro .subtitle { font-size: 10px; letter-spacing: 1.5px; }

@@ -223,9 +223,8 @@ export const PANEL_CSS = `
     font-weight: 500;
     letter-spacing: 0.01em;
     color: var(--vlm-text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
 }
 .vlm-status { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .vlm-status-dot {

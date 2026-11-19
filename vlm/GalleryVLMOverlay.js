@@ -877,7 +877,7 @@ class GalleryVLMOverlay {
 <div class="vlm-resize-handle" aria-hidden="true"></div>
 <div class="vlm-header">
     <div class="vlm-header-id">
-        <span class="vlm-header-title">TheDoInspector</span>
+        <span class="vlm-header-title">TheDo<wbr>Inspector</span>
         <span class="vlm-status">
             <span class="vlm-status-dot" id="${id}-dot"></span>
             <span class="vlm-status-label" id="${id}-status" role="status">Not started</span>
