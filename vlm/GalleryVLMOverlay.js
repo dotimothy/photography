@@ -517,6 +517,7 @@ class GalleryVLMOverlay {
         this._extractTimer  = 0;
         this._clearanceTimer = 0;
         this._destroyed     = false;
+        this._modelCommandPending = false;
         this._statusKind    = 'idle';
 
         // Local-model download state (window.VLM_MODELS contract; inert when that API is absent).
@@ -917,7 +918,7 @@ class GalleryVLMOverlay {
 <div class="vlm-composer vlm-chat-only">
     <div class="vlm-suggestions" role="group" aria-label="Sample Prompts">${suggestions}</div>
     <div class="vlm-input-area">
-        <textarea class="vlm-input" id="${id}-input" rows="1" placeholder="Ask about this photo" aria-label="Ask About The Photo"></textarea>
+        <textarea class="vlm-input" id="${id}-input" rows="1" placeholder="Ask about this photo or type /help" aria-label="Ask About The Photo Or Enter A Command"></textarea>
         <div class="vlm-input-tools">
             <button class="vlm-btn vlm-btn-icon vlm-voice-btn vlm-mic-btn" id="${id}-mic" type="button" hidden title="Voice Input" aria-label="Voice Input" aria-pressed="false">${ICONS.mic}</button>
             <button class="vlm-btn vlm-btn-icon vlm-voice-btn vlm-tts-btn" id="${id}-tts" type="button" title="Read Aloud: Off" aria-label="Read Aloud: Off" aria-pressed="false">${ICONS.speakerOff}</button>
@@ -1985,7 +1986,9 @@ class GalleryVLMOverlay {
         // Suggestions and Send need a photo, an idle chat and a model that can answer.
         const blocked = !this._imageSrc || !this._gate.canChat || this._streaming;
         for (const button of this._suggestionBtns) button.disabled = blocked;
-        sendBtn.disabled = blocked || !input.value.trim();
+        const text = input.value.trim();
+        const command = this._modelCommand(text);
+        sendBtn.disabled = this._modelCommandPending || !text || (command ? this._streaming : blocked);
         if (stopBtn) stopBtn.hidden = !this._streaming;
         // Live mode: restart mic once generation ends, but only if TTS is not playing
         if (this._liveMode && !this._streaming && !this._sttActive && this._ttsPending === 0)
@@ -2753,10 +2756,77 @@ class GalleryVLMOverlay {
         this._revealInChat(msgEl);
     }
 
+    _modelCommand(text) {
+        return /^\/(load|unload|help)$/i.exec(text)?.[1].toLowerCase();
+    }
+
+    async _runModelCommand(command) {
+        if (command === 'help') {
+            return '/load loads the selected model into memory. /unload frees its memory and keeps its files. The next question can load it again.';
+        }
+
+        const settings = window.VLM_SETTINGS ?? {};
+        if (settings.enabled === false) return 'Enable TheDoInspector in AI Settings first.';
+        if (settings.type === 'api') return 'The API provider manages model memory for this backend.';
+        if (settings.type === 'ollama') {
+            const endpoint = settings.ollamaEndpoint;
+            const model = settings.ollamaModel || 'gemma3';
+            if (command === 'load') {
+                await VLMManager.loadOllamaModel(endpoint, model);
+                return `${model} loaded into Ollama memory.`;
+            }
+            await VLMManager.unloadOllamaModel(endpoint, model);
+            return `${model} unloaded from Ollama memory.`;
+        }
+
+        if (command === 'unload') {
+            if (this.manager.release()) {
+                this._setStatus('idle', 'Model unloaded');
+                return 'Model unloaded. Its files are still stored in this browser.';
+            }
+            if (this.manager.isLoading || (this.manager.isReady && !this.manager.isSuspended)) {
+                return 'The model is busy. Try /unload again when it finishes.';
+            }
+            return 'The model is already out of memory.';
+        }
+
+        if (this.manager.isReady && !this.manager.isSuspended && !this.manager.isLoading) {
+            return 'The selected model is already loaded.';
+        }
+        const started = await this.manager.load(this._gate.modelId ?? undefined);
+        if (started) return this.manager.isLoading ? 'Loading the selected model from browser storage…' : 'The selected model is loaded.';
+        await this._gate.refresh();
+        return this._gate.state === 'not-downloaded'
+            ? 'Download the selected model in AI Settings first.'
+            : 'The selected model could not start. Check its status in AI Settings.';
+    }
+
     async _sendMessage() {
         const input  = this._q('-input');
         const prompt = input.value.trim();
-        if (!prompt || !this._imageSrc || !this._gate.canChat || this._streaming) return;
+        if (!prompt || this._streaming || this._modelCommandPending) return;
+        const command = this._modelCommand(prompt);
+        if (command) {
+            const generation = this._generation;
+            input.value = '';
+            this._autosizeInput();
+            this._modelCommandPending = true;
+            this._refreshSendBtn();
+            this._appendMsg('user', prompt);
+            try {
+                const result = await this._runModelCommand(command);
+                if (!this._destroyed && generation === this._generation) this._appendMsg('assistant', result);
+            } catch (error) {
+                if (!this._destroyed && generation === this._generation) {
+                    this._appendMsg('assistant', `Model command failed: ${error.message}`);
+                }
+            } finally {
+                this._modelCommandPending = false;
+                if (!this._destroyed) this._refreshSendBtn();
+            }
+            return;
+        }
+        if (!this._imageSrc || !this._gate.canChat) return;
 
         input.value             = '';
         if (!this._nativeAutosize) input.style.height = 'auto';

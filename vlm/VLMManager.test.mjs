@@ -399,6 +399,25 @@ test('init and restart never start a worker for a model that is not downloaded',
     assert.equal(FakeWorker.created.length, 0);
 });
 
+test('explicit load resumes a released model and rejects an uncached model without starting a worker', async () => {
+    const { manager } = freshManager([SMOL]);
+    assert.equal(await manager.load(FAST), false);
+    assert.equal(FakeWorker.created.length, 0);
+
+    const starts = await Promise.all([manager.load(SMOL), manager.load(SMOL)]);
+    assert.deepEqual(starts, [true, true]);
+    assert.equal(FakeWorker.created.length, 1);
+    const first = FakeWorker.created[0];
+    first.reply({ type: 'ready', device: 'wasm' });
+    assert.equal(manager.release(), true);
+    assert.equal(first.terminated, true);
+
+    assert.equal(await manager.load(SMOL), true);
+    assert.equal(FakeWorker.created.length, 2);
+    assert.equal(manager.isSuspended, false);
+    assert.equal(manager.isLoading, true);
+});
+
 test('a downloaded model loads in one worker with a device plan, and a finished download loads the model that was asked for', async () => {
     const { manager, announced } = freshManager([SMOL]);
     manager.init(SMOL);

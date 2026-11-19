@@ -191,6 +191,15 @@ class VLMManager {
         this._startLocal(modelId);
     }
 
+    /** Explicitly start or resume the selected local model from browser storage. */
+    async load(modelId = this._modelId ?? DEFAULT_MODEL_ID) {
+        if (this._worker) return this._modelId === modelId;
+        if (this._startPromise) return this._modelId === modelId && await this._startPromise;
+        if (this._suspended && this._modelId === modelId) return this._startLocal(modelId);
+        this.init(modelId);
+        return (await this._startPromise) ?? false;
+    }
+
     /** Check browser storage, then load. Resolves true when a worker was started. */
     _startLocal(modelId) {
         const attempt = this._checkAndLoad(modelId);
