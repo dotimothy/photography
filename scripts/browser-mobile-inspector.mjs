@@ -19,7 +19,7 @@ try {
         assert.equal(requests.some(url => /vlmWorker|huggingface|test-api/.test(url)), false);
         if (route.startsWith('/index')) {
             await page.evaluate(async () => {
-                els.welcome.classList.add('hidden'); state.hasExplored = true;
+                document.getElementById('space-intro').style.display = 'none'; els.welcome.style.display = 'none'; state.hasExplored = true;
                 if (!lastCameraPhoto && !cameraPhotoBusy) await showCameraPhoto(null, 'preview');
             });
             await page.waitForFunction(() => lastCameraPhoto?.image && !cameraPhotoBusy);

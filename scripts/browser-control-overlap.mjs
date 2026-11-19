@@ -24,6 +24,7 @@ const ready = async page => page.waitForFunction(() => typeof state === 'object'
 const settle = async page => page.waitForFunction(() => !cameraTravel && !cameraPhotoBusy, null, { timeout: 20000 });
 async function enterScene(page) {
     await page.evaluate(() => {
+        document.getElementById('space-intro').style.display = 'none';
         if (!state.hasExplored) startExperience();
     });
     await page.waitForTimeout(400);
@@ -38,10 +39,12 @@ async function atScreen(page, mode = 'screen') {
     await settle(page);
 }
 
-// Each state starts from a fresh load of `path` and then runs `enter`. Phones open directly on the camera.
+// Each state starts from a fresh load of `path` and then runs `enter`. Phones skip the intro.
 const states = {
-    welcome: { path: '/?mode=3d', desktopOnly: true, enter: async page => {
-        await page.getByRole('button', { name: 'Enter', exact: true }).waitFor();
+    intro: { path: '/?mode=3d', enter: async page => page.waitForTimeout(400) },
+    welcome: { path: '/?mode=3d', enter: async page => {
+        await page.evaluate(() => document.getElementById('btn-skip-intro')?.click());
+        await page.waitForTimeout(600);
     } },
     home: { path: '/?mode=3d', enter: enterScene },
     'lcd-photo': { path: '/?mode=3d', enter: page => atScreen(page) },

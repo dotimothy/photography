@@ -6,7 +6,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH 
 async function boot(page) {
     await page.goto(`${base}/?mode=3d`, { waitUntil: 'networkidle' });
     await page.evaluate(() => {
-        els.welcome.classList.add('hidden'); state.hasExplored = true;
+        document.getElementById('space-intro').style.display = 'none'; els.welcome.style.display = 'none'; state.hasExplored = true;
         state.directLinks = false; state.rendering.cameraMotion = false; applySceneRenderingSettings();
         TWEEN.removeAll(); controls.enableDamping = false; camera.position.set(0, 0, innerWidth < 768 ? -44 : -25); controls.target.set(0, 0, 0); controls.update();
         cameraHome();
