@@ -35,19 +35,6 @@ async function checkWheelZoom(page, point) {
     await page.evaluate(()=>setCameraLensZoom(18));
     await page.waitForFunction(()=>cameraLensTween===null);
 }
-async function watchFlash(page) {
-    await page.evaluate(()=>{
-        window.flashCheck=new Promise(resolve=>{
-            const start=performance.now(), samples=[];
-            function sample() {
-                samples.push({amount:cameraFlashAmount,light:cameraFlashLight.intensity});
-                if(performance.now()-start<650) requestAnimationFrame(sample);
-                else resolve(samples);
-            }
-            sample();
-        });
-    });
-}
 async function stepBack(page) {
     await page.locator('#mode-3d canvas').focus();
     await page.keyboard.press('Escape');
@@ -238,12 +225,8 @@ try {
         const first=await page.evaluate(()=>lastCameraPhoto.src);
         await page.keyboard.press('Enter'); await settle(page);
         assert.equal(await page.evaluate(()=>cameraLiveView),true,'First shutter press opens live space view');
-        await watchFlash(page);
         await page.keyboard.press('Enter');
         await settle(page);
-        const flash=await page.evaluate(()=>window.flashCheck);
-        assert.ok(flash.some(s=>s.amount>0.2&&s.light>0),'Shutter illuminates the scene and camera displays');
-        assert.deepEqual(flash.at(-1),{amount:0,light:0},'Flash fades completely');
         assert.equal(await page.evaluate(()=>cameraCaptureCount),1);
         assert.notEqual(await page.evaluate(()=>lastCameraPhoto.src),first);
         await page.keyboard.press('ArrowLeft');
@@ -376,10 +359,8 @@ try {
         assert.equal(await page.evaluate(()=>cameraTravel),false);
         await page.keyboard.press('Escape');
         assert.equal(await page.evaluate(()=>cameraInspection),null);
-        await watchFlash(page);
         await page.keyboard.press('Enter');
         await settle(page);
-        assert.ok((await page.evaluate(()=>window.flashCheck)).every(s=>s.amount===0&&s.light===0),'Reduced motion suppresses flash');
         assert.equal(await page.locator('#camera-photo').count(),0);
         assert.deepEqual(errors,[]);
         console.log(`${mobile?'Mobile':'Desktop'} in-scene displays, physical controls, gestures, history, loading recovery, and reduced motion passed.`);

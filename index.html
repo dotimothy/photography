@@ -1258,18 +1258,10 @@
         height: 100%;
     }
 
-    /* A blinding white flash for the transition */
-    #hyper-flash {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: white;
+    #space-intro.intro-fading {
         opacity: 0;
         pointer-events: none;
-        z-index: 10002;
-        transition: opacity 0.8s ease-out;
+        transition: opacity .6s ease-out;
     }
 
     .intro-overlay {
@@ -1491,8 +1483,6 @@
         <div id="fps-counter">FPS: 60</div>
 
         <!-- EPIC SPACE INTRO -->
-        <!-- UPDATED: Flash moved outside container so it can persist after fade -->
-        <div id="hyper-flash"></div>
         <div id="space-intro">
             <canvas id="space-canvas"></canvas>
             <div class="intro-overlay">
@@ -1500,7 +1490,6 @@
                 <div class="warp-sub">PHOTOGRAPHY BY TIMOTHY DO</div>
             </div>
             <button id="btn-skip-intro"
-                onclick="document.getElementById('space-intro').style.display='none'; var w=document.getElementById('welcome-watermark'); if(w) w.classList.add('revealing');"
                 style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
                        background:transparent;border:1px solid rgba(255,255,255,0.35);
                        color:rgba(255,255,255,0.6);padding:10px 36px;font-family:inherit;
@@ -2035,10 +2024,9 @@
         let cameraMetadataVisible = false;
         let cameraDisplay = 'menu', cameraMessage = '', cameraCaptureCount = 0;
         let cameraInspection = null, cameraReturnPose = null, cameraTravel = false;
-        let cameraTravelTweens = [], cameraFlashAmount = 0;
+        let cameraTravelTweens = [];
         let cameraPointerOverBody = false, cameraPointerPressed = false, cameraInteractionUntil = 0;
         let cameraMotionTime = 0, cameraMotionLastFrame = 0;
-        let cameraFlashLight, cameraFlashPanel, cameraFlashTween;
         let cameraSource = 'portfolio', cameraLiveView = false;
         let cameraLiveTarget, cameraLiveCamera, cameraLiveLastFrame = 0;
         const cameraAim = { yaw: 0, pitch: 0 };
@@ -3967,11 +3955,8 @@
             rounded(1.3, 1.25, 1.2, 0.16, 0.08, blackMat, 0, 7.25, -0.15);
             rounded(3.5, 1.85, 1.8, 0.25, 0.12, shellMat, 0, 8.58, -0.05);
             rounded(3.18, 1.4, 0.16, 0.18, 0.04, blackMat, 0, 8.62, 0.91);
-            cameraFlashPanel = rounded(2.98, 1.17, 0.1, 0.13, 0.025,
+            rounded(2.98, 1.17, 0.1, 0.13, 0.025,
                 new THREE.MeshBasicMaterial({ color: 0x75818a, toneMapped: false }), 0, 8.62, 1.04);
-            cameraFlashLight = new THREE.PointLight(0xffffff, 0, 90, 2);
-            cameraFlashLight.position.set(0, 8.62, 2.0);
-            camGroup.add(cameraFlashLight);
 
             // Recessed control dials and a shutter sitting on the grip, not floating above it.
             const dial = (x, y, z, radius) => {
@@ -4648,10 +4633,6 @@
                     text: { x: panel.x + 6, y: panel.y + strip * 2 + 4, w: panel.w - 12, h: panel.h - strip * 2 - 8 },
                     size: THREE.MathUtils.clamp(h * 0.062, 10, 20), min: 5, step: 0.5 });
             }
-            if (cameraFlashAmount > 0) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${cameraFlashAmount * 0.85})`;
-                ctx.fillRect(area.x, area.y, area.w, area.h);
-            }
             // Status rides over the top edge of the picture, as on a real camera's display.
             ctx.fillStyle = '#03080b99'; ctx.fillRect(area.x, area.y, area.w, strip);
             ctx.fillStyle = '#d8eaf0';
@@ -5174,10 +5155,6 @@
                         cameraScreenButton(ctx, zones, 'NEW TAB', map.x, 305, map.w, 105, () => openCameraCaptureTab());
                     }
                 }
-                if (cameraFlashAmount > 0) {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${cameraFlashAmount * 0.85})`;
-                    ctx.fillRect(area.x, area.y, area.w, area.h);
-                }
                 const fullGallery = !isLive && !cameraPhotoBusy && cameraCollections.includes(lastCameraPhoto?.gallery) ? lastCameraPhoto.gallery : null;
                 ctx.fillStyle = '#aec4ce'; ctx.font = cameraFont(30);
                 cameraBoxText(ctx, cameraMessage || (lastCameraPhoto ? `${lastCameraPhoto.gallery.toUpperCase()} / FRAME ${String(cameraHistoryIndex + 1).padStart(3, '0')}` : 'V: VIEWFINDER / ENTER: SHUTTER'),
@@ -5234,20 +5211,6 @@
                     part.press = new TWEEN.Tween(part.pivot.position)
                         .to(part.axis === 'z' ? { z: part.rest.z + depth } : { y: part.rest.y - depth }, 90).yoyo(true).repeat(1).start();
                 }
-            }
-            if (id === 'shutter' && !sceneMotionPreference.matches) {
-                cameraFlashTween?.stop();
-                const flash = { amount: 1 };
-                const applyFlash = () => {
-                    cameraFlashAmount = sceneMotionPreference.matches ? 0 : flash.amount;
-                    cameraFlashLight.intensity = cameraFlashAmount * 14;
-                    cameraFlashPanel.material.color.setHex(0x75818a).lerp(new THREE.Color(0xffffff), cameraFlashAmount);
-                    updateUI();
-                };
-                applyFlash();
-                cameraFlashTween = new TWEEN.Tween(flash).to({ amount: 0 }, 240)
-                    .easing(TWEEN.Easing.Quadratic.Out).onUpdate(applyFlash)
-                    .onComplete(() => { flash.amount = 0; applyFlash(); cameraFlashTween = null; }).start();
             }
         }
 
@@ -5582,7 +5545,6 @@
                 sfx.click(); setCameraSource('space'); return;
             }
             animateCameraControl(id);
-            window.PrintOrbit?.cameraAction(id);
             if (id === 'viewfinder') {
                 sfx.click(); cameraDisplay = 'photo';
                 focusCameraDisplay('viewfinder');
@@ -5968,7 +5930,6 @@
             }
             const canvas = document.getElementById('space-canvas');
             const intro = document.getElementById('space-intro');
-            const flash = document.getElementById('hyper-flash');
             const ctx = canvas.getContext('2d');
 
             let width, height, cx, cy;
@@ -5978,18 +5939,28 @@
             // Physics & Animation State
             let speed = 0.1;
             let targetSpeed = 80; // Much faster max speed
-            let starBaseSize = 0.5;
-            let phase = 'start'; // start, accel, warp, flash, done
+            let phase = 'start';
             let shakeStrength = 0;
             let animateIntro = true;
 
-            if (window.SitePerformance?.current?.animations === false) {
-                intro.style.display = 'none';
-                flash.style.display = 'none';
-                const watermark = document.getElementById('welcome-watermark');
-                if (watermark) watermark.classList.add('revealing');
+            function finish({ fade = false } = {}) {
+                if (!animateIntro) return;
+                animateIntro = false;
+                window.removeEventListener('resize', resize);
+                document.getElementById('welcome-watermark').classList.add('revealing');
+                if (fade) {
+                    intro.classList.add('intro-fading');
+                    setTimeout(() => { intro.style.display = 'none'; }, 600);
+                } else {
+                    intro.style.display = 'none';
+                }
+            }
+
+            if (sceneMotionPreference.matches || window.SitePerformance?.current?.animations === false) {
+                finish();
                 return;
             }
+            document.getElementById('btn-skip-intro').addEventListener('click', () => finish(), { once: true });
 
             // Initialize dimensions
             function resize() {
@@ -6019,12 +5990,8 @@
 
             function update() {
                 if (!animateIntro) return;
-                if (window.SitePerformance?.current?.animations === false) {
-                    intro.style.display = 'none';
-                    flash.style.display = 'none';
-                    animateIntro = false;
-                    const watermark = document.getElementById('welcome-watermark');
-                    if (watermark) watermark.classList.add('revealing');
+                if (sceneMotionPreference.matches || window.SitePerformance?.current?.animations === false || intro.style.display === 'none') {
+                    finish();
                     return;
                 }
 
@@ -6042,39 +6009,7 @@
                     if (speed >= targetSpeed) {
                         speed = targetSpeed;
                         phase = 'warp';
-                        setTimeout(() => { phase = 'flash'; }, 2000); // Hold warp for 2s
-                    }
-                } else if (phase === 'flash') {
-                    if (!flash.dataset.triggered) {
-                        flash.dataset.triggered = "true"; // Flag to run once
-
-                        // 1. Trigger Flash In (White Screen)
-                        flash.style.opacity = '1';
-
-                        // 2. Wait for white screen to be full opacity
-                        setTimeout(() => {
-                            // Swap background: Hide space intro, reveal welcome screen (underneath flash)
-                            intro.style.display = 'none';
-                            animateIntro = false;
-
-                            // 3. Trigger Flash Out (Fade to Transparent)
-                            // We modify transition for a smoother exit
-                            flash.style.transition = "opacity 2s ease-in-out";
-                            flash.style.opacity = '0';
-
-                            // 4. Cleanup
-                            setTimeout(() => {
-                                if (flash.parentNode) flash.remove();
-                            }, 2000);
-
-                            // 5. Trigger Watermark Reveal (Now that intro is done)
-                            const watermark = document.getElementById('welcome-watermark');
-                            if (watermark) {
-                                watermark.classList.add('revealing');
-                            }
-
-
-                        }, 800); // Matches CSS transition time for flash-in
+                        setTimeout(() => finish({ fade: true }), 2000);
                     }
                 }
 
@@ -6090,7 +6025,7 @@
 
                 // 2. Central Glow (The Singularity)
                 // Gets brighter and bluer as we speed up
-                const glowOpacity = Math.min(speed / targetSpeed, 0.8);
+                const glowOpacity = Math.min(speed / targetSpeed, 0.18);
                 const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, width * 0.4);
                 gradient.addColorStop(0, `rgba(200, 255, 255, ${glowOpacity})`);
                 gradient.addColorStop(0.1, `rgba(0, 229, 255, ${glowOpacity * 0.5})`);

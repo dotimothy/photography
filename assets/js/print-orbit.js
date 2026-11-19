@@ -32,7 +32,7 @@ window.PrintOrbit = (function () {
         flight: null, hold: false, activeGi: -1, hero: null, hovered: null, highlight: -1,
         returnPose: null, galleryReturn: null, heldTravel: false,
         pointer: { x: 0, y: 0, inside: false, dirty: false, touch: false }, parallax: { x: 0, y: 0 },
-        wave: -1, fillGen: 0, trimTimer: 0, budgetKey: '', last: 0, lineOpacity: 0.1, labelOpacity: 1,
+        fillGen: 0, trimTimer: 0, budgetKey: '', last: 0, lineOpacity: 0.1, labelOpacity: 1,
         ejecting: 0, born: 0
     };
     const queue = [];
@@ -853,10 +853,6 @@ window.PrintOrbit = (function () {
         }
     }
 
-    function cameraAction(id) {
-        if (id === 'shutter' && o.built && !motionOff()) o.wave = performance.now();
-    }
-
     // ── Pointer and keyboard ──────────────────────────────────────────────────
     function interactive() {
         return o.built && state.is3D && state.hasExplored && !els.settingsOverlay.classList.contains('visible') &&
@@ -1131,15 +1127,11 @@ window.PrintOrbit = (function () {
         }
         if (print.leaving) scale *= 1 - ease.inQuad(clamp01((now - print.leaving) / 450));
         group.scale.setScalar(Math.max(scale, 0.0001));
-        // Brightness: developing in, dimmed behind a chosen collection, lifted by rail focus or the flash.
+        // Brightness: developing in, dimmed behind a chosen collection, lifted by rail focus.
         let target = print.brightTarget;
         if (o.mode === 'home' && o.highlight >= 0) target = print.gi === o.highlight ? 1 : 0.22;
         print.bright += (target - print.bright) * (motionOff() ? 1 : 1 - Math.exp(-dt * 6));
         let brightness = print.bright * print.appear * print.appear;
-        if (o.wave >= 0) {
-            const reach = (now - o.wave) / 1000 - print.world.length() / 110;
-            brightness += Math.exp(-Math.pow((reach - 0.12) / 0.15, 2)) * 0.55;
-        }
         if (print.pulse) brightness += 0.3 * Math.sin(clamp01((now - print.pulse) / 700) * Math.PI);
         print.material.color.setScalar(brightness);
         // Fade out rather than clip when the visitor's flight passes through a print.
@@ -1211,7 +1203,6 @@ window.PrintOrbit = (function () {
                 return false;
             });
         }
-        if (o.wave >= 0 && now - o.wave > 1600) o.wave = -1;
 
         // Halo, labels and orbit lines follow the current state.
         const haloTarget = o.hovered ? 0.85 * o.hovered.hover : 0;
@@ -1236,7 +1227,7 @@ window.PrintOrbit = (function () {
     return {
         init, activate, deactivate, reset, update, arrive,
         enterCollection, leaveCollection, diveInto, returnFromGallery,
-        photoShown, cameraAction,
+        photoShown,
         get mode() { return o.mode; },
         get state() { return o; }
     };
