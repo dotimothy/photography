@@ -157,10 +157,11 @@ try {
             assert.equal(await page.evaluate(() => cameraZoom), 18, 'Double tap resets zoom');
             await page.touchscreen.tap(5, 250);
             assert.equal(await page.evaluate(() => cameraInspection), 'screen', 'Near-miss touch does not leave the screen');
-            for (const button of await page.locator('.mobile-camera-shortcuts button:visible').all()) {
-                const box = await button.boundingBox(); assert.ok(box.width >= 44 && box.height >= 44);
-            }
-            await page.locator('.mobile-camera-shortcuts [data-camera-action="menu"]').click(); await settle(page);
+            // The display's own keys are the phone controls: each projects to a thumb-sized target.
+            for (const key of await page.evaluate(() => cameraControlRects()))
+                assert.ok(key.w >= 44 && key.h >= 44, `${key.label} is ${Math.round(key.w)}x${Math.round(key.h)}`);
+            const home = await point(page, 'HOME');
+            await page.touchscreen.tap(home.x, home.y); await settle(page);
             assert.equal(await page.evaluate(() => cameraDisplay), 'menu');
             await cdp.detach();
         } else {

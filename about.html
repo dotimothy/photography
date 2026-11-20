@@ -16,7 +16,9 @@
     <!-- Preconnect to Google Fonts for faster handshake -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap' rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;600;700;900&display=swap' rel='stylesheet'>
+    <link rel="stylesheet" href="./assets/css/portfolio-controls.css">
+    <script src="./assets/js/gallery-return.js" defer></script>
 
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
@@ -439,9 +441,85 @@
             -webkit-backdrop-filter: blur(8px);
         }
 
+        .extra-socials { margin-top: .45rem; }
+        .extra-socials a svg { width: 16px; height: 16px; }
+        .extra-socials .pixieset-logo { width: 16px; height: 16px; }
+
         .social-btn svg {
             width: 22px;
             height: 22px;
+        }
+
+        .about-contact {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+            margin-top: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            background: #0a131a;
+        }
+
+        .about-contact-copy {
+            align-self: center;
+            padding: clamp(22px, 4vw, 48px);
+        }
+
+        .about-contact h2 {
+            margin: 0 0 12px;
+            color: #eef4f8;
+            font-size: clamp(1.65rem, 4vw, 2.75rem);
+            line-height: 1.08;
+        }
+
+        .about-contact p {
+            max-width: 34ch;
+            margin: 0 0 22px;
+            color: #b9cbd5;
+            line-height: 1.65;
+        }
+
+        .about-contact-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .about-contact-actions a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            min-height: 44px;
+            padding: 8px 15px;
+            border: 1px solid var(--glass-border);
+            border-radius: 9px;
+            background: rgba(8, 12, 20, .72);
+            color: #eef4f8;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .about-contact-actions a:first-child {
+            border-color: rgba(0, 229, 255, .45);
+            color: var(--accent-cyan);
+        }
+
+        .about-contact-actions a:hover { background: #12232e; }
+        .about-contact-actions a:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+
+        .about-contact-image {
+            min-height: 180px;
+            background: linear-gradient(90deg, #0a131a 0%, transparent 35%), url('./assets/about-lakeside.jpg') center 45% / cover;
+        }
+
+        @media (max-width: 600px) {
+            .about-contact { grid-template-columns: minmax(0, 1fr); }
+            .about-contact-image {
+                grid-row: 1;
+                min-height: 132px;
+                background: linear-gradient(0deg, #0a131a, transparent 42%), url('./assets/about-lakeside.jpg') center 40% / cover;
+            }
         }
 
         .social-btn .pixieset-logo {
@@ -526,6 +604,48 @@
             text-decoration: underline;
         }
 
+        .gear-viewer:not([hidden]) {
+            display: grid;
+            grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            border-top: 0;
+            border-radius: 0 0 16px 16px;
+            background: #080e18;
+        }
+
+        .gear-preview {
+            position: relative;
+            min-height: clamp(260px, 38vw, 410px);
+            background: #0b1420;
+            cursor: grab;
+            touch-action: pan-y;
+        }
+
+        .gear-preview:active { cursor: grabbing; }
+        .gear-preview canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+        .gear-preview:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -3px; }
+        .gear-viewer-controls { align-self: center; padding: clamp(16px, 3vw, 32px); }
+        .gear-viewer-controls label { display: block; margin-bottom: 6px; color: #e5f3fa; font-weight: 600; }
+        .gear-viewer-controls select, .gear-viewer-controls a {
+            box-sizing: border-box;
+            min-height: 44px;
+            border: 1px solid rgba(167, 215, 230, .24);
+            border-radius: 8px;
+            background: #0e1b29;
+            color: #eef4f8;
+            font: inherit;
+        }
+        .gear-viewer-controls select { width: 100%; padding: 0 9px; }
+        .gear-viewer-controls a { display: inline-flex; align-items: center; padding: 0 13px; text-decoration: none; }
+        .gear-viewer-controls p { color: #bacbd6; font-size: .875rem; line-height: 1.5; }
+        .gear-viewer-controls :focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+        .gear-bag { container: gear-bag / inline-size; }
+        @container gear-bag (max-width: 570px) {
+            .gear-viewer:not([hidden]) { grid-template-columns: minmax(0, 1fr); }
+        }
+        .gear-bag-body[hidden] { display: none; }
+
         /* --- INFO CARDS --- */
         .info-section {
             margin-bottom: 30px;
@@ -549,90 +669,189 @@
             -webkit-backdrop-filter: blur(12px);
         }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            padding: 24px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-top: none;
-            border-radius: 0 0 var(--card-radius) var(--card-radius);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        #my-perspective {
+            container: about-profiles / inline-size;
         }
 
-        @media (min-width: 768px) {
-            .info-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+        .about-sky {
+            position: relative;
+            isolation: isolate;
+            display: grid;
+            align-content: end;
+            min-height: clamp(270px, 44vw, 460px);
+            padding: clamp(20px, 5vw, 52px);
+            overflow: hidden;
+            margin-bottom: clamp(24px, 5vw, 52px);
+            border: 1px solid rgba(139, 213, 235, .22);
+            border-radius: 20px;
+            background: linear-gradient(0deg, #050913 4%, rgba(5, 9, 19, .88) 27%, rgba(5, 9, 19, .25) 66%), url('./assets/about-bear-gulch.jpg') center 46% / cover;
+        }
+
+        .about-sky::before,
+        .about-sky::after {
+            content: '';
+            position: absolute;
+            right: -12%;
+            top: 12%;
+            z-index: -1;
+            width: 80%;
+            aspect-ratio: 2.4;
+            transform: rotate(-24deg);
+            border: 1px solid rgba(141, 225, 241, .28);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .about-sky::after {
+            right: -18%;
+            top: 6%;
+            width: 91%;
+            border-color: rgba(141, 225, 241, .13);
+        }
+
+        #about-heading {
+            margin: 0 0 16px;
+            color: #eef4f8;
+            font-size: clamp(2.4rem, 8vw, 6rem);
+            line-height: .98;
+            letter-spacing: -.055em;
+            text-shadow: 0 3px 22px #050913;
+        }
+
+        .about-profile-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+        .about-profile-nav a {
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
+            padding: 0 13px;
+            border: 1px solid rgba(171, 217, 232, .3);
+            border-radius: 999px;
+            background: rgba(5, 9, 19, .77);
+            color: #eef4f8;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .about-profile-nav a:hover { border-color: var(--accent-cyan); }
+        .about-profile-nav a:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+
+        .info-grid {
+            display: grid;
+            position: relative;
+            gap: clamp(30px, 5vw, 56px);
+            margin-inline-start: 7px;
+            padding-inline-start: clamp(18px, 3.5vw, 38px);
+            border-inline-start: 1px solid rgba(0, 229, 255, .36);
         }
 
         .card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--card-radius);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            cursor: pointer;
-            transition: transform 0.2s ease, border-color 0.2s;
-            -webkit-tap-highlight-color: rgba(0, 229, 255, 0.2);
+            position: relative;
+            display: grid;
+            align-items: center;
+            min-width: 0;
+            gap: clamp(15px, 3vw, 32px);
+            scroll-margin-top: 24px;
         }
 
-        .card:hover {
-            border-color: rgba(79, 195, 247, 0.4);
-        }
-
-        .card:active {
-            transform: scale(0.98);
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: calc(-1 * clamp(18px, 3.5vw, 38px) - 5px);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 229, 255, .48);
         }
 
         .card-img-wrapper {
             position: relative;
+            display: block;
             width: 100%;
-            height: 200px;
-            background-color: #1a1a1a;
+            min-height: 165px;
+            aspect-ratio: 4 / 3;
             overflow: hidden;
+            padding: 0;
+            border: 1px solid rgba(139, 213, 235, .22);
+            border-radius: 14px;
+            background: #080d16;
+            color: #eef4f8;
+            box-shadow: 0 14px 35px rgba(0, 0, 0, .36);
+            cursor: zoom-in;
         }
 
+        .card-img-wrapper::after {
+            content: '+';
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            display: grid;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 50%;
+            background: rgba(8, 12, 20, .75);
+            font: 400 21px/1 'Roboto', sans-serif;
+            pointer-events: none;
+        }
+
+        .card-img-wrapper:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -4px; }
+
         .card-img {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: opacity 0.3s, transform 0.2s;
+            transition: opacity .3s ease, transform .45s ease;
             opacity: 0;
         }
 
-        .card-img.loaded {
-            opacity: 1;
+        .card-img.loaded { opacity: 1; }
+
+        @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+            .card-img-wrapper:hover .card-img { transform: scale(1.04); }
         }
 
-        .card:hover .card-img {
-            transform: scale(1.03);
-        }
+        .card-content { min-width: 0; padding-bottom: 5px; }
 
-        .card-content {
-            padding: 16px 18px 18px;
-            flex-grow: 1;
-        }
-
-        .card h2 {
-            color: var(--accent-cyan);
-            font-size: 1.1rem;
-            margin: 0 0 8px 0;
-            letter-spacing: 0.5px;
+        .card h3 {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            margin: 0 0 12px;
+            color: #eef4f8;
+            font-size: clamp(1.4rem, 3.4vw, 2.45rem);
+            line-height: 1.15;
         }
 
+        .card h3 .icon { flex: none; color: var(--accent-cyan); fill: currentColor; }
+
         .card p {
-            line-height: 1.6;
-            color: var(--text-muted);
+            max-width: 55ch;
             margin: 0;
-            font-size: 0.9rem;
+            color: #bacbd6;
+            font-size: .95rem;
+            line-height: 1.7;
+        }
+
+        @container about-profiles (min-width: 620px) {
+            .card { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+            .card:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+            .card:nth-child(even) .card-img-wrapper { grid-column: 2; grid-row: 1; }
+            .card:nth-child(even) .card-content { grid-column: 1; grid-row: 1; }
+        }
+
+        #my-perspective .about-contact {
+            margin-top: clamp(32px, 7vw, 72px);
+            background: radial-gradient(ellipse at right, #102738, #080d18 74%);
+        }
+
+        #my-perspective .about-contact-image {
+            background-position: center, center 48%;
+            mask-image: radial-gradient(ellipse at center, #000 30%, transparent 72%);
         }
 
         /* --- LIGHTBOX (Mobile Optimized) --- */
@@ -680,15 +899,18 @@
 
         .lightbox-close {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: var(--pc-top);
+            right: var(--pc-right);
             width: 44px;
             height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.1);
+            padding: 0;
+            color: var(--pc-text);
+            font: 400 24px/1 'Roboto', sans-serif;
+            background: var(--pc-glass);
+            border: 1px solid var(--pc-line);
             border-radius: 50%;
             cursor: pointer;
         }
@@ -787,9 +1009,9 @@
         .container { max-width: 1120px; }
         .about-intro { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: 28px 40px; text-align: left; align-items: center; padding: 44px 12px 0; margin-bottom: 36px; }
         .about-intro .profile-img { width: 176px; height: 176px; margin: 0; }
-        .intro-copy { min-width: 0; }
+        .intro-copy { min-width: 0; container-type: inline-size; }
         .intro-name { margin: 0 0 10px; color: #d0e9ee; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .about-intro h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.1; }
+        .about-intro h1 { font-size: clamp(20px, min(max(32px, 5vw), 12cqi), 56px); line-height: 1.1; overflow-wrap: anywhere; }
         .about-intro .subtitle { margin: 12px 0 20px; line-height: 1.8; }
         .about-intro .social-row { justify-content: flex-start; flex-wrap: wrap; gap: 10px; }
         .about-intro .social-btn { width: 44px; height: 44px; }
@@ -800,44 +1022,23 @@
         .story-copy p { line-height: 1.85; }
         .info-section { margin-bottom: 44px; }
         .section-heading { padding: 18px 24px; font-size: .85rem; }
-        .info-grid { gap: 20px; }
-        .info-grid .card { height: auto; }
-        .card-content { padding: 22px; }
-        .card p { line-height: 1.8; }
         .gear-bag-body { gap: 24px; padding: 28px; }
         .gear-category-label { text-align: left; padding-bottom: 12px; margin-bottom: 16px; }
         .gear-list li { min-height: 46px; line-height: 1.5; }
         footer { padding: 12px 8px 24px; line-height: 2; }
         @media (max-width: 720px) {
             .about-intro { grid-template-columns: 1fr; justify-items: center; gap: 18px; padding: 48px 0 0; margin-bottom: 24px; text-align: center; }
+            .intro-copy { justify-self: stretch; }
             .about-intro .profile-img { width: 132px; height: 132px; }
             .about-intro .social-row { justify-content: center; gap: 8px; }
             .about-intro .subtitle { font-size: 10px; letter-spacing: 1.5px; }
             .story-copy { padding: 28px 24px; }
             .story-feature, .info-section { margin-bottom: 28px; }
-            .info-grid, .gear-bag-body { padding: 16px; gap: 18px; }
+            .gear-bag-body { padding: 16px; gap: 18px; }
             .section-heading { padding: 16px 18px; }
         }
 
-        .about-view-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 20px; background: var(--glass-bg); border-inline: 1px solid var(--glass-border); }
-        .about-view-controls button { min-height: 44px; padding: 8px 16px; border: 1px solid rgba(0,229,255,.3); border-radius: 8px; background: rgba(0,229,255,.07); color: #e0f7fa; font: 700 13px 'Roboto', sans-serif; cursor: pointer; }
-        .about-view-controls button:hover, .about-view-controls button[aria-pressed="true"] { background: rgba(0,229,255,.2); border-color: var(--accent-cyan); }
-        .about-view-controls button:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
-        .about-rotate-controls { display: flex; gap: 8px; align-items: center; }
-        .about-rotate-controls[hidden] { display: none; }
-        .about-rotate-status { color: #b0bec5; font-size: 12px; }
         body.about-3d-active { overflow: hidden; }
-        .about-view-controls { align-self: center; border: 1px solid var(--glass-border); border-radius: 12px; margin-top: 36px; max-width: 100%; }
-        .about-view-controls p { margin: 0; color: #b0bec5; font-size: 12px; }
-        body:not(.about-3d-active) .about-view-controls { padding: 0; background: none; border: 0; }
-        #about-3d-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 10px 18px; border: 1px solid rgba(0,229,255,.4); border-radius: 999px; background: linear-gradient(135deg, rgba(0,229,255,.12), rgba(12,18,28,.85)); color: #e0f7fa; letter-spacing: .4px; box-shadow: inset 0 1px 0 #ffffff12, 0 4px 18px #0004; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: background .2s ease, border-color .2s ease, box-shadow .2s ease; }
-        #about-3d-toggle svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--accent-cyan); }
-        #about-3d-toggle:hover { border-color: var(--accent-cyan); background: rgba(0,229,255,.18); box-shadow: 0 0 18px rgba(0,229,255,.18), inset 0 1px 0 #ffffff20; }
-        #about-3d-toggle[aria-pressed="true"] { border-color: var(--accent-cyan); background: rgba(0,229,255,.15); }
-        #about-3d-toggle .mode-grid, #about-3d-toggle[aria-pressed="true"] .mode-cube { display: none; }
-        #about-3d-toggle[aria-pressed="true"] .mode-grid { display: block; }
-        .about-3d-active .about-view-controls { position: fixed; top: 16px; left: 80px; right: 16px; margin: 0; z-index: 100; justify-content: center; background: rgba(8,18,24,.95); }
-        .container.about-3d { position: fixed; inset: 100px 0 64px; width: 100%; max-width: none; perspective: 1600px; overflow: hidden; animation: none; touch-action: pan-y; }
         .container.about-3d > .about-plane { position: absolute; top: 0; left: 50%; width: min(78%, 1040px); height: 100%; max-height: 100%; margin: 0; padding: 28px; overflow: auto; overscroll-behavior: contain; border: 1px solid rgba(0,229,255,.3); border-radius: 20px; background: rgba(8,16,21,.97); box-shadow: 0 20px 60px #0008; transform: translateX(calc(-50% + var(--card-slot) * 105%)) translateZ(calc(var(--card-distance) * -380px)) rotateY(calc(var(--card-slot) * -24deg)); opacity: 1; transition: transform .45s ease, filter .45s ease; filter: brightness(var(--card-brightness)); z-index: var(--card-layer); backface-visibility: hidden; }
         .container.about-3d > .about-plane[aria-hidden="true"] { pointer-events: none; }
         .container.about-3d > .about-intro { align-content: center; }
@@ -848,33 +1049,73 @@
         .container:not(.about-3d) > .about-plane { transition: opacity .8s ease; }
         .about-3d:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -3px; }
         @media (max-width: 600px) {
-            .about-view-controls { padding: 10px; }
-            .about-3d-active .about-view-controls { left: 64px; right: 8px; top: 8px; gap: 6px; }
-            .about-view-controls p { flex-basis: 100%; text-align: center; font-size: 10px; line-height: 1.4; }
-            .about-rotate-controls { gap: 4px; }
-            .about-view-controls button { padding: 8px 10px; }
-            .container.about-3d { top: 176px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); perspective: 1000px; }
+            .container.about-3d { perspective: 1000px; }
             .container.about-3d > .about-plane { width: 90%; padding: 16px; border-radius: 16px; }
             .container.about-3d > .about-intro { align-content: start; }
             .container.about-3d > .story-feature { display: block; }
             .container.about-3d > .story-feature .story-image-wrap { height: 280px; min-height: 0; }
             .container.about-3d .story-copy { padding: 24px 8px; }
-            .container.about-3d .info-grid, .container.about-3d .gear-bag-body { padding: 12px; }
+            .container.about-3d .gear-bag-body { padding: 12px; }
         }
         @media (prefers-reduced-motion: reduce) { .container.about-3d > .about-plane { transition: none; } }
-        .about-section-picker, .about-touch-hint, .about-touch-label { display: none; }
-        @media (max-width: 768px), (pointer: coarse) {
-            .about-3d-active .about-view-controls { top: 8px; left: 64px; right: 8px; padding: 8px; gap: 6px; }
-            .about-3d-active #about-3d-help { display: none; }
-            .about-3d-active .about-touch-hint { display: block; font-size: 11px; }
-            .about-3d-active .about-rotate-controls { position: fixed; left: 12px; right: 12px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 64px minmax(0, 1fr) 64px; gap: 8px; padding: 10px; border: 1px solid rgba(0,229,255,.3); border-radius: 16px; background: rgba(8,18,24,.97); box-shadow: 0 8px 24px #0008; }
-            .about-3d-active .about-rotate-status { display: none; }
-            .about-3d-active .about-section-picker { display: block; min-width: 0; width: 100%; min-height: 52px; padding: 8px; color: #e0f7fa; border: 1px solid rgba(0,229,255,.3); border-radius: 8px; background: #10242c; font: 13px 'Roboto', sans-serif; }
-            .about-section-picker:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
-            .about-rotate-controls button { min-height: 52px; padding: 6px; touch-action: manipulation; }
-            .about-touch-label { display: block; font-size: 10px; margin-top: 3px; }
-            .container.about-3d { top: 104px; bottom: calc(148px + env(safe-area-inset-bottom, 0px)); }
+
+        /* --- CONTROLS ---
+           Back sits top-left (portfolio-controls.css). The page's two actions share that row on the
+           right and scroll away with the page; in the 3D carousel they stay put and the bottom edge
+           gains the carousel's own bar. Nothing else floats over the page. */
+        /* The carousel bar rises above whatever the rest of the site parks in the bottom corners, whenever
+           it is wide enough to reach them (--about-corner-reserve is measured by the script below). */
+        body { --about-pane: var(--vlm-pane-width, 0px); --about-bar-bottom: max(var(--pc-bottom), calc(var(--about-corner-reserve, 0px) + 8px)); }
+        .about-view-controls { position: absolute; top: var(--pc-top); right: calc(var(--pc-right) + var(--about-pane)); z-index: 100; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+        body.about-3d-active .about-view-controls { position: fixed; }
+        .about-view-controls button, .about-rotate-controls button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--pc-line); border-radius: 999px; background: var(--pc-glass); -webkit-backdrop-filter: var(--pc-blur); backdrop-filter: var(--pc-blur); color: var(--pc-text); font: 600 14px/1 'Roboto', sans-serif; white-space: nowrap; cursor: pointer; touch-action: manipulation; transition: background-color .18s ease, border-color .18s ease, color .18s ease; }
+        .about-view-controls button[hidden] { display: none; }
+        @media (max-width: 1279px) {
+            /* Beside the AI panel the row is short: Back folds to its arrow so the two never meet. */
+            body:has(.vlm-panel.vlm-open) #portfolio-return { width: 44px; padding: 0; }
+            body:has(.vlm-panel.vlm-open) .portfolio-return-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
         }
+        .about-view-controls button:hover, .about-rotate-controls button:hover { border-color: var(--pc-line-strong); background: var(--pc-glass-hover); }
+        .about-view-controls button[aria-pressed="true"] { border-color: var(--pc-accent); color: var(--pc-accent); }
+        .about-view-controls button:focus-visible, .about-rotate-controls button:focus-visible, .about-section-picker:focus-visible, .lightbox-close:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 3px; }
+        .about-view-controls button:disabled { opacity: .6; cursor: progress; }
+        #about-3d-toggle svg { width: 20px; height: 20px; flex-shrink: 0; }
+        #about-3d-toggle .mode-grid, #about-3d-toggle[aria-pressed="true"] .mode-cube { display: none; }
+        #about-3d-toggle[aria-pressed="true"] .mode-grid { display: block; }
+
+        .container.about-3d { position: fixed; inset: calc(var(--pc-top) + 60px) var(--about-pane) calc(var(--about-bar-bottom) + 98px) 0; width: auto; max-width: none; perspective: 1600px; overflow: hidden; animation: none; touch-action: pan-y; }
+        .about-rotate-controls { position: fixed; left: calc((100% - var(--about-pane)) / 2); bottom: var(--about-bar-bottom); z-index: 100; transform: translateX(-50%); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; box-sizing: border-box; width: min(520px, calc(100% - var(--about-pane) - var(--pc-left) - var(--pc-right))); padding: 8px; border: 1px solid var(--pc-line); border-radius: 14px; background: var(--pc-glass); -webkit-backdrop-filter: var(--pc-blur); backdrop-filter: var(--pc-blur); box-shadow: var(--pc-shadow); }
+        .about-rotate-controls[hidden] { display: none; }
+        #about-next { flex-direction: row-reverse; }
+        .about-rotate-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+        .about-section-picker { min-width: 0; width: 100%; min-height: 44px; padding: 0 38px 0 16px; border: 1px solid var(--pc-line); border-radius: 999px; background: rgba(255, 255, 255, .06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23eef4f8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 12px center / 18px no-repeat; color: var(--pc-text); font: 600 14px/1 'Roboto', sans-serif; text-overflow: ellipsis; -webkit-appearance: none; appearance: none; cursor: pointer; }
+        .about-section-picker option { background: #0b1118; color: var(--pc-text); }
+        /* One quiet line above the bar: keys for a keyboard, gestures for touch. */
+        #about-3d-help, .about-touch-hint { position: fixed; left: calc((100% - var(--about-pane)) / 2); bottom: calc(var(--about-bar-bottom) + 70px); z-index: 99; transform: translateX(-50%); width: max-content; max-width: calc(100% - var(--about-pane) - 32px); margin: 0; overflow: hidden; color: var(--pc-text-dim); font: 400 12px/18px 'Roboto', sans-serif; text-align: center; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+        .about-touch-hint { display: none; }
+        @media (max-width: 768px), (pointer: coarse) {
+            body.about-3d-active #about-3d-help { display: none; }
+            body.about-3d-active .about-touch-hint { display: block; }
+        }
+        @media (max-width: 479px) {
+            /* Phones: arrow over label, so the section picker keeps the middle of the bar. */
+            .about-rotate-controls { gap: 6px; padding: 6px; }
+            .about-rotate-controls button, #about-next { flex-direction: column; gap: 3px; min-width: 60px; padding: 0 8px; border-radius: 12px; font-size: 11px; }
+            .about-section-picker { padding: 0 30px 0 12px; border-radius: 12px; background-position: right 8px center; font-size: 13px; }
+        }
+        /* The same, wherever the width left beside a docked AI panel is phone-sized (set by the script below). */
+        body.about-narrow .about-rotate-controls { gap: 6px; padding: 6px; }
+        body.about-narrow .about-rotate-controls button, body.about-narrow #about-next { flex-direction: column; gap: 3px; min-width: 60px; padding: 0 8px; border-radius: 12px; font-size: 11px; }
+        body.about-narrow .about-section-picker { padding: 0 30px 0 12px; border-radius: 12px; background-position: right 8px center; font-size: 13px; }
+        /* When the top row would run into Back, the view toggle folds to its icon (its name stays for assistive tech). */
+        .about-view-controls.about-tight #about-3d-toggle { width: 44px; padding: 0; }
+        .about-view-controls.about-tight #about-3d-toggle .mode-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+        @media (max-height: 480px) {
+            /* Phone landscape: the hint line gives its height to the carousel. */
+            body.about-3d-active #about-3d-help, body.about-3d-active .about-touch-hint { display: none; }
+            .container.about-3d { bottom: calc(var(--about-bar-bottom) + 70px); }
+        }
+        @media (prefers-reduced-motion: reduce) { .about-view-controls button, .about-rotate-controls button { transition: none; } }
     </style>
 </head>
 
@@ -884,22 +1125,26 @@
     <div class="bg-layer bg-stars"></div>
     <div class="bg-layer bg-aurora"></div>
 
-            <div class="about-view-controls">
-                <button type="button" id="about-3d-toggle" aria-pressed="false" aria-controls="about-page" title="Explore the About page in 3D">
-                    <svg class="mode-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></svg>
-                    <svg class="mode-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-                    <span class="mode-label">3D View</span>
-                </button>
-                <button type="button" id="about-inspector" title="Ask AI about the current photo">AI Inspector</button>
-                <div class="about-rotate-controls" id="about-rotate-controls" hidden>
-                    <button type="button" id="about-previous" aria-label="Previous About section">&#8592;<span class="about-touch-label">Previous</span></button>
-                    <span class="about-rotate-status" id="about-rotate-status" role="status" aria-live="polite"></span>
-                    <select class="about-section-picker" id="about-section-picker" aria-label="Jump to About section"></select>
-                    <button type="button" id="about-next" aria-label="Next About section">&#8594;<span class="about-touch-label">Next</span></button>
-                </div>
-                <p id="about-3d-help" hidden>Left/Right or Swipe: Navigate. Home/End: First/Last. 2/3: View. Esc: Exit. Scroll Within Each Section.</p>
-                <p class="about-touch-hint">Swipe to explore. Scroll to read.</p>
-            </div>
+    <a id="portfolio-return" href="./index.html?mode=3d" target="_top"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span class="portfolio-return-label">Back To Camera</span></a>
+
+    <div class="about-view-controls">
+        <button type="button" id="about-3d-toggle" aria-pressed="false" aria-controls="about-page" title="Explore The About Page In 3D">
+            <svg class="mode-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></svg>
+            <svg class="mode-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            <span class="mode-label">3D View</span>
+        </button>
+        <button type="button" id="about-inspector" title="Ask AI About The Current Photo">AI Inspector</button>
+    </div>
+
+    <!-- Carousel controls: on the bottom edge, and only while the 3D view is open. -->
+    <div class="about-rotate-controls" id="about-rotate-controls" hidden>
+        <button type="button" id="about-previous" aria-label="Previous About Section" title="Previous"><span aria-hidden="true">&#8592;</span><span class="about-touch-label">Previous</span></button>
+        <span class="about-rotate-status" id="about-rotate-status" role="status" aria-live="polite"></span>
+        <select class="about-section-picker" id="about-section-picker" aria-label="Jump To About Section"></select>
+        <button type="button" id="about-next" aria-label="Next About Section" title="Next"><span aria-hidden="true">&#8594;</span><span class="about-touch-label">Next</span></button>
+    </div>
+    <p id="about-3d-help" hidden>Left/Right or Swipe: Navigate. Home/End: First/Last. 2/3: View. Esc: Exit. Scroll Within Each Section.</p>
+    <p class="about-touch-hint">Swipe to explore. Scroll to read.</p>
 
     <div class="container" id="about-page">
 
@@ -910,12 +1155,17 @@
                 <h1>TheDoShoots</h1>
             <div class="subtitle">Photographer • Engineer • Explorer</div>
 
-            <nav class="social-row" aria-label="Social profiles">
-                <!-- Inline SVGs for Maximum Performance (No external FontAwesome req) -->
+            <nav class="social-row" aria-label="Featured Social Profiles And Contact">
                 <a href="https://instagram.com/thedoshoots" target="_blank" class="social-btn" aria-label="Instagram">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
                         <path fill="currentColor"
                             d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z" />
+                    </svg>
+                </a>
+                <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="YouTube">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                        <path fill="currentColor"
+                            d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z" />
                     </svg>
                 </a>
                 <a href="https://www.flickr.com/people/169526448@N03/" target="_blank" class="social-btn"
@@ -925,15 +1175,17 @@
                             d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM144.5 319c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5zm159 0c-35.1 0-63.5-28.4-63.5-63.5s28.4-63.5 63.5-63.5 63.5 28.4 63.5 63.5-28.4 63.5-63.5 63.5z" />
                     </svg>
                 </a>
+                <a href="./contact.html" target="_blank" rel="noopener" class="social-btn" aria-label="Contact">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path fill="currentColor"
+                            d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z" />
+                    </svg>
+                </a>
+            </nav>
+            <nav class="social-row extra-socials" aria-label="More Profiles">
                 <a href="https://thedoshoots.pixieset.com/" target="_blank" rel="me noopener" class="social-btn"
                     aria-label="Pixieset">
                     <span class="pixieset-logo" aria-hidden="true"></span>
-                </a>
-                <a href="https://www.youtube.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="YouTube">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                        <path fill="currentColor"
-                            d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z" />
-                    </svg>
                 </a>
                 <a href="https://tiktok.com/@TheDoShoots" target="_blank" class="social-btn" aria-label="TikTok">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
@@ -952,12 +1204,6 @@
                     <svg viewBox="0 0 232 166" fill="currentColor">
                         <path
                             d="m219 142.7c-27 2-33-11.4-38.5-27-4-11-8-25-10-32 12.5-19 27-42 48.5-76h-40.3c-7 11-14 22.6-21 33.7-2-5.6-4.7-11.6-8-16.7-10.4-15-25-25-46.7-23.7-28.7 1.8-50.5 15.6-68 33-16 16.1-31.7 39.6-33.5 66.2-2.4 35.6 23.6 56 53 58.3 23.3 1.8 40.8-4.4 55.5-12.1 10-5.2 31-23 37.5-30.8 4.7 21.8 17 42.8 44.3 42.8 17 0 27.7-9.3 33.5-16.5-2 .2-4.3.4-6.8.5zM88.6 129.5c-6.3 4.5-14.4 9.4-22.8 10.7-21 3.3-30.4-13.1-28.9-35 1.1-17 7.9-32.8 15.8-46.6 8.1-14 17.6-26.5 28.4-34 3.9-2.7 9.7-5.9 17.7-6.5 19.4-1.6 26.5 19.4 31.4 37 2.3 8.2 3.8 16.6 4.6 21-5.5 8.1-22.7 36.3-46.3 53.4z" />
-                    </svg>
-                </a>
-                <a href="https://forms.gle/KvaUyizYpwuKnF868" target="_blank" class="social-btn" aria-label="Email">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                        <path fill="currentColor"
-                            d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z" />
                     </svg>
                 </a>
             </nav>
@@ -990,6 +1236,15 @@
                 </svg>
                 Gear Bag
             </div>
+            <div id="gear-viewer" class="gear-viewer" hidden>
+                <div id="gear-preview" class="gear-preview" tabindex="0"></div>
+                <div class="gear-viewer-controls">
+                    <label for="gear-product">Gear</label>
+                    <select id="gear-product"></select>
+                    <p>Drag or use the arrow keys to rotate the render.</p>
+                    <a id="gear-product-link" target="_blank" rel="noopener">View Product</a>
+                </div>
+            </div>
             <div class="gear-bag-body">
                 <!-- Primary Shooter -->
                 <div>
@@ -1000,7 +1255,7 @@
                                 <path
                                     d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+Alpha+A7+IV" target="_blank" rel="noopener">Sony
+                            <a data-gear="sony-a7" href="https://electronics.sony.com/imaging/interchangeable-lens-cameras/all-interchangeable-lens-cameras/p/ilce7m4-b" target="_blank" rel="noopener">Sony
                                 Alpha A7 IV</a>
                         </li>
                         <li>
@@ -1008,7 +1263,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+FE+28-70mm+f3.5-5.6" target="_blank"
+                            <a data-gear="sony-28" href="https://electronics.sony.com/imaging/lenses/all-e-mount/p/sel2870" target="_blank"
                                 rel="noopener">Sony FE 28-70mm F/3.5-5.6</a>
                         </li>
                         <li>
@@ -1016,7 +1271,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+FE+50mm+f1.8" target="_blank" rel="noopener">Sony
+                            <a data-gear="sony-50" href="https://electronics.sony.com/imaging/lenses/full-frame-e-mount/p/sel50f18f-2" target="_blank" rel="noopener">Sony
                                 FE 50mm F/1.8</a>
                         </li>
                         <li>
@@ -1024,7 +1279,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Tamron+70-300mm+f4.5-6.3+Sony+E" target="_blank"
+                            <a data-gear="tamron" href="https://www.tamron.com/global/consumer/lenses/a047/" target="_blank"
                                 rel="noopener">Tamron 70-300mm F/4.5-6.3</a>
                         </li>
                         <li>
@@ -1032,7 +1287,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Samyang+12mm+f2+Sony+E" target="_blank"
+                            <a data-gear="samyang" href="https://samyangus.com/products/12mm-f2-0-high-speed-wide-angle?variant=36210003116185" target="_blank"
                                 rel="noopener">Samyang 12mm F/2.0</a>
                         </li>
                     </ul>
@@ -1046,7 +1301,7 @@
                                 <path
                                     d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EOS+Rebel+T5" target="_blank" rel="noopener">Canon
+                            <a data-gear="canon-t5" href="https://global.canon/en/c-museum/product/dslr818.html" target="_blank" rel="noopener">Canon
                                 EOS Rebel T5</a>
                         </li>
                         <li>
@@ -1054,7 +1309,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EF+70-300mm+f4-5.6" target="_blank"
+                            <a data-gear="canon-70" href="https://global.canon/en/c-museum/product/ef388.html" target="_blank"
                                 rel="noopener">Canon EF 70-300mm F/4-5.6</a>
                         </li>
                         <li>
@@ -1062,7 +1317,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EF+18-55mm+f3.5-5.6" target="_blank"
+                            <a data-gear="canon-18" href="https://global.canon/en/c-museum/product/ef411.html" target="_blank"
                                 rel="noopener">Canon EF 18-55mm F/3.5-5.6</a>
                         </li>
                     </ul>
@@ -1076,7 +1331,7 @@
                                 <path
                                     d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Samsung+Galaxy+S24+Ultra" target="_blank"
+                            <a data-gear="samsung" href="https://www.samsung.com/us/smartphones/galaxy-s24-ultra/" target="_blank"
                                 rel="noopener">Samsung S24 Ultra</a>
                         </li>
                         <li>
@@ -1084,7 +1339,7 @@
                                 <path
                                     d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Google+Pixel+9+Pro" target="_blank" rel="noopener">Pixel
+                            <a data-gear="pixel" href="https://store.google.com/us/config/refurbished_pixel_9_pro" target="_blank" rel="noopener">Pixel
                                 9 Pro</a>
                         </li>
                     </ul>
@@ -1092,78 +1347,89 @@
             </div>
         </section>
 
-        <!-- INFO GRID -->
+        <!-- ABOUT ME PROFILES -->
         <section id="my-perspective" class="info-section about-section" aria-labelledby="about-heading">
-            <div class="section-heading scroll-reveal" id="about-heading">
-                <svg class="icon" viewBox="0 0 448 512">
-                    <path
-                        d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z" />
-                </svg>
-                About Me
+            <div class="about-sky">
+                <h2 id="about-heading">About Me</h2>
+                <nav class="about-profile-nav" aria-label="Jump To A Profile">
+                    <a href="#about-photographer">Photographer</a>
+                    <a href="#about-engineer">Engineer</a>
+                    <a href="#about-explorer">Explorer</a>
+                </nav>
             </div>
-            <main class="info-grid" id="about-cards" aria-label="About Timothy">
-                <div class="card scroll-reveal" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
-                    <div class="card-img-wrapper">
+            <div class="info-grid" id="about-cards" aria-label="About Timothy">
+                <article id="about-photographer" class="card scroll-reveal">
+                    <button type="button" class="card-img-wrapper" aria-label="Enlarge Photographer Picture" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
                         <img data-src="./assets/starshalo.jpg" alt="Photographer" class="card-img" decoding="async"
                             loading="lazy">
-                    </div>
+                    </button>
                     <div class="card-content">
-                        <h2>
-                            <svg class="icon" viewBox="0 0 576 512">
+                        <h3>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 576 512">
                                 <path
                                     d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" />
                             </svg>
                             Photographer
-                        </h2>
+                        </h3>
                         <p>I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep
                             colors
                             of the Orion Nebula. By day, I traverse National Parks to honor nature through landscape
                             photography.</p>
                     </div>
-                </div>
+                </article>
 
-                <div class="card scroll-reveal"
-                    onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
-                    <div class="card-img-wrapper">
+                <article id="about-engineer" class="card scroll-reveal">
+                    <button type="button" class="card-img-wrapper" aria-label="Enlarge Engineer Picture" onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
                         <img data-src="https://timothydo.me/images/TheDoProSolo.jpg" alt="Engineer" class="card-img"
                             decoding="async" loading="lazy">
-                    </div>
+                    </button>
                     <div class="card-content">
-                        <h2>
-                            <svg class="icon" viewBox="0 0 512 512">
+                        <h3>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 512 512">
                                 <path
                                     d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm88 64v64H64V96h88zm56 0h88v64H208V96zm240 0v64H360V96h88zM64 224h88v64H64V224zm232 0v64H208V224h88zm64 0h88v64H360V224zM152 352v64H64V352h88zm56 0h88v64H208V352zm240 0v64H360V352h88z" />
                             </svg>
                             Engineer
-                        </h2>
+                        </h3>
                         <p>With a Master's degree in Electrical and Computer Engineering from UCLA, I now work in
                             Computer Vision and Image Processing. Understanding image acquisition, signal processing,
                             and
                             visual AI allows me to push the boundaries of what a camera can capture.</p>
                     </div>
-                </div>
+                </article>
 
-                <div class="card scroll-reveal" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
-                    <div class="card-img-wrapper">
+                <article id="about-explorer" class="card scroll-reveal">
+                    <button type="button" class="card-img-wrapper" aria-label="Enlarge Explorer Picture" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
                         <img data-src="./assets/zion.jpg" alt="Explorer" class="card-img" decoding="async"
                             loading="lazy">
-                    </div>
+                    </button>
                     <div class="card-content">
-                        <h2>
-                            <svg class="icon" viewBox="0 0 512 512">
+                        <h3>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 512 512">
                                 <path
                                     d="M192 32c17.7 0 32 14.3 32 32V316c0 14.6-9.6 27.5-23.5 31.2C63.6 385.5 1.5 329.6 0 328c-1.1-1.1-17.7-18.4 12.5-47.5 19.4-18.7 28.3-27.1 36.1-34.5l9.4-8.9c19.3-18.2 41.9-46.7 41.9-82.6V64c0-17.7 14.3-32 32-32h60.1zm84.4 290.7l21.3 49.6c11.3 26.2 46.6 26.2 57.9 0l22.6-52.6c3.4-7.8 11-12.8 19.5-12.8s16.1 5 19.5 12.8l22.6 52.6c11.3 26.2 46.6 26.2 57.9 0l21.3-49.6c3.4-7.9 11.1-12.9 19.7-12.9H512V32c0-17.7-14.3-32-32-32H388c-17.7 0-32 14.3-32 32v157c-26.4 12.5-47.7 32.1-59.5 57.2l-20.1 42.6V32z" />
                             </svg>
                             Explorer
-                        </h2>
+                        </h3>
                         <p>As an Eagle Scout with the photography merit badge, nature is my second home. This portfolio
                             is
                             my window into a collection of moments where the universe stood still just long enough for
                             the
                             shutter to click.</p>
                     </div>
+                </article>
+            </div>
+            <section class="about-contact scroll-reveal" aria-labelledby="about-contact-title">
+                <div class="about-contact-copy">
+                    <h2 id="about-contact-title">Let’s Make Something</h2>
+                    <p>Get in touch about a photoshoot, a print, licensing a photograph, or a collaboration.</p>
+                    <div class="about-contact-actions">
+                        <a href="./contact.html" target="_blank" rel="noopener">Get In Touch</a>
+                        <a href="./index.html" target="_blank" rel="noopener">See The Work</a>
+                    </div>
                 </div>
-            </main>
+                <div class="about-contact-image" aria-hidden="true"></div>
+            </section>
         </section>
 
         <footer class="scroll-reveal">
@@ -1179,7 +1445,7 @@
 
     <!-- LIGHTBOX -->
     <div class="lightbox" id="lightbox">
-        <div class="lightbox-close" onclick="closeLightbox()">&times;</div>
+        <button type="button" class="lightbox-close" onclick="closeLightbox()" aria-label="Close" title="Close">&times;</button>
         <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Full View"
             class="lightbox-img" id="lightbox-img">
         <div class="lightbox-caption" id="lightbox-caption"></div>
@@ -1312,7 +1578,7 @@
                 document.getElementById('about-3d-help').hidden = !enabled;
                 toggle.setAttribute('aria-pressed', String(enabled));
                 toggle.querySelector('.mode-label').textContent = enabled ? '2D View' : '3D View';
-                toggle.title = enabled ? 'Return to the scrolling About page' : 'Explore the About page in 3D';
+                toggle.title = enabled ? 'Return To The Scrolling About Page' : 'Explore The About Page In 3D';
                 controls.hidden = !enabled;
                 if (enabled) {
                     stage.tabIndex = 0;
@@ -1412,6 +1678,88 @@
     </script>
     <script src="./assets/js/live-fps.js"></script>
     <script>
+        // The FPS readout (bottom-left) and the AI panel's round toggle (bottom-right) belong to other
+        // parts of the site, here or on the homepage framing this page. Whenever the carousel bar is wide
+        // enough to reach one of them, it is told how much of the bottom edge that control is using.
+        (() => {
+            const parked = '#site-performance-hud, .vlm-toggle-btn:not(.vlm-toggle-docked)';
+            const docs = [document];
+            try {
+                if (window.parent !== window && window.frameElement) docs.push(window.parent.document);
+            } catch (_) { /* Cross-origin embed: nothing of ours to dodge. */ }
+            const root = document.documentElement;
+            const watched = new WeakSet();
+            const watcher = new MutationObserver(() => measure());
+            let current = '';
+            function measure() {
+                // Where the bar sits: centred in the width the AI panel leaves free, at most 520px wide.
+                const free = window.innerWidth - (parseFloat(getComputedStyle(root).getPropertyValue('--vlm-pane-width')) || 0);
+                const half = Math.min(520, free - 24) / 2;
+                let reserve = 0;
+                docs.forEach((doc) => {
+                    const frame = doc === document ? null : window.frameElement.getBoundingClientRect();
+                    const edge = frame ? frame.bottom : window.innerHeight;
+                    doc.querySelectorAll(parked).forEach((control) => {
+                        if (!watched.has(control)) {
+                            watched.add(control);
+                            watcher.observe(control, { attributes: true, attributeFilter: ['class', 'style', 'hidden'], childList: true, subtree: true });
+                        }
+                        const rect = control.getBoundingClientRect();
+                        const style = doc.defaultView.getComputedStyle(control);
+                        if (!rect.height || style.display === 'none' || style.visibility === 'hidden') return;
+                        const left = rect.left - (frame ? frame.left : 0);
+                        if (left + rect.width < free / 2 - half || left > free / 2 + half) return;
+                        if (rect.bottom > edge - 140 && rect.top < edge) reserve = Math.max(reserve, edge - rect.top);
+                    });
+                });
+                const value = `${Math.round(reserve)}px`;
+                if (value === current) return;
+                current = value;
+                root.style.setProperty('--about-corner-reserve', value);
+            }
+            // The AI panel announces its width on the root element.
+            watcher.observe(root, { attributes: true, attributeFilter: ['style'] });
+            docs.forEach((doc) => {
+                watcher.observe(doc.body, { childList: true });
+                const frame = doc.getElementById('iframe-container');
+                if (frame) watcher.observe(frame, { childList: true });
+            });
+            window.addEventListener('resize', measure);
+            window.addEventListener('load', measure);
+            measure();
+        })();
+    </script>
+    <script>
+        // Layout that follows the width actually free for the page: the viewport minus a docked AI panel,
+        // or a narrow frame. Viewport media queries cannot see the panel, so this sets two classes.
+        (() => {
+            const root = document.documentElement;
+            const row = document.querySelector('.about-view-controls');
+            const back = document.getElementById('portfolio-return');
+            let queued = false;
+            function fit() {
+                queued = false;
+                const pane = parseFloat(getComputedStyle(root).getPropertyValue('--vlm-pane-width')) || 0;
+                document.body.classList.toggle('about-narrow', window.innerWidth - pane < 480);
+                if (!row || !back) return;
+                // Measure the row at full size, then fold the toggle only if it would reach Back.
+                row.classList.remove('about-tight');
+                const backBox = back.getBoundingClientRect();
+                const tight = !back.hidden && backBox.width > 0 && row.getBoundingClientRect().left < backBox.right + 8;
+                row.classList.toggle('about-tight', tight);
+            }
+            const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(fit); } };
+            // The AI panel announces its width on the root element and adds itself to the body.
+            new MutationObserver(schedule).observe(root, { attributes: true, attributeFilter: ['style', 'class'] });
+            new MutationObserver(schedule).observe(document.body, { childList: true });
+            if (row) new MutationObserver(schedule).observe(row, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-pressed'] });
+            window.addEventListener('resize', schedule);
+            window.addEventListener('load', schedule);
+            document.fonts?.ready.then(schedule);
+            fit();
+        })();
+    </script>
+    <script>
         // Service Worker registration (PWA install + offline)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -1420,6 +1768,7 @@
         }
     </script>
 
+    <script type="module" src="./assets/js/gear-viewer.js"></script>
 </body>
 
 </html>

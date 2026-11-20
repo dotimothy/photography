@@ -13,7 +13,7 @@ class GalleryShapeTests(unittest.TestCase):
             (template / 'index.html').write_text('<html><head><meta name="gallery-shape-emoji" content="old"></head><body></body></html>')
             for value in [None, '⭐', '\"<test>']:
                 builder.generate_site(['test'], {'test': ['one.jpg']}, {'test': {'one': {}}},
-                                      str(root / 'output'), {'test': 'DISPLAY'}, str(template),
+                                      str(root / 'output'), str(template),
                                       {'test': value} if value else None)
                 page = (root / 'output/test/index.html').read_text(encoding='utf-8')
                 self.assertNotIn('content="old"', page)

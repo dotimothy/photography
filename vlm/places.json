@@ -1,0 +1,19 @@
+{
+  "about": "Place names for the GPS-tagged portfolio photos, resolved once so the location card can name a place without a network lookup. Keys are latitude,longitude rounded to three decimals (InspectorCore.placeKey). Photos not listed here fall back to a single cached reverse lookup in the visitor's browser (see InspectorMap.js).",
+  "source": "OpenStreetMap: protected-area boundaries (Overpass is_in) and town or county names (Nominatim reverse, zoom 14). Data © OpenStreetMap contributors, ODbL.",
+  "resolved": "2026-11-18",
+  "places": {
+    "36.804,-118.940": { "label": "Giant Sequoia National Monument", "region": "Fresno County, California" },
+    "41.410,-124.036": { "label": "Prairie Creek Redwoods State Park", "region": "Humboldt County, California" },
+    "35.781,-120.334": { "label": "San Luis Obispo County, California" },
+    "37.716,-119.677": { "label": "Yosemite National Park", "region": "Mariposa County, California" },
+    "36.662,-117.096": { "label": "Death Valley National Park", "region": "Inyo County, California" },
+    "36.460,-116.864": { "label": "Death Valley National Park", "region": "Furnace Creek, Inyo County, California" },
+    "36.434,-116.863": { "label": "Death Valley National Park", "region": "Inyo County, California" },
+    "36.464,-116.880": { "label": "Death Valley National Park", "region": "Furnace Creek, Inyo County, California" },
+    "37.284,-121.813": { "label": "San Jose, Santa Clara County, California" },
+    "36.995,-122.087": { "label": "Wilder Ranch State Park", "region": "Santa Cruz, Santa Cruz County, California" },
+    "39.349,-123.826": { "label": "Point Cabrillo Light Station State Historic Park", "region": "Caspar, Mendocino County, California" },
+    "39.366,-123.526": { "label": "Jackson Demonstration State Forest", "region": "Mendocino County, California" }
+  }
+}

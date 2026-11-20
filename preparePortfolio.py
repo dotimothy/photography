@@ -55,15 +55,18 @@ WATERMARK_PATH = './assets/watermark.png'
 PORTFOLIOS_ROOT = './build/portfolios'
 CACHE_ROOT = './.cache/images'
 
-# Optional 3D layouts, independent of the emojis used in page titles.
+GALLERIES = ('astronomy', 'food', 'landscape', 'planes', 'wildlife')
+
+# Optional 3D layouts. An omitted collection uses the template's default shape.
 GALLERY_SHAPE_EMOJIS = {
     'astronomy': '⭐', 'food': '🍎', 'landscape': '🌳',
     'planes': '✈️', 'wildlife': '🐕',
 }
 
-GALLERY_EMOJIS = {
-    'astronomy': '🌌', 'food': '🍱', 'landscape': '🏞️', 'planes': '✈️', 'wildlife':  '🐿️ '
-}
+# List the chosen filename stems (without .jpg) in viewing order by collection.
+# Leave a collection out until its Selects are ready. The full gallery remains available.
+GALLERY_SELECTS = {}
+
 
 # --- Helpers ---
 def get_dir_size(start_path='.'):
@@ -280,11 +283,10 @@ def main():
     else:
         print(f" - CPU Affinity: Not supported on this OS (Standard scheduling)")
 
-    target_keys = [k for k in GALLERY_EMOJIS.keys() if not args.select or k in args.select]
+    target_keys = [k for k in GALLERIES if not args.select or k in args.select]
     print(f"Target Galleries ({len(target_keys)}):")
     for key in target_keys:
-        emoji = GALLERY_EMOJIS.get(key, '')
-        print(f" - {emoji} {key.title()} {emoji}")
+        print(f" - {key.title()}")
 
     # --- STEP 0: CLEANUP ---
     if args.clean or args.full_clean:
@@ -507,9 +509,9 @@ def main():
     step3_start = time.time()
     profiler.start('Site Generation')
     
-    count = build_module.generate_site(target_keys, gallery_map, results_map, PORTFOLIOS_ROOT, GALLERY_EMOJIS,
+    count = build_module.generate_site(target_keys, gallery_map, results_map, PORTFOLIOS_ROOT,
                                       template_src=args.gallery_source or './tmp/gallery',
-                                      shape_emojis=GALLERY_SHAPE_EMOJIS)
+                                      shape_emojis=GALLERY_SHAPE_EMOJIS, selects=GALLERY_SELECTS)
 
     profiler.stop('Site Generation', count=count)
     print(f"{color.BOLD}*** Step 3 Completed in {time.time() - step3_start:.2f}s ***{color.END}")
@@ -519,12 +521,12 @@ def main():
     step4_start = time.time()
     profiler.start('Deployment Prep')
     
-    deploy_assets = ['index.html', 'about.html', 'linktree.html', 'license.html', 'assets', 'vlm', 'LICENSE']
+    deploy_assets = ['index.html', 'about.html', 'linktree.html', 'contact.html', 'license.html', 'assets', 'vlm', 'LICENSE']
     # manifest.json + sw.js are handled inside prepare_deployment (sw.js needs build-time stamping)
     build_module.prepare_deployment(deploy_assets)
     # Always include every gallery already present in the build. A selective
     # gallery rebuild must not shrink the portfolio-wide search index.
-    build_module.generate_metadata_search_index(PORTFOLIOS_ROOT, GALLERY_EMOJIS.keys())
+    build_module.generate_metadata_search_index(PORTFOLIOS_ROOT, GALLERIES)
             
     profiler.stop('Deployment Prep')
     print(f"{color.BOLD}*** Step 4 Completed in {time.time() - step4_start:.2f}s ***{color.END}")

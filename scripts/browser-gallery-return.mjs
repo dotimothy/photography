@@ -12,7 +12,7 @@ try {
     for (const gallery of ['astronomy', 'landscape', 'wildlife', 'planes', 'food']) {
         for (const mode of ['2d', '3d']) {
             await page.goto(`${base}/portfolios/${gallery}/index.html?mode=${mode}`, { waitUntil: 'domcontentloaded' });
-            const back = page.getByRole('link', { name: 'Back to Camera' });
+            const back = page.getByRole('link', { name: 'Back To Camera' });
             assert.ok(await back.isVisible());
             assert.ok((await back.boundingBox()).height >= 44);
             await back.click();
@@ -22,13 +22,13 @@ try {
         console.log(`${gallery}: 2D and 3D return to the main camera`);
     }
     await page.goto(`${base}/portfolios/astronomy/immersive.html`, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('link', { name: 'Back to Camera' }).click();
+    await page.getByRole('link', { name: 'Back To Camera' }).click();
     await page.waitForURL(`${base}/index.html?mode=3d`);
     // A shared link works even without JavaScript or a previous history entry.
     const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 320, height: 568 } });
     const direct = await plain.newPage();
     await direct.goto(`${base}/portfolios/food/index.html`, { waitUntil: 'domcontentloaded' });
-    await direct.getByRole('link', { name: 'Back to Camera' }).click();
+    await direct.getByRole('link', { name: 'Back To Camera' }).click();
     await direct.waitForURL(`${base}/index.html?mode=3d`);
     console.log('Immersive viewer and direct links without JavaScript return home');
     const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
@@ -38,7 +38,7 @@ try {
         window.returnToMainProbe = true;
         handleNav('./portfolios/astronomy/index.html', true);
     });
-    const embeddedReturn = host.frameLocator('#exhibit-iframe').getByRole('link', { name: 'Back to Main Page' });
+    const embeddedReturn = host.frameLocator('#exhibit-iframe').getByRole('link', { name: 'Back To Main Page' });
     await embeddedReturn.click();
     await host.waitForFunction(() => !els.iframeOverlay.classList.contains('active') && !state.isPaused);
     assert.equal(await host.evaluate(() => window.returnToMainProbe), true);

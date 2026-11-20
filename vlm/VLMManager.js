@@ -1,10 +1,16 @@
 /**
  * VLMManager.js — Singleton VLM Engine
  *
- * Supports two backends, switchable at runtime:
+ * Supports three backends, switchable at runtime:
  *
- *   LOCAL  — Web Worker running SmolVLM via Transformers.js (default)
- *   API    — OpenAI-compatible REST endpoint (GPT-4o, Ollama, LM Studio, etc.)
+ *   LOCAL   — Web Worker running a small vision-language model via Transformers.js
+ *   API     — OpenAI-compatible REST endpoint (GPT-4o, LM Studio, etc.)
+ *   OLLAMA  — Ollama's native /api/chat endpoint
+ *
+ * Local models never download on their own. A model must first be downloaded
+ * from Settings > AI Inspector (see modelStore.js, exposed as window.VLM_MODELS).
+ * init() and restart() check browser storage: when the model is there they load
+ * it; when it is not they report 'not-downloaded' and start nothing.
  *
  * Usage
  * ─────
@@ -13,88 +19,305 @@
  *   const mgr = VLMManager.getInstance();
  *   mgr.on('ready', () => console.log('Model ready'));
  *
- *   // Local mode
- *   mgr.init('onnx-community/FastVLM-0.5B-ONNX');
+ *   // Local mode — loads from browser storage, or reports 'not-downloaded'
+ *   mgr.init('HuggingFaceTB/SmolVLM-256M-Instruct');
  *
- *   // API mode — signals ready immediately, no download
+ *   // API mode — signals ready immediately
  *   mgr.setApiMode('https://api.openai.com/v1', 'sk-...', 'gpt-4o');
  *
  *   mgr.query(imageUrl, 'What's in this photo?', [], {
  *       onToken:  (tok) => console.log(tok),
- *       onDone:   (txt) => console.log('Full:', txt),
+ *       onDone:   (txt, tokenCount, avgTps, stats) => console.log('Full:', txt),
  *       onError:  (msg) => console.error(msg),
  *   });
+ *
+ * Model state for any UI
+ * ──────────────────────
+ *   window.VLM_MODELS.status(id) / download(id) / cancel(id) / remove(id) / progress(id)
+ *   window 'vlm-model-state' events: { modelId, state, loaded?, total?, message? }
+ *   mgr.stats — device, load time, tokens per second, memory, cache use
  */
 
-let _singleton = null;
+import { createModelStore } from './modelStore.js';
+
+// One manager and one store per page, however many URLs this module is imported
+// under (a cache-busting ?v= makes each URL its own module instance).
+const MANAGER_KEY = Symbol.for('thedoshoots.vlmManager');
+const STORE_KEY = Symbol.for('thedoshoots.vlmModelStore');
+
+const DEFAULT_MODEL_ID = 'onnx-community/FastVLM-0.5B-ONNX';
+const WORKER_URL = './vlmWorker.js?v=12';
+
+/** A loaded local model is released after this long without a question. */
+export const IDLE_RELEASE_MS = 5 * 60 * 1000;
+/** ...and sooner when the page is in a background tab. */
+export const HIDDEN_RELEASE_MS = 60 * 1000;
+
+function modelStore() {
+    return (globalThis[STORE_KEY] ??= createModelStore());
+}
+
+/** Cheap, stable identity for an image source (URL or data URI), used to key per-image caches. */
+export function imageKey(src, salt = '') {
+    const text = String(src ?? '');
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
+    return `${text.length}:${(hash >>> 0).toString(36)}:${salt}`;
+}
+
+/**
+ * Decode an image and scale it down to the model's input size before it goes to
+ * the worker. Returns an ImageBitmap (transferable, so it crosses threads
+ * without a copy) or null when the browser cannot produce one.
+ */
+export async function prepareImage(src, maxEdge) {
+    const key = imageKey(src, maxEdge);
+    if (typeof createImageBitmap !== 'function' || typeof OffscreenCanvas === 'undefined') return { bitmap: null, key };
+    try {
+        const response = await fetch(src);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        let bitmap = await createImageBitmap(await response.blob());
+        const sourceWidth = bitmap.width, sourceHeight = bitmap.height;
+        const scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+        if (scale < 1) {
+            const resized = await createImageBitmap(bitmap, {
+                resizeWidth: Math.max(1, Math.round(sourceWidth * scale)),
+                resizeHeight: Math.max(1, Math.round(sourceHeight * scale)),
+                resizeQuality: 'medium',
+            });
+            bitmap.close();
+            bitmap = resized;
+        }
+        return { bitmap, key, width: bitmap.width, height: bitmap.height, sourceWidth, sourceHeight };
+    } catch (_) {
+        return { bitmap: null, key };   // the worker fetches the source itself
+    }
+}
 
 class VLMManager {
     constructor() {
         // True singleton — subsequent `new VLMManager()` returns the same object.
-        if (_singleton) return _singleton;
-        _singleton = this;
+        const existing = globalThis[MANAGER_KEY];
+        if (existing) return existing;
+        globalThis[MANAGER_KEY] = this;
 
         this._worker      = null;
         this._ready       = false;
         this._loading     = false;
-        this._modelId     = null;        // model ID currently loaded in the worker
+        this._modelId     = null;        // local model currently selected
         this._mode        = 'local';     // 'local' | 'api'
         this._apiConfig   = null;        // { endpoint, apiKey, model }
         this._nextId      = 0;
         this._callbacks   = new Map();   // requestId → { onStart, onToken, onDone, onError }
         this._listeners   = {};          // event name → [handler, ...]
         this._systemPrompt = null;       // prepended as a system message in every API conversation
+
+        this._store       = modelStore();
+        this._starting    = null;        // token of the storage check in flight
+        this._suspended   = false;       // model released after idling; reloads on the next question
+        this._busy        = 0;           // local questions in flight
+        this._releaseTimer = null;
+        this._startPromise = null;       // resolves true once a worker has been started
+        this._imageInfo   = new Map();   // requestId → how the image was prepared
+        this._loadStarted = 0;
+        this._stats       = this._emptyStats();
+
+        if (typeof window !== 'undefined' && window.addEventListener) {
+            window.addEventListener('vlm-model-state', (event) => this._onModelState(event.detail ?? {}));
+            if (typeof document !== 'undefined') {
+                document.addEventListener('visibilitychange', () => this._scheduleRelease());
+            }
+        }
     }
 
     /** Always returns the page-level singleton. */
     static getInstance() {
-        return _singleton ?? new VLMManager();
+        return globalThis[MANAGER_KEY] ?? new VLMManager();
     }
 
-    get isReady()   { return this._ready; }
-    get isLoading() { return this._loading; }
+    get isReady()     { return this._ready; }
+    get isLoading()   { return this._loading; }
+    /** True while a ready local model is unloaded to save memory; the next query reloads it. */
+    get isSuspended() { return this._suspended; }
+
+    /**
+     * Snapshot for a stats readout:
+     * { backend, modelId, device, dtype, loaded, suspended, loadMs, warmupMs,
+     *   heapMB, weightsMB, deviceMemoryGB, tokensPerSecond, releases, lastQuery }
+     * lastQuery carries the worker's per-answer numbers (prompt tokens, tokens
+     * reused from the key/value cache, time to first token, image preparation).
+     */
+    get stats() {
+        return { ...this._stats, lastQuery: this._stats.lastQuery ? { ...this._stats.lastQuery } : null };
+    }
+
+    _emptyStats() {
+        return {
+            backend: 'local', modelId: null, device: null, dtype: null, loaded: false, suspended: false,
+            // heapMB comes from performance.memory, which Chromium exposes on pages but not in
+            // workers, so it is usually null; weightsMB (bytes of model files loaded) is the
+            // dependable memory figure.
+            loadMs: null, warmupMs: null, heapMB: null, weightsMB: null,
+            deviceMemoryGB: (typeof navigator !== 'undefined' && navigator.deviceMemory) || null,
+            tokensPerSecond: null, releases: 0, lastQuery: null,
+        };
+    }
+
+    _setStats(patch) {
+        Object.assign(this._stats, patch);
+        this._emit('stats', this.stats);
+    }
 
     // ─── Lifecycle ─────────────────────────────────────────────────────────
 
     /**
-     * Spawn the worker and begin loading the local model.
-     * Safe to call multiple times — only the first call has any effect.
+     * Select a local model and load it if it has been downloaded.
+     * Never downloads: when the model is not in browser storage this emits
+     * 'vlm-model-state' { state: 'not-downloaded' } (and an 'unavailable'
+     * event) and leaves isReady and isLoading false.
+     * Safe to call repeatedly — a call is ignored while a model is loaded or loading.
      * @param {string} [modelId]  HuggingFace model ID
      */
-    init(modelId = 'onnx-community/FastVLM-0.5B-ONNX') {
-        if (this._worker) return;
-        this._mode    = 'local';
-        this._loading = true;
-        this._modelId = modelId;
-
-        this._worker = new Worker(
-            new URL('./vlmWorker.js?v=11', import.meta.url),
-            { type: 'module' },
-        );
-
-        this._worker.onmessage = (e) => this._dispatch(e.data);
-        this._worker.onerror   = (e) => {
-            console.error('[VLMManager] Worker error:', e.message);
-            this._emit('error', { message: e.message });
-        };
-
-        this._worker.postMessage({ type: 'load', modelId });
+    init(modelId = DEFAULT_MODEL_ID) {
+        if (this._worker || this._starting || (this._suspended && this._modelId === modelId)) return;
+        if (this._mode === 'api') {
+            this._apiConfig = null;
+            this._ready = false;
+        }
+        this._mode      = 'local';
+        this._modelId   = modelId;
+        this._suspended = false;
+        this._ready     = false;
+        this._startLocal(modelId);
     }
 
-    /**
-     * Terminate the local worker and restart with a (possibly different) model.
-     * Pending callbacks are discarded. Fires a 'restart' event so the UI can
-     * reset its loading indicators.
-     * @param {string} modelId
-     */
-    restart(modelId = 'onnx-community/FastVLM-0.5B-ONNX') {
+    /** Explicitly start or resume the selected local model from browser storage. */
+    async load(modelId = this._modelId ?? DEFAULT_MODEL_ID) {
+        if (this._modelId !== modelId && (this._worker || this._starting)) {
+            if (this._busy > 0 || this._loading) return false;
+            this.restart(modelId);
+        }
+        if (this._worker) return this._modelId === modelId;
+        if (this._startPromise) return this._modelId === modelId && await this._startPromise;
+        if (this._suspended && this._modelId === modelId) return this._startLocal(modelId);
+        this.init(modelId);
+        return (await this._startPromise) ?? false;
+    }
+
+    /** Check browser storage, then load. Resolves true when a worker was started. */
+    _startLocal(modelId) {
+        const attempt = this._checkAndLoad(modelId);
+        this._startPromise = attempt;
+        const clear = () => { if (this._startPromise === attempt) this._startPromise = null; };
+        attempt.then(clear, clear);
+        return attempt;
+    }
+
+    async _checkAndLoad(modelId) {
+        const token = this._starting = { modelId };
+        let plan = null, fallback = null, downloading = false;
+        try {
+            plan = await this._store.resolve(modelId);
+            if (plan.complete && plan.device === 'webgpu') {
+                // If WebGPU fails at load time, the CPU can take over only with files already stored.
+                const cpu = await this._store.resolve(modelId, 'wasm');
+                if (cpu.complete) fallback = { device: 'wasm', dtype: cpu.dtype };
+            }
+            if (!plan.complete) downloading = (await this._store.status(modelId)) === 'downloading';
+        } catch (_) { plan = null; }
+        if (this._starting !== token) return false;   // superseded by restart() or a backend change
+        this._starting = null;
+
+        if (!plan?.complete) {
+            const model = this._store.get(modelId);
+            const wasReady = this._ready;
+            this._ready = false;
+            this._loading = false;
+            this._suspended = false;
+            this._setStats({ backend: 'local', modelId, loaded: false, suspended: false });
+            const message = model?.unavailable ? `${model.name}: ${model.unavailable}` : undefined;
+            if (downloading) {
+                this._store.announce({ modelId, state: 'downloading', ...(this._store.progress(modelId) ?? {}) }, { force: true, broadcast: false });
+            } else {
+                this._store.announce({ modelId, state: 'not-downloaded', ...(message ? { message } : {}) }, { broadcast: false });
+            }
+            this._emit('unavailable', { modelId, state: downloading ? 'downloading' : 'not-downloaded', message, wasReady });
+            return false;
+        }
+
+        const model = this._store.get(modelId);
+        this._loading = true;
+        this._suspended = false;
+        this._loadStarted = Date.now();
+        let worker;
+        try { worker = this._worker = this._createWorker(); }
+        catch (error) { this._failLoad(error.message || 'Could not start the model worker'); return false; }
+        worker.onmessage = (e) => { if (this._worker === worker) this._dispatch(e.data); };
+        worker.onerror   = (e) => {
+            if (this._worker !== worker) return;
+            console.error('[VLMManager] Worker error:', e.message);
+            this._failLoad(e.message || 'The model worker stopped unexpectedly');
+        };
+        worker.postMessage({
+            type: 'load', modelId,
+            family: model?.family ?? 'smolvlm',
+            imageSplitting: false,
+            plan: { device: plan.device, dtype: plan.dtype },
+            fallback,
+        });
+        this._setStats({ backend: 'local', modelId, device: plan.device, dtype: plan.dtype, loaded: false, suspended: false });
+        this._store.announce({ modelId, state: 'loading' }, { broadcast: false });
+        this._store.inspect?.(modelId)
+            .then((info) => { if (this._modelId === modelId) this._setStats({ weightsMB: Math.round(info.cachedBytes / 1e6) }); })
+            .catch(() => {});
+        return true;
+    }
+
+    /** Overridable so tests can supply a stand-in worker. */
+    _createWorker() {
+        return new Worker(new URL(WORKER_URL, import.meta.url), { type: 'module' });
+    }
+
+    /** Overridable so tests can skip image decoding. */
+    _prepareImage(src, maxEdge) {
+        return prepareImage(src, maxEdge);
+    }
+
+    _stopWorker() {
+        clearTimeout(this._releaseTimer);
+        this._releaseTimer = null;
+        this._starting = null;
         if (this._worker) {
             this._worker.terminate();
             this._worker = null;
         }
+        this._busy = 0;
+    }
+
+    _failLoad(message) {
+        const modelId = this._modelId;
+        this._stopWorker();
+        this._ready = false;
+        this._loading = false;
+        this._suspended = false;
+        this._setStats({ loaded: false, suspended: false });
+        for (const [id, cb] of this._callbacks) { cb.onError?.(message); this._callbacks.delete(id); }
+        this._store.announce({ modelId, state: 'error', message }, { broadcast: false });
+        this._emit('error', { message });
+    }
+
+    /**
+     * Terminate the local worker and switch to a (possibly different) model.
+     * Pending callbacks are discarded. Fires a 'restart' event so the UI can
+     * reset its loading indicators. Like init(), never downloads.
+     * @param {string} modelId
+     */
+    restart(modelId = DEFAULT_MODEL_ID) {
+        this._stopWorker();
         this._mode     = 'local';
         this._ready    = false;
         this._loading  = false;
+        this._suspended = false;
         this._modelId  = null;
         this._apiConfig = null;
         this._callbacks.clear();
@@ -103,8 +326,55 @@ class VLMManager {
     }
 
     /**
-     * Switch to API mode.  Terminates any running local worker, stores the
-     * config, and fires 'ready' immediately — there is nothing to download.
+     * Unload the local model to return its memory (several hundred MB of
+     * WebAssembly heap or GPU buffers). The model stays "ready": the next
+     * query reloads it from browser storage. Called automatically after
+     * IDLE_RELEASE_MS without a question, or HIDDEN_RELEASE_MS in a
+     * background tab. Does nothing while a question is being answered.
+     * @returns {boolean} whether a model was released
+     */
+    release(reason = 'manual') {
+        if (this._mode !== 'local' || !this._worker || !this._ready || this._busy > 0) return false;
+        const modelId = this._modelId;
+        this._stopWorker();
+        this._suspended = true;
+        this._loading = false;
+        this._setStats({ loaded: false, suspended: true, heapMB: null, releases: this._stats.releases + 1 });
+        this._store.announce({ modelId, state: 'ready', suspended: true }, { broadcast: false });
+        this._emit('release', { modelId, reason });
+        return true;
+    }
+
+    _scheduleRelease() {
+        clearTimeout(this._releaseTimer);
+        this._releaseTimer = null;
+        if (this._mode !== 'local' || !this._worker || !this._ready || this._busy > 0) return;
+        const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+        this._releaseTimer = setTimeout(() => this.release(hidden ? 'hidden' : 'idle'), hidden ? HIDDEN_RELEASE_MS : IDLE_RELEASE_MS);
+        this._releaseTimer?.unref?.();
+    }
+
+    /** React to downloads finishing and models being deleted, on this page or another tab. */
+    _onModelState({ modelId, state }) {
+        if (this._mode !== 'local' || !modelId || modelId !== this._modelId) return;
+        if (state === 'downloaded' && !this._worker && !this._starting && !this._suspended) {
+            // The model this page asked for has arrived: load it, unless the tab is in the background.
+            if (typeof document === 'undefined' || document.visibilityState !== 'hidden') this._startLocal(modelId);
+        } else if (state === 'not-downloaded' && (this._worker || this._suspended)) {
+            // The loaded model was deleted from storage: give its memory back too.
+            this._stopWorker();
+            this._ready = false;
+            this._loading = false;
+            this._suspended = false;
+            for (const [id, cb] of this._callbacks) { cb.onError?.('The model was deleted.'); this._callbacks.delete(id); }
+            this._setStats({ loaded: false, suspended: false });
+            this._emit('unavailable', { modelId, state: 'not-downloaded', wasReady: true });
+        }
+    }
+
+    /**
+     * Switch to API mode.  Terminates any running local worker (returning the
+     * model's memory), stores the config, and fires 'ready' immediately.
      *
      * Safe to call repeatedly: subsequent calls update the config and re-fire
      * 'ready' so the UI refreshes its status text.
@@ -114,10 +384,7 @@ class VLMManager {
      * @param {string} model     Model name, e.g. 'gpt-4o'
      */
     setApiMode(endpoint, apiKey, model) {
-        if (this._worker) {
-            this._worker.terminate();
-            this._worker = null;
-        }
+        this._stopWorker();
         this._mode      = 'api';
         this._apiConfig = {
             endpoint: (endpoint || 'https://api.openai.com/v1').replace(/\/$/, ''),
@@ -126,8 +393,10 @@ class VLMManager {
         };
         this._ready    = true;
         this._loading  = false;
+        this._suspended = false;
         this._modelId  = null;
         this._callbacks.clear();
+        this._stats = { ...this._emptyStats(), backend: 'api', modelId: this._apiConfig.model, device: 'api', loaded: true, releases: this._stats.releases };
         this._emit('ready', { device: 'api' });
     }
 
@@ -150,6 +419,7 @@ class VLMManager {
         this._apiConfig.isOllama   = true;
         this._apiConfig.ollamaBase = base;
         this._apiConfig.think = (think === true || think === false) ? think : null;
+        this._stats.backend = 'ollama';
     }
 
     /**
@@ -223,6 +493,7 @@ class VLMManager {
         }));
     }
 
+
     // ─── Query API ─────────────────────────────────────────────────────────
 
     /**
@@ -232,29 +503,85 @@ class VLMManager {
      * @param {string}   imageSrc      Absolute URL or data-URI of the image.
      * @param {string}   prompt        User's question.
      * @param {Array}    chatHistory   Prior {role, content} turns (may be empty).
-     * @param {object}   callbacks     { onStart?, onToken?, onDone?, onError?, signal?, systemPrompt? }
+     * @param {object}   callbacks     { onStart?, onToken?, onDone?, onError?, signal?, systemPrompt?, maxNewTokens?, temperature? }
      * systemPrompt overrides the shared prompt for this request without changing other clients.
+     * maxNewTokens caps generated tokens. Temperature 0 uses greedy decoding for local models.
+     * onDone receives (text, tokenCount, avgTps, stats).
      * @returns {number}               Request ID.
      */
     query(imageSrc, prompt, chatHistory, callbacks = {}) {
+        const maxNewTokens = Number(callbacks.maxNewTokens);
+        const temperature = callbacks.temperature === '' || callbacks.temperature == null ? NaN : Number(callbacks.temperature);
+        callbacks = {
+            ...callbacks,
+            maxNewTokens: Number.isInteger(maxNewTokens) && maxNewTokens >= 1 && maxNewTokens <= 32768 ? maxNewTokens : undefined,
+            temperature: Number.isFinite(temperature) && temperature >= 0 && temperature <= 2 ? temperature : undefined,
+        };
         if (this._mode === 'api') {
             this._queryApi(imageSrc, prompt, chatHistory, callbacks);
             return 0;
         }
-        if (!this._worker) throw new Error('VLMManager: call init() before query()');
+        if (!this._worker && !this._starting && !this._suspended) throw new Error('VLMManager: call init() before query()');
 
         const id = ++this._nextId;
         this._callbacks.set(id, callbacks);
-        const requestPrompt = callbacks.systemPrompt ? `${callbacks.systemPrompt}\n\n${prompt}` : prompt;
-        this._worker.postMessage({ type: 'generate', id, imageSrc, prompt: requestPrompt, chatHistory });
-
-        // Forward abort signal to the worker so local inference can stop mid-stream
-        if (callbacks.signal) {
-            const onAbort = () => this._worker?.postMessage({ type: 'abort', id });
-            if (callbacks.signal.aborted) onAbort();
-            else callbacks.signal.addEventListener('abort', onAbort, { once: true });
-        }
+        this._queryLocal(id, imageSrc, prompt, chatHistory, callbacks);
         return id;
+    }
+
+    async _queryLocal(id, imageSrc, prompt, chatHistory, callbacks) {
+        this._busy++;
+        clearTimeout(this._releaseTimer);
+        try {
+            if (!this._worker) {
+                // Still checking storage after init(), or released after idling: wait for the worker.
+                const pending = this._startPromise ?? (this._suspended ? this._startLocal(this._modelId) : null);
+                if (!pending || !(await pending) || !this._worker) throw new Error('Download A Model In Settings');
+            }
+            if (!this._callbacks.has(id)) return;   // restarted or switched backend meanwhile
+            const worker = this._worker;
+            const started = Date.now();
+            const model = this._store.get(this._modelId);
+            const prepared = await this._prepareImage(imageSrc, model?.inputSize ?? 512);
+            if (!this._callbacks.has(id) || this._worker !== worker) {
+                prepared.bitmap?.close?.();
+                return;
+            }
+
+            const requestPrompt = callbacks.systemPrompt ? `${callbacks.systemPrompt}\n\n${prompt}` : prompt;
+            const message = {
+                type: 'generate', id, prompt: requestPrompt, chatHistory,
+                imageKey: prepared.key,
+                maxNewTokens: callbacks.maxNewTokens,
+                temperature: callbacks.temperature,
+            };
+            if (prepared.bitmap) message.image = prepared.bitmap; else message.imageSrc = imageSrc;
+            this._imageInfo.set(id, {
+                prepareMs: Date.now() - started,
+                transferred: !!prepared.bitmap,
+                width: prepared.width ?? null, height: prepared.height ?? null,
+                sourceWidth: prepared.sourceWidth ?? null, sourceHeight: prepared.sourceHeight ?? null,
+            });
+            this._worker.postMessage(message, prepared.bitmap ? [prepared.bitmap] : []);
+
+            // Forward abort signal to the worker so local inference can stop mid-stream
+            if (callbacks.signal) {
+                const target = this._worker;
+                const onAbort = () => { if (this._worker === target) target.postMessage({ type: 'abort', id }); };
+                if (callbacks.signal.aborted) onAbort();
+                else callbacks.signal.addEventListener('abort', onAbort, { once: true });
+            }
+        } catch (error) {
+            this._imageInfo.delete(id);
+            if (this._callbacks.delete(id)) callbacks.onError?.(error.message);
+            this._settle();
+        }
+    }
+
+    /** One local question finished (answered, failed or dropped). */
+    _settle() {
+        this._busy = Math.max(0, this._busy - 1);
+        this._scheduleRelease();
     }
 
     // ─── Event Bus ─────────────────────────────────────────────────────────
@@ -270,7 +597,11 @@ class VLMManager {
     }
 
     /**
-     * Subscribe to a global event: 'ready' | 'progress' | 'restart' | 'error'
+     * Subscribe to a global event:
+     *   'ready' | 'progress' | 'restart' | 'error'      (unchanged)
+     *   'unavailable'  the selected local model is not downloaded, so nothing loaded
+     *   'release'      the local model was unloaded after idling
+     *   'stats'        the stats snapshot changed
      * Returns `this` for chaining.
      */
     on(event, handler) {
@@ -288,7 +619,18 @@ class VLMManager {
             case 'ready':
                 this._ready   = true;
                 this._loading = false;
+                this._suspended = false;
+                this._setStats({
+                    device: data.device, dtype: data.dtype ?? this._stats.dtype, loaded: true, suspended: false,
+                    loadMs: data.loadMs ?? (Date.now() - this._loadStarted), heapMB: data.heapMB ?? null,
+                });
+                this._store.announce({ modelId: this._modelId, state: 'ready' }, { broadcast: false });
                 this._emit('ready', data);
+                this._scheduleRelease();
+                break;
+
+            case 'warm':
+                this._setStats({ warmupMs: data.warmupMs, heapMB: data.heapMB ?? this._stats.heapMB });
                 break;
 
             case 'progress':
@@ -303,18 +645,27 @@ class VLMManager {
                 cb?.onToken?.(data.token, data.tps, data.tokenCount);
                 break;
 
-            case 'done':
-                cb?.onDone?.(data.text, data.tokenCount, data.avgTps);
-                this._callbacks.delete(id);
+            case 'done': {
+                const stats = data.stats ? { ...data.stats, image: this._imageInfo.get(id) ?? null } : null;
+                this._imageInfo.delete(id);
+                if (stats) this._setStats({ lastQuery: stats, tokensPerSecond: data.avgTps ?? null, heapMB: stats.heapMB ?? this._stats.heapMB });
+                if (id != null && this._callbacks.delete(id)) {
+                    cb?.onDone?.(data.text, data.tokenCount, data.avgTps, stats);
+                    this._settle();
+                }
                 break;
+            }
 
             case 'error':
-                if (cb?.onError) {
-                    cb.onError(data.message);
+                if (id != null) {
+                    this._imageInfo.delete(id);
+                    if (this._callbacks.delete(id)) {
+                        cb?.onError?.(data.message);
+                        this._settle();
+                    }
                 } else {
-                    this._emit('error', data);
+                    this._failLoad(data.message);
                 }
-                if (id != null) this._callbacks.delete(id);
                 break;
         }
     }
@@ -379,7 +730,8 @@ class VLMManager {
             const headers = { 'Content-Type': 'application/json' };
             if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
-            const body = { model, messages, stream: true, max_tokens: 2048 };
+            const body = { model, messages, stream: true, max_tokens: callbacks.maxNewTokens ?? 2048 };
+            if (callbacks.temperature != null) body.temperature = callbacks.temperature;
 
             const res = await fetch(`${endpoint}/chat/completions`, {
                 method: 'POST',
@@ -510,6 +862,11 @@ class VLMManager {
         try {
             const body = { model, messages, stream: true };
             if (think !== null && think !== undefined) body.think = think;
+            if (callbacks.maxNewTokens != null || callbacks.temperature != null) {
+                body.options = {};
+                if (callbacks.maxNewTokens != null) body.options.num_predict = callbacks.maxNewTokens;
+                if (callbacks.temperature != null) body.options.temperature = callbacks.temperature;
+            }
 
             const res = await fetch(`${ollamaBase}/api/chat`, {
                 method:  'POST',
@@ -587,6 +944,14 @@ class VLMManager {
     _emit(event, data) {
         (this._listeners[event] ?? []).forEach(fn => fn(data));
     }
+}
+
+// window.VLM_MODELS — the model store, on every page that loads this module.
+if (typeof window !== 'undefined' && !window.VLM_MODELS) {
+    const store = modelStore();
+    window.VLM_MODELS = store;
+    // A download the visitor started on the previous page of the site continues here.
+    setTimeout(() => { store.resumePending().catch(() => {}); }, 0);
 }
 
 export { VLMManager };

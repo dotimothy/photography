@@ -7,6 +7,13 @@ const browser = await chromium.launch({
     headless: true,
 });
 const base = process.env.SITE_URL || 'http://127.0.0.1:8765';
+// Tap a key drawn on the camera's display, at its projected position on the phone screen.
+async function lcdTap(page, label) {
+    const key = await page.evaluate(label => cameraControlRects().find(zone => zone.label === label), label);
+    assert.ok(key, `Missing camera key: ${label}`);
+    assert.ok(key.w >= 44 && key.h >= 44, `${label} projects to ${Math.round(key.w)}x${Math.round(key.h)}`);
+    await page.touchscreen.tap(key.x + key.w / 2, key.y + key.h / 2);
+}
 try {
     for (const width of [320, 390, 768]) {
         const context = await browser.newContext({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
@@ -19,25 +26,34 @@ try {
         assert.equal(await page.evaluate(() => state.hasExplored), true);
         assert.equal(await page.locator('#space-intro').isVisible(), false);
         assert.equal(await page.locator('#welcome-screen').isVisible(), false);
-        assert.equal(await page.locator('.mobile-scene-dock').isVisible(), true);
+        // The camera is the interface: one Menu key, no dock of duplicate buttons.
+        assert.equal(await page.locator('#btn-controls-toggle').isVisible(), true);
+        assert.equal(await page.locator('.mobile-scene-dock, .mobile-shutter, #mobile-collection-dial').count(), 0);
+        assert.equal(await page.locator('.mobile-step-back').isVisible(), false);
         await page.waitForFunction(() => lastCameraPhoto?.image && !cameraPhotoBusy);
         assert.equal(await page.evaluate(() => cameraDisplay), 'photo');
         // Discover photos on the camera display without leaving the scene.
         await page.route('**/portfolios/*/fulls/*', route => route.fulfill({ path: 'assets/photographer.jpg', contentType: 'image/jpeg' }));
-        await page.locator('.mobile-shutter').click();
+        await page.waitForFunction(() => !cameraTravel);
+        await lcdTap(page, 'CAMERA SCREEN');
         await page.waitForFunction(() => lastCameraPhoto?.image && !cameraPhotoBusy && !cameraTravel);
         assert.equal(await page.evaluate(() => cameraInspection), 'screen');
         await page.locator('.mobile-step-back').click();
         await page.waitForFunction(() => !cameraInspection && !cameraTravel);
         assert.equal(await page.evaluate(() => state.is3D), true);
-        await page.locator('#mobile-collection-dial').selectOption('food');
+        // Choosing a collection happens on the camera's Home page.
+        await lcdTap(page, 'CAMERA SCREEN');
+        await page.waitForFunction(() => cameraInspection === 'screen' && !cameraTravel);
+        await lcdTap(page, 'HOME');
+        await page.waitForFunction(() => cameraDisplay === 'menu' && !cameraTravel);
+        await lcdTap(page, 'FOOD / FULL GALLERY');
         await page.waitForURL('**/portfolios/food/index.html?*');
         await page.goBack({ waitUntil: 'domcontentloaded' });
         await page.waitForFunction(() => !cameraInspection && !cameraTravel);
         await page.locator('#btn-controls-toggle').click();
         await page.locator('#btn-home').click();
         assert.equal(await page.evaluate(() => state.is3D), false);
-        assert.equal(await page.locator('.mobile-scene-dock').isVisible(), false);
+        assert.equal(await page.locator('.mobile-browse-button').isVisible(), true);
         assert.equal(await page.locator('#mode-2d').evaluate(el => el.scrollWidth > innerWidth), false);
         assert.equal(await page.locator('.nav-card').count(), 6);
         const menu = page.locator('#btn-controls-toggle');
@@ -63,8 +79,8 @@ try {
         assert.match(page.mainFrame().url(), /portfolios\/astronomy\//);
         await page.goBack({ waitUntil: 'domcontentloaded' });
         assert.ok(await page.locator('#mode-2d').evaluate(el => el.classList.contains('active')));
-        await menu.click();
-        await page.locator('#btn-quick-toggle').click();
+        // Back To Camera (top left) is the one switch from the photo list to the 3D camera.
+        await page.locator('.mobile-browse-button').click();
         assert.equal(await page.evaluate(() => state.is3D), true);
         assert.equal(await page.locator('#welcome-screen').isVisible(), false);
         assert.deepEqual(errors, []);

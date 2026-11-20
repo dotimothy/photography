@@ -47,12 +47,17 @@ try {
         await page.route('**/metadata/metadata.json', route => route.fulfill({ json: { image_order: ['Fixture'], Fixture: {} } }));
         await page.route('**/fulls/*.jpg', route => route.fulfill({ path: 'assets/photographer.jpg', contentType: 'image/jpeg' }));
         for (const gallery of ['astronomy', 'food', 'landscape', 'planes', 'wildlife']) {
+            // Home lists every collection once; each key opens its full gallery.
             await boot(page);
-            await tap(page, mobile, 'FULL GALLERIES');
-            assert.equal(await page.evaluate(() => cameraDisplay), 'galleries');
             await tap(page, mobile, `${gallery.toUpperCase()} / FULL GALLERY`);
             await checkDestination(page, mobile, gallery);
         }
+        // The physical collection dial (C) shows the same list on its own page.
+        await boot(page);
+        await page.evaluate(() => runCameraAction('collection'));
+        await page.waitForFunction(() => !cameraTravel && cameraDisplay === 'galleries');
+        await tap(page, mobile, 'PLANES / FULL GALLERY');
+        await checkDestination(page, mobile, 'planes');
         for (const finder of [false, true]) {
             await boot(page);
             await page.evaluate(async finder => {
@@ -66,7 +71,7 @@ try {
         await boot(page);
         await page.evaluate(() => runCameraAction('settings'));
         await page.waitForFunction(() => !cameraTravel);
-        await tap(page, mobile, 'FULL GALLERIES');
+        assert.equal(await page.evaluate(() => cameraDisplay), 'settings');
         await tap(page, mobile, 'HOME');
         assert.equal(await page.evaluate(() => cameraDisplay), 'menu');
         assert.deepEqual(errors, []);

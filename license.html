@@ -10,13 +10,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --bg-color: #0a0a0a;
-            --container-bg: #111111;
-            --text-color: #e0e0e0;
+            --bg-color: #04070c;
+            --container-bg: rgba(8, 12, 20, .72);
+            --text-color: #e0e6ea;
             --accent-color: #ffffff;
-            --fade-text: #888888;
-            --border-color: #333333;
-            --code-bg: #1a1a1a;
+            --fade-text: #93a0aa;
+            --border-color: rgba(255, 255, 255, .14);
+            --code-bg: rgba(255, 255, 255, .04);
+            --cyan: #00e5ff;
         }
 
         * {
@@ -30,9 +31,20 @@
             color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
             line-height: 1.6;
-            padding: 40px 20px;
+            /* Room at the top for Back, which floats over the page corner. */
+            padding: calc(max(12px, env(safe-area-inset-top, 0px)) + 60px) 20px 40px;
             display: flex;
             justify-content: center;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at 15% -5%, rgba(0, 229, 255, .14), transparent 43%),
+                radial-gradient(ellipse at 90% 8%, rgba(128, 58, 255, .12), transparent 46%);
+            background-repeat: no-repeat;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 3px;
         }
 
         .container {
@@ -77,13 +89,14 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
+            min-height: 44px;
             color: var(--fade-text);
             text-decoration: none;
             font-size: 0.9rem;
             transition: 0.3s;
-            padding: 8px 16px;
+            padding: 0 18px;
             border: 1px solid var(--border-color);
-            border-radius: 20px;
+            border-radius: 999px;
         }
 
         .github-link:hover {
@@ -143,17 +156,49 @@
             color: var(--fade-text);
         }
 
-        .close-hint {
+        /* Back: the same control as on the gallery pages (assets/css/portfolio-controls.css). Kept inline
+           because this file is also copied next to every gallery, where relative asset paths differ. */
+        #portfolio-return {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            font-size: 0.8rem;
-            color: var(--fade-text);
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 4px;
-            backdrop-filter: blur(5px);
+            top: max(12px, env(safe-area-inset-top, 0px));
+            left: max(12px, env(safe-area-inset-left, 0px));
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 999px;
+            background: rgba(8, 12, 20, .72);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            color: #eef4f8;
+            font: 600 14px/1 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            text-decoration: none;
+            white-space: nowrap;
         }
+
+        #portfolio-return[hidden] { display: none; }
+        #portfolio-return:hover { border-color: rgba(255, 255, 255, .32); background: rgba(22, 30, 44, .82); }
+        #portfolio-return svg { flex: 0 0 20px; }
+
+        .portfolio-return-label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+        }
+
+        @media (min-width: 768px) {
+            #portfolio-return { width: auto; padding: 0 16px 0 12px; }
+            .portfolio-return-label { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+        }
+
+        /* Shown inside a gallery's own license dialog, which has a close button of its own. */
+        html.license-nested body { padding-top: 40px; }
 
         @media (max-width: 600px) {
             .container {
@@ -177,7 +222,7 @@
 </head>
 
 <body>
-    <div class="close-hint">Press ESC to close</div>
+    <a id="portfolio-return" href="./index.html?mode=3d" target="_top"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span class="portfolio-return-label">Back To Camera</span></a>
 
     <div class="container">
         <div class="header">
@@ -250,6 +295,36 @@ SOFTWARE.</pre>
     </div>
 
     <script>
+        // Back leads one step out: to the camera when this page was opened on its own, or back to the
+        // page that framed it. A gallery's license dialog closes itself, so Back is not offered there.
+        (() => {
+            const back = document.getElementById('portfolio-return');
+            const label = back.querySelector('.portfolio-return-label');
+            // Copies of this page live beside each gallery, two folders below the homepage.
+            const home = /\/portfolios\/[^/]+\/[^/]*$/.test(location.pathname) ? '../../' : './';
+            back.href = home + 'index.html?mode=3d';
+            const watermark = document.querySelector('.license-watermark');
+            if (watermark) watermark.src = home + 'assets/watermark.png';
+            if (window.parent === window) return;
+            let closesFrame = false;
+            try { closesFrame = typeof window.parent.closeiFrame === 'function'; } catch (_) { /* cross-origin embed */ }
+            if (!closesFrame) {
+                back.hidden = true;
+                document.documentElement.classList.add('license-nested');
+                return;
+            }
+            label.textContent = 'Back To Main Page';
+            back.setAttribute('aria-label', 'Back To Main Page');
+            back.href = home + 'index.html';
+            back.addEventListener('click', (event) => {
+                if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                try {
+                    window.parent.closeiFrame();
+                    event.preventDefault();
+                } catch (_) { /* follow the link */ }
+            });
+        })();
+
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 // Universal actions to close potential parents

@@ -10,3 +10,7 @@ assets/portfolio.csv
 __pycache__
 *.pyc
 portfolios/
+# Claude Code: agent worktrees and personal settings
+.claude/worktrees/
+.claude/settings.local.json
+scripts/_t_*.mjs

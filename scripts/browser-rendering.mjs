@@ -15,7 +15,8 @@ async function openRendering(page, mobile) {
         document.getElementById('space-intro').style.display = 'none';
         els.welcome.style.display = 'none';
     });
-    if (mobile) await page.locator('#btn-controls-toggle').click();
+    // Settings lives in the one Menu at the top right on every screen size.
+    await page.locator('#btn-controls-toggle').click();
     await page.locator('#btn-open-settings').click();
     await page.locator('[data-tab="rendering"]').click();
     assert.ok(await page.locator('[data-tab="rendering"]').evaluate((el) => el.classList.contains('active')));

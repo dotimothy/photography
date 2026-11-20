@@ -1,83 +1,714 @@
-/* Outside the gallery's auto-hiding controls so there is always a way home. */
-#portfolio-return {
-    position: fixed;
-    top: max(15px, env(safe-area-inset-top));
-    left: max(15px, env(safe-area-inset-left));
-    z-index: 10050;
+/*
+ * One control layout for the generated gallery pages (index.html and
+ * immersive.html of the gallery template, which this repository cannot edit).
+ *
+ *   top-left      Back (portfolio-controls.css) - steps out one level at a time
+ *   top-centre    gallery title / viewer hint / zoom readout (text only)
+ *   top-right     the template's own menu trigger; its list becomes a labelled panel
+ *   bottom edge   only what belongs to the current state: shape toggle (3D),
+ *                 frame counter + EXIF + thumbnails (photo), zoom toolbar (immersive)
+ *
+ * Every selector is anchored on a template id, so a rule simply stops
+ * matching if the template changes. Scripts are optional: without
+ * gallery-layout.js the template's FPS readout stays hidden, its footer and
+ * "Close Viewer" item stay where the template put them.
+ */
+
+:root {
+    /* Space kept free at the bottom-right for the AI panel's own round toggle. */
+    --pg-ai-reserve: 0px;
+    /* Height taken at the bottom edge by the thumbnail strip, when it is showing. */
+    --pg-stack: 0px;
+    --pg-pane: var(--vlm-pane-width, 0px);
+}
+html.portfolio-embedded,
+html.portfolio-ai-toggle { --pg-ai-reserve: 76px; }
+body:has(#imageViewer.visible #thumbnail-selector:not(.hidden)) { --pg-stack: 80px; }
+
+:focus-visible { outline-color: var(--pc-accent); }
+
+/* Modal layers bring their own close button, so Back steps aside. */
+body:has(#settingsModal.visible, #licenseOverlay.visible, #lightPollutionMapOverlay.visible) #portfolio-return {
+    visibility: hidden;
+}
+/* Slideshow: Back fades with the template's own controls and returns on any tap or key focus. */
+body:has(#viewer-controls-container.fade-out) #portfolio-return:not(:focus-visible) {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ---------- Top bar ---------- */
+#ui-layer #title {
+    --pg-title-edge: max(var(--pc-left), var(--pc-right));
+    top: var(--pc-top);
+    left: calc(var(--pg-title-edge) + 52px);
+    right: calc(var(--pg-title-edge) + 52px + var(--pg-pane));
+    width: auto;
+    max-width: none;
+    margin: 0;
+    transform: none;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 0;
+    font-size: clamp(17px, 5.2vw, 21px);
+    line-height: 44px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+@media (min-width: 768px) {
+    #ui-layer #title {
+        left: calc(var(--pg-title-edge) + 216px);
+        right: calc(var(--pg-title-edge) + 216px + var(--pg-pane));
+        font-size: clamp(20px, 2.6vw, 30px);
+    }
+}
+
+#controls-container,
+#viewer-controls-container {
+    top: var(--pc-top);
+    right: calc(var(--pc-right) + var(--pg-pane));
+    gap: 8px;
+    max-width: calc(100vw - var(--pg-pane) - var(--pc-left) - var(--pc-right));
+}
+/* The photo viewer has already stepped aside for the AI panel, and its menu sits inside it. */
+#viewer-controls-container { right: var(--pc-right); }
+/* A menu that is open sits above the page's other layers, the photo info card included. */
+#ui-layer:has(#controls-container.expanded) { z-index: 620; }
+#imageViewer:has(#viewer-controls-container.expanded) { z-index: 720; }
+
+#controls-toggle,
+#viewer-controls-toggle {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--pc-line);
+    border-radius: 50%;
+    background: var(--pc-glass);
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    color: var(--pc-text);
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+#controls-toggle:hover,
+#viewer-controls-toggle:hover {
+    border-color: var(--pc-line-strong);
+    background: var(--pc-glass-hover);
+    transform: none;
+}
+#controls-toggle[aria-expanded="true"],
+#viewer-controls-toggle[aria-expanded="true"] { border-color: var(--pc-accent); color: var(--pc-accent); }
+#controls-toggle svg,
+#viewer-controls-toggle svg { width: 20px; height: 20px; color: inherit; }
+
+/* The template wires its menu trigger only once the page has loaded (window.onload) and keeps the
+   trigger transparent until then; while the loading screen is up it must not swallow taps. */
+body:has(#loading-screen:not(.hidden)) #controls-container button { pointer-events: none; }
+
+/* ---------- Menu panel: the template's icon column, with a name on every row ---------- */
+#controls-list,
+#viewer-controls-list { visibility: hidden; }
+#controls-container.expanded #controls-list,
+#viewer-controls-container.expanded #viewer-controls-list {
+    visibility: visible;
+    box-sizing: border-box;
+    min-width: 212px;
+    max-width: 100%;
+    max-height: calc(100vh - var(--pc-top) - var(--pc-bottom) - 52px);
+    max-height: calc(100dvh - var(--pc-top) - var(--pc-bottom) - 52px);
+    padding: 6px;
+    gap: 2px;
+    align-items: stretch;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--pc-line);
+    border-radius: 14px;
+    background: var(--pc-glass);
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    box-shadow: var(--pc-shadow);
+}
+#controls-container #controls-list button,
+#viewer-controls-container #viewer-controls-list button {
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 44px;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 14px 0 12px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--pc-text);
+    font: 600 14px/1.2 'Roboto', sans-serif;
+    text-align: left;
+    white-space: nowrap;
+    touch-action: manipulation;
+}
+#controls-container #controls-list button[hidden],
+#viewer-controls-container #viewer-controls-list button[hidden] { display: none; }
+#controls-container #controls-list button:hover,
+#viewer-controls-container #viewer-controls-list button:hover {
+    border-color: transparent;
+    background: rgba(255, 255, 255, .09);
+    transform: none;
+}
+#controls-container #controls-list button:focus-visible,
+#viewer-controls-container #viewer-controls-list button:focus-visible {
+    outline: 2px solid var(--pc-accent);
+    outline-offset: -2px;
+    border-radius: 10px;
+}
+#controls-list button svg,
+#viewer-controls-list button svg { flex: 0 0 20px; }
+/* Row names: the template's tooltip, or the Title Case name gallery-layout.js files under data-label. */
+#controls-list button::after,
+#viewer-controls-list button::after {
+    content: attr(title);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#controls-list button[data-label]::after,
+#viewer-controls-list button[data-label]::after { content: attr(data-label); }
+#controls-list button.portfolio-menu-item::after,
+#viewer-controls-list button.portfolio-menu-item::after,
+#controls-list #mode-toggle::after { content: none; }
+#controls-list #mode-toggle::before {
+    content: "";
+    flex: 0 0 20px;
+    height: 20px;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* Back already closes the photo, so the menu does not offer it twice. */
+html.portfolio-back-steps[data-gallery-state] #exitViewer { display: none; }
+
+/* Credits and the frame-rate readout live at the foot of the menu once gallery-layout.js files them there. */
+#ui-layer > #fps-counter { display: none !important; }
+#controls-list > footer {
+    position: static;
+    width: auto;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--pc-line);
+    text-align: left;
+    z-index: auto;
+}
+#controls-list > footer h2 {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    opacity: 1;
+    font-size: 0;
+}
+#controls-list > footer a {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 44px;
+    padding: 0 14px 0 12px;
+    border-radius: 10px;
+    color: var(--pc-text-dim);
+    font: 500 13px/1.2 'Roboto', sans-serif;
+    text-decoration: none;
+    white-space: nowrap;
+}
+#controls-list > footer a:first-child::before { content: "\00a9\00a0"; }
+#controls-list > footer a:hover { background: rgba(255, 255, 255, .09); color: var(--pc-text); opacity: 1; }
+#controls-list > footer a:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -2px; border-radius: 10px; }
+#controls-list > #fps-counter {
+    position: static !important;
+    display: block !important;
+    padding: 8px 12px 6px;
+    border-radius: 0;
+    background: none;
+    color: var(--pc-text-dim);
+    font: 500 12px/1.2 'Roboto', sans-serif !important;
+    font-variant-numeric: tabular-nums;
+    opacity: 1 !important;
+}
+/* The 3D scene is paused behind the 2D grid, so its frame rate would be stale there. */
+body:has(#gallery-2d.active) #controls-list > #fps-counter { display: none !important; }
+
+/* Short screens (phone landscape): two columns so the whole menu stays on screen. */
+@media (max-height: 520px) {
+    #controls-container.expanded #controls-list,
+    #viewer-controls-container.expanded #viewer-controls-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 344px;
+    }
+    #controls-list > footer,
+    #controls-list > #fps-counter { grid-column: 1 / -1; }
+    #controls-list > footer h2 { flex-direction: row; flex-wrap: wrap; }
+}
+
+/* ---------- 2D grid ---------- */
+#gallery-2d {
+    top: calc(var(--pc-top) + var(--pg-grid-header-height, 58px));
+    right: var(--pg-pane);
+    width: auto;
+    padding: 8px max(24px, var(--pc-safe-right)) calc(24px + var(--pc-safe-bottom)) max(24px, var(--pc-safe-left));
+}
+@media (max-width: 600px) {
+    #gallery-2d {
+        gap: 8px;
+        padding-left: var(--pc-left);
+        padding-right: var(--pc-right);
+    }
+}
+
+/* ---------- 3D scene: its one action, the shape toggle ---------- */
+#gallery-3d > button {
+    left: calc((100% - var(--pg-pane)) / 2) !important;
+    bottom: max(16px, var(--pc-safe-bottom)) !important;
+    transform: translateX(-50%);
+    min-height: 44px !important;
+    padding: 0 18px !important;
+    border: 1px solid var(--pc-line) !important;
+    border-radius: 999px !important;
+    background: var(--pc-glass) !important;
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    color: var(--pc-text) !important;
+    font: 600 14px/1 'Roboto', sans-serif;
+    white-space: nowrap;
+    touch-action: manipulation;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+#gallery-3d > button:hover { border-color: var(--pc-line-strong) !important; background: var(--pc-glass-hover) !important; }
+/* An open menu owns the screen until it is dismissed (it can reach the bottom edge on a phone held sideways). */
+body:has(#controls-container.expanded) #gallery-3d > button { opacity: 0; pointer-events: none; }
+@media (max-width: 600px) {
+    /* Framed in the homepage on a phone, the bottom corners hold the homepage's own round controls. */
+    html.portfolio-embedded #gallery-3d > button { bottom: calc(max(16px, var(--pc-safe-bottom)) + 60px) !important; }
+}
+#gallery-3d > button:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 3px; border-radius: 999px; }
+
+/* ---------- Photo viewer ---------- */
+#imageViewer { width: calc(100% - var(--pg-pane)); height: calc(100% - var(--pg-sheet, 0px)); }
+/* The photo's box is positioned, so the template's absolutely placed image is measured against it. */
+#full-image-container { position: absolute; inset: 0; width: auto; height: auto; }
+@media (min-height: 600px) {
+    /* Room for the top bar and the frame line, so neither sits on the photograph. */
+    #full-image-container { top: 60px; bottom: calc(72px + var(--pg-stack)); }
+}
+#viewer-hint {
+    top: calc(var(--pc-top) + 15px);
+    color: var(--pc-text-dim);
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: .06em;
+}
+@media (max-width: 767px), (hover: none), (pointer: coarse) {
+    /* Keyboard shortcuts mean nothing on a touch screen. */
+    #viewer-hint { display: none; }
+}
+#image-counter {
+    bottom: calc(var(--pc-bottom) + var(--pg-stack));
+    color: var(--pc-text-dim);
+    font: 500 12px/20px 'Roboto', sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .14em;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, .9);
+}
+#viewer-exif-strip {
+    bottom: calc(var(--pc-bottom) + var(--pg-stack) + 26px);
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    width: max-content;
+    max-width: calc(100% - 24px - 2 * var(--pg-ai-reserve));
+    transition: opacity .2s ease;
+}
+#viewer-exif-strip,
+#metadataViewer h2[data-frame-caption] {
+    font: 500 12px/1.45 'Roboto Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+#viewer-exif-strip {
+    padding: 4px 8px;
+    text-align: center;
+    color: var(--pc-text);
+    background: var(--pc-glass);
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+#viewer-exif-strip:empty { padding: 0; }
+
+#viewer-exif-strip[data-frame-caption] {
+    bottom: calc(var(--pc-bottom) + var(--pg-stack));
+    flex-direction: column;
+    gap: 2px;
+}
+
+#imageViewer:has(#viewer-exif-strip[data-frame-caption]) #image-counter { opacity: 0; }
+.viewer-frame-date { font-size: 11px; color: var(--pc-text-dim); }
+
+.gallery-contact-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 .6rem;
+    color: var(--pc-text);
+    text-underline-offset: .2em;
+}
+
+.gallery-contact-link:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -2px; }
+
+/* The info card repeats the same exposure data in full, and so does the AI panel's sheet on a phone. */
+body:has(#metadataViewer.visible) #viewer-exif-strip { opacity: 0; }
+@media (max-width: 600px) {
+    html.portfolio-ai-open #viewer-exif-strip { opacity: 0; }
+    html.portfolio-ai-open #full-image-container { top: 60px; bottom: 36px; }
+}
+
+#thumbnail-selector {
+    /* --pg-hud-reserve: the homepage's frame-rate readout, when this page is framed over it (gallery-return.js). */
+    left: var(--pg-hud-reserve, 0px);
+    width: calc(100% - var(--pg-ai-reserve) - var(--pg-hud-reserve, 0px));
+    height: calc(80px + var(--pc-safe-bottom));
+    padding: 5px 5px calc(5px + var(--pc-safe-bottom)) max(5px, var(--pc-safe-left));
+    border-top: 1px solid var(--pc-line);
+    background: rgba(8, 12, 20, .86);
+    scrollbar-width: none;
+}
+#thumbnail-selector .thumb-small { border-radius: 4px; }
+#thumbnail-selector .thumb-small.active { border-color: var(--pc-accent); }
+
+/* Previous / Next (the template hides them below 768px, where swiping does the job). */
+.nav-arrow {
+    z-index: 650;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid var(--pc-line);
+    border-radius: 50%;
+    background: var(--pc-glass);
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    color: var(--pc-text);
+    font-size: 18px;
+    line-height: 1;
+    opacity: 1;
+    transition: background-color .18s ease, border-color .18s ease, opacity .25s ease;
+}
+.nav-arrow:hover { border-color: var(--pc-line-strong); background: var(--pc-glass-hover); opacity: 1; }
+.nav-arrow:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 3px; border-radius: 50%; }
+#leftArrow { left: var(--pc-left); }
+#rightArrow { right: calc(var(--pc-right) + var(--pg-pane)); }
+/* An open menu owns the right edge until it is dismissed. */
+body:has(#viewer-controls-container.expanded) .nav-arrow { opacity: 0; pointer-events: none; }
+
+/* Photo info: a card that drops from under Back, the same place the zoomed viewer shows it,
+   clear of the frame line, the thumbnails and anything parked in the bottom corners. */
+#metadataViewer {
+    top: calc(var(--pc-top) + 56px);
+    bottom: auto;
+    left: var(--pc-left);
+    box-sizing: border-box;
+    width: min(340px, calc(100vw - var(--pc-left) - var(--pc-right) - var(--pg-pane)));
+    max-height: calc(100vh - var(--pg-sheet, 0px) - var(--pc-top) - var(--pc-bottom) - var(--pg-stack) - 124px);
+    padding: 14px 16px;
+    overflow-y: auto;
+    border: 1px solid var(--pc-line);
+    border-radius: 14px;
+    background: var(--pc-glass);
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    box-shadow: var(--pc-shadow);
+    color: var(--pc-text);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity .22s ease, transform .22s ease, visibility 0s .22s;
+}
+#metadataViewer.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity .22s ease, transform .22s ease, visibility 0s;
+}
+#metadataViewer h2 { margin: 0 0 6px; font: 600 15px/1.3 'Roboto', sans-serif; overflow-wrap: anywhere; }
+#metadataViewer p { font: 400 13px/1.55 'Roboto', sans-serif; opacity: .82; }
+
+/* ---------- Modal layers ---------- */
+/* The template ships its license dialog with class="hidden" and never removes it, so the dialog
+   stayed invisible once opened. "visible" is the class it does toggle; let that one win. */
+#licenseOverlay.hidden.visible { display: flex !important; opacity: 1 !important; pointer-events: auto !important; }
+/* Dialogs keep inside the screen's safe area. */
+#licenseOverlay,
+#lightPollutionMapOverlay,
+#settingsModal { box-sizing: border-box; padding: var(--pc-top) var(--pc-right) var(--pc-bottom) var(--pc-left); }
+#licenseContainer { width: min(800px, 100%); height: min(80%, 100%); border-color: var(--pc-line); border-radius: 14px; }
+#lightPollutionMapContainer { width: min(1000px, 100%); height: min(80%, 100%); border-radius: 14px; }
+#settingsModal { height: 100%; }
+#settingsModal .settings-content {
+    box-sizing: border-box;
+    width: min(400px, 100%);
+    max-height: 100%;
+    overflow-y: auto;
+    border-color: var(--pc-line);
+    border-radius: 14px;
+    background: rgba(8, 12, 20, .92);
+    box-shadow: var(--pc-shadow);
+}
+#settingsModal input[type="range"] {
+    height: 44px;
+    margin: 0;
+    background: linear-gradient(rgba(255, 255, 255, .16), rgba(255, 255, 255, .16)) center / 100% 4px no-repeat;
+    border-radius: 0;
+    cursor: pointer;
+}
+#settingsModal input[type="range"]::-webkit-slider-thumb { width: 20px; height: 20px; background: var(--pc-accent); }
+#settingsModal input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--pc-accent); }
+#settingsModal label { margin-bottom: 4px; }
+#settingsModal .val-display { color: var(--pc-accent); }
+#settingsModal .setting-group { margin-bottom: 16px; }
+#settingsModal .setting-group h3 { margin-bottom: 6px; color: var(--pc-text-dim); }
+#closeSettings,
+#closeLicense,
+#lightPollutionMapCloseButton,
+#map-overlay .btn-close-map {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--pc-line);
+    border-radius: 50%;
+    background: var(--pc-glass);
+    color: var(--pc-text);
+    font-size: 14px;
+    line-height: 1;
+}
+#closeSettings:hover,
+#closeLicense:hover,
+#lightPollutionMapCloseButton:hover,
+#map-overlay .btn-close-map:hover { border-color: var(--pc-line-strong); background: var(--pc-glass-hover); }
+#resetSettings { min-height: 44px; padding: 0 18px; border-radius: 999px; font: 600 14px/1 'Roboto', sans-serif; }
+.license-header { padding: 8px 8px 8px 20px; }
+
+/* ---------- immersive.html (everything here hangs off ids only that page has) ---------- */
+#hud .toolbar {
+    bottom: max(16px, var(--pc-safe-bottom)) !important;
+    gap: 2px;
+    padding: 4px !important;
+    border: 1px solid var(--pc-line);
+    border-radius: 999px;
+    background: var(--pc-glass);
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    box-shadow: var(--pc-shadow);
+}
+#hud .icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--pc-text);
+    opacity: .86;
+    touch-action: manipulation;
+    transition: background-color .18s ease, opacity .18s ease;
+}
+#hud .icon-btn[hidden] { display: none; }
+#hud .icon-btn:hover { background: rgba(255, 255, 255, .09); opacity: 1; }
+#hud .icon-btn:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -2px; }
+#hud .icon-btn.portfolio-menu-item svg { fill: none; }
+@media (max-width: 400px) {
+    /* A small phone zooms by pinching; the toolbar keeps Reset and gives up the two step buttons to stay on screen. */
+    #hud #btn-minus,
+    #hud #btn-plus { display: none; }
+}
+/* Inside a gallery the gallery's own Back closes this viewer. */
+html.portfolio-nested-steps #hud #btn-close { display: none !important; }
+/* Zoom readout: top-centre, where the gallery shows its title. */
+#hud #info-text {
+    top: calc(var(--pc-top) + 14px);
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--pc-text-dim);
+    font: 500 12px/16px 'Roboto', sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .08em;
+    white-space: nowrap;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, .9);
+}
+#hud #metadata-panel {
+    top: calc(var(--pc-top) + 56px);
+    left: var(--pc-left);
+    box-sizing: border-box;
+    width: min(300px, calc(100vw - var(--pc-left) - var(--pc-right)));
+    max-width: none;
+    max-height: calc(100vh - var(--pc-top) - 56px - 86px - var(--pc-safe-bottom));
+    padding: 14px 16px;
+    border-color: var(--pc-line);
+    border-radius: 14px;
+    background: var(--pc-glass);
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    box-shadow: var(--pc-shadow);
+}
+#empty-state .btn-upload,
+#empty-state #btn-load-url {
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--pc-line);
+    border-radius: 999px;
+    background: var(--pc-glass);
+    color: var(--pc-text);
+    font: 600 14px/1 'Roboto', sans-serif;
+    cursor: pointer;
+}
+#empty-state .btn-upload:hover,
+#empty-state #btn-load-url:hover { border-color: var(--pc-line-strong); background: var(--pc-glass-hover); }
+#empty-state #url-input { min-width: 0; min-height: 44px; box-sizing: border-box; border-radius: 999px; padding: 0 16px; }
+#empty-state #url-input:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 3px; }
+#empty-state .upload-box { box-sizing: border-box; max-width: calc(100vw - 24px); padding: 28px 20px; border-color: var(--pc-line); border-radius: 14px; background: rgba(8, 12, 20, .92); }
+#empty-state #url-input-container { max-width: 100%; }
+
+/* ---------- AI Inspector entry ---------- */
+/* gallery-inspector.js files this button into a menu; until then it has no place on the page. */
+#portfolio-inspector:not(.portfolio-menu-item) { display: none; }
+/* Only if the template ever loses its menus: a single action on the bottom edge. */
+#portfolio-inspector.portfolio-menu-item.portfolio-floating {
+    position: fixed;
+    right: var(--pc-right);
+    bottom: var(--pc-bottom);
+    z-index: 1200;
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
     min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--pc-line);
+    border-radius: 999px;
+    background: var(--pc-glass);
+    -webkit-backdrop-filter: var(--pc-blur);
+    backdrop-filter: var(--pc-blur);
+    color: var(--pc-text);
+    font: 600 14px/1 'Roboto', sans-serif;
+    cursor: pointer;
+}
+#portfolio-inspector.portfolio-floating[hidden] { display: none; }
+#portfolio-inspector.portfolio-floating:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 3px; border-radius: 999px; }
+
+@media (prefers-reduced-motion: reduce) {
+    #controls-toggle,
+    #viewer-controls-toggle,
+    #controls-list,
+    #viewer-controls-list,
+    #metadataViewer,
+    #metadataViewer.visible,
+    #gallery-3d > button,
+    .nav-arrow,
+    #hud .icon-btn { transition: none; }
+}
+
+/* The toolbar template keeps the layout switch in the header and the viewer
+   details in a dock. Reserve their space before positioning portfolio controls. */
+#ui-layer:has(#layout-switch) #title {
+    --pg-title-inset: calc(var(--pg-title-edge) + max(216px, var(--pg-gallery-toolbar-width, 0px) + 12px));
+    left: var(--pg-title-inset);
+    right: calc(var(--pg-title-inset) + var(--pg-pane));
+}
+
+@media (max-width: 600px) {
+    #ui-layer:has(#layout-switch) #title {
+        top: calc(var(--pc-top) + 58px);
+        left: var(--pg-title-edge);
+        right: calc(var(--pg-title-edge) + var(--pg-pane));
+    }
+
+    body:has(#layout-switch) #gallery-2d {
+        --pg-grid-header-height: 108px;
+    }
+}
+
+html.portfolio-ai-open #ui-layer:has(#layout-switch) #title {
+    top: calc(var(--pc-top) + 58px);
+    left: var(--pg-title-edge);
+    right: calc(var(--pg-title-edge) + var(--pg-pane));
+}
+
+html.portfolio-ai-open body:has(#layout-switch) #gallery-2d {
+    --pg-grid-header-height: 108px;
+}
+
+#gallery-dock {
+    left: var(--pg-hud-reserve, 0px);
+    right: calc(var(--pg-pane) + var(--pg-ai-reserve));
+    padding: 0 var(--pc-right) var(--pc-bottom) var(--pc-left);
+}
+
+#viewer-controls-container .gallery-toolbar button:hover {
+    transform: none;
+}
+
+#imageViewer:has(#viewer-dock) {
+    padding-top: calc(var(--pc-top) + 52px);
+}
+
+#imageViewer #viewer-dock {
+    padding-bottom: var(--pc-safe-bottom);
+}
+
+#imageViewer:has(#viewer-dock) #full-image-container {
+    position: relative;
+    inset: auto;
+}
+
+#viewer-dock #image-counter,
+#viewer-dock #viewer-exif-strip,
+#viewer-dock #thumbnail-selector {
+    position: static;
+}
+
+#viewer-dock #viewer-exif-strip {
+    justify-self: center;
     box-sizing: border-box;
-    padding: 10px 14px;
-    border: 1px solid #ffffff50;
-    border-radius: 24px;
-    background: #08121eef;
-    color: #f0f7fc;
-    font: 600 14px/1.4 'Roboto', sans-serif;
-    text-decoration: none;
-    pointer-events: auto;
-    touch-action: manipulation;
 }
-#portfolio-return:hover { background: #193349; color: white; opacity: 1; }
-#portfolio-return:focus-visible { outline: 2px solid #b8eaff; outline-offset: 3px; }
-/* Keep portfolio navigation in its own row, clear of gallery controls. */
-@media (max-width: 768px) {
-    body:has(#portfolio-return) {
-        --gallery-controls-top: calc(max(15px, env(safe-area-inset-top)) + 56px);
-    }
-    body:has(#portfolio-return) #title {
-        top: var(--gallery-controls-top);
-        box-sizing: border-box;
-    }
-    body:has(#portfolio-return) #controls-container,
-    body:has(#portfolio-return) #viewer-controls-container {
-        top: var(--gallery-controls-top);
-    }
-    body:has(#controls-container) #title { padding-right: 76px; }
-    body:has(#portfolio-return) #top-controls {
-        top: calc(var(--gallery-controls-top) + 48px);
-        max-width: calc(100vw - 24px);
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    body:has(#top-controls) #gallery-2d { padding-top: calc(var(--gallery-controls-top) + 104px); }
-    body:has(#portfolio-return) #viewer-controls {
-        top: var(--gallery-controls-top);
-        left: max(12px, env(safe-area-inset-left));
-        right: max(12px, env(safe-area-inset-right));
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        gap: 6px;
-    }
-    #ui-layer:has(#controls-container.expanded),
-    #imageViewer:has(#viewer-controls-container.expanded) { z-index: 12000; }
-    #controls-container.expanded,
-    #viewer-controls-container.expanded { z-index: 12001; }
+
+#viewer-dock:has(#metadataViewer.visible) #viewer-exif-strip,
+#viewer-dock:has(#viewer-exif-strip[data-frame-caption]) #image-counter {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
 }
-/* Keep the gallery's FPS readout below the persistent return control. */
-body:has(#portfolio-return) #fps-counter {
-    top: calc(max(15px, env(safe-area-inset-top)) + 56px) !important;
-    left: max(15px, env(safe-area-inset-left)) !important;
+
+#viewer-dock #metadataViewer {
+    width: min(340px, calc(100% - var(--pc-left) - var(--pc-right) - var(--pg-ai-reserve)));
+    max-height: min(28dvh, 13rem);
+    margin-left: var(--pc-left);
 }
-#portfolio-inspector {
-    position: fixed; right: max(16px, env(safe-area-inset-right));
-    bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 4501;
-    min-height: 48px; padding: 12px 18px; border: 1px solid #a4d8f0;
-    border-radius: 24px; background: #102638; color: white;
-    font: 600 14px 'Roboto', sans-serif; pointer-events: auto;
+
+#viewer-dock #thumbnail-selector { margin-left: var(--pg-hud-reserve, 0px); }
+
+body:has(#layout-switch):has(#controls-container.expanded) #gallery-2d .thumb {
+    pointer-events: none;
 }
-#portfolio-inspector[hidden] { display: none; }
-#portfolio-inspector:focus-visible { outline: 2px solid #b8eaff; outline-offset: 3px; }
-@media (max-width: 768px) {
-    #portfolio-return { padding: 10px 12px; font-size: 13px; }
-    #portfolio-inspector {
-        top: max(15px, env(safe-area-inset-top));
-        bottom: auto;
-        right: max(12px, env(safe-area-inset-right));
-        min-height: 44px;
-        padding: 10px 12px;
-        font-size: 13px;
-    }
+
+body:has(#layout-switch) #gallery-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    white-space: nowrap;
+}
+
+body:has(#layout-switch):has(#settingsModal.visible, #licenseOverlay.visible, #lightPollutionMapOverlay.visible) #gallery-footer {
+    visibility: hidden;
 }

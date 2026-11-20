@@ -14,6 +14,8 @@ const fields = {
   ollamaEndpoint: ["vlmOllamaEndpoint", "http://localhost:11434"],
   ollamaModel: ["vlmOllamaModel", "gemma3"],
   systemPrompt: ["vlmSystemPrompt", ""],
+  maxNewTokens: ["vlmMaxNewTokens", ""],
+  temperature: ["vlmTemperature", ""],
 };
 const config = () => ({
   enabled: true,
@@ -28,6 +30,8 @@ function applyConfig() {
     manager = overlay.manager;
   if (c.type === "api") manager.setApiMode(c.apiEndpoint, c.apiKey, c.apiModel);
   else if (c.type === "ollama") manager.setOllamaMode(c.ollamaEndpoint, c.ollamaModel, c.ollamaThink);
+  // init/restart only load a local model that was already downloaded in Settings > AI Inspector;
+  // otherwise they report 'not-downloaded' and the panel points the visitor at settings.
   else if (manager._modelId && manager._modelId !== c.model) manager.restart(c.model);
   else manager.init(c.model);
   overlay._customSystemPrompt = c.systemPrompt;
@@ -49,6 +53,11 @@ export async function openInspector(container = document.body, image = null) {
             document.body.append(overlay._panel, overlay._btn);
             overlay._btn.style.display = "none";
           }
+        });
+        window.addEventListener("storage", (event) => {
+          if (event.key !== null && !["vlmMaxNewTokens", "vlmTemperature"].includes(event.key)) return;
+          const { maxNewTokens, temperature } = config();
+          Object.assign(window.VLM_SETTINGS, { maxNewTokens, temperature });
         });
         applyConfig();
       })().finally(() => {

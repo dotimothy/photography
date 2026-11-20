@@ -14,29 +14,94 @@ GALLERY_THEME_COLORS = {
     'wildlife':  '#2e2a1a',  # earthy gold
 }
 
-def add_gallery_return_navigation(content):
-    """Keep a route back to the portfolio in generated gallery/viewer pages."""
-    stylesheet = '<link rel="stylesheet" href="../../assets/css/gallery-return.css">'
-    script = '<script src="../../assets/js/gallery-return.js" defer></script>'
-    inspector_script = '<script src="../../assets/js/gallery-inspector.js" type="module"></script>'
-    if '../../assets/js/gallery-inspector.js' not in content:
-        content = re.sub(r'</head\s*>', inspector_script + '\n</head>', content, count=1, flags=re.IGNORECASE)
-    if 'id="portfolio-inspector"' not in content:
-        button = '<button type="button" id="portfolio-inspector">AI Inspector</button>'
-        content = re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + button,
-                         content, count=1, flags=re.IGNORECASE)
-    if '../../assets/js/gallery-return.js' not in content:
-        content = re.sub(r'</head\s*>', script + '\n</head>', content, count=1, flags=re.IGNORECASE)
-    if 'id="portfolio-return"' in content:
+GALLERY_TITLE_EMOJIS = {
+    'astronomy': '🌌', 'food': '🍱', 'landscape': '🏞️',
+    'planes': '✈️', 'wildlife': '🐿️',
+}
+
+
+def gallery_title(gallery):
+    return f"{GALLERY_TITLE_EMOJIS.get(gallery, '')} {gallery.title()}".strip()
+
+
+def _inject_gallery_markup(content, marker, markup, into_head):
+    """Insert markup once: before </head>, or directly after <body>. `marker` proves it is already there."""
+    if marker in content:
         return content
-    link = ('<a id="portfolio-return" href="../../index.html?mode=3d" target="_top">'
-            '<span aria-hidden="true">&#8592;</span> Back to Camera</a>')
-    content = re.sub(r'</head\s*>', stylesheet + '\n</head>', content, count=1, flags=re.IGNORECASE)
-    return re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + link,
+    if into_head:
+        return re.sub(r'</head\s*>', lambda match: markup + '\n</head>', content, count=1, flags=re.IGNORECASE)
+    return re.sub(r'(<body\b[^>]*>)', lambda match: match.group(1) + '\n' + markup,
                   content, count=1, flags=re.IGNORECASE)
 
 
-def generate_site(target_keys, gallery_map, results_map, portfolios_root, gallery_emojis, template_src='./tmp/gallery', shape_emojis=None):
+def add_gallery_return_navigation(content):
+    """Keep a route back to the portfolio in generated gallery/viewer pages.
+
+    The template is not ours to edit, so everything the portfolio adds to a
+    gallery page goes in here: one "back" link (top-left), the AI Inspector
+    button (gallery-inspector.js files it into the template's own menu), and
+    the stylesheets/scripts that lay the template's controls out as one set.
+    Stylesheets land before </head>, after the template's own, so they win
+    ties without needing extra specificity.
+    """
+    assets = '../../assets/'
+    for path, tag in [
+        ('js/gallery-inspector.js', '<script src="{}" type="module"></script>'),
+        ('js/gallery-return.js', '<script src="{}" defer></script>'),
+        ('js/gallery-layout.js', '<script src="{}" defer></script>'),
+        ('css/portfolio-controls.css', '<link rel="stylesheet" href="{}">'),
+        ('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap', '<link rel="stylesheet" href="{}">'),
+        ('css/gallery-return.css', '<link rel="stylesheet" href="{}">'),
+    ]:
+        url = path if path.startswith("https://") else assets + path
+        content = _inject_gallery_markup(content, url, tag.format(url), True)
+    content = _inject_gallery_markup(
+        content, 'id="portfolio-inspector"',
+        '<button type="button" id="portfolio-inspector">AI Inspector</button>', False)
+    link = ('<a id="portfolio-return" href="../../index.html?mode=3d" target="_top">'
+            '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '
+            'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>'
+            '<span class="portfolio-return-label">Back To Camera</span></a>')
+    return _inject_gallery_markup(content, 'id="portfolio-return"', link, False)
+
+
+def customize_gallery_app(source, title, has_selects=False):
+    """Apply portfolio-specific overrides only to the generated copy of app.js."""
+    label = json.dumps(title)
+    if has_selects:
+        selects_label = json.dumps(f"{title} Selects")
+        label = f"this.images === this.metadata.selects_order ? {selects_label} : {label}"
+    source = re.sub(r'const titleText = ".*Gallery Template.*";',
+                    lambda _: f'const titleText = {label};', source)
+    if not has_selects:
+        return source
+
+    # The same gallery app powers the archive and Selects so that keyboard,
+    # slideshow, thumbnail and deep-link behavior all use the chosen sequence.
+    orders = (
+        "this.images = data.image_order || Object.keys(data).filter(k => k !== 'image_order');",
+        'this.images = this.metadata.image_order || Object.keys(this.metadata);',
+    )
+    order = next((candidate for candidate in orders if source.count(candidate) == 1), None)
+    if order is None:
+        raise ValueError("The gallery template's photo loading code changed. Update Selects integration.")
+    metadata = 'this.metadata' if 'this.metadata.image_order' in order else 'data'
+    return source.replace(order, order + f"""
+            if (new URLSearchParams(location.search).get('view') === 'selects' && {metadata}.selects_order?.length) {{
+                this.images = {metadata}.selects_order;
+            }}""", 1)
+
+
+def customize_gallery_view3d(source):
+    """Start the gallery overview closer while keeping the template's zoom limits."""
+    return re.sub(
+        r'this\.baseDistance\s*=\s*this\.getOptimalDistance\(\);',
+        'this.baseDistance = this.getOptimalDistance() * 0.9;',
+        source,
+    )
+
+
+def generate_site(target_keys, gallery_map, results_map, portfolios_root, template_src='./tmp/gallery', shape_emojis=None, selects=None):
     """
     Generates the static site structure for each target gallery.
     """
@@ -45,8 +110,7 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
         if gallery not in gallery_map or not gallery_map[gallery]:
             continue
 
-        emoji = gallery_emojis.get(gallery, '')
-        title = f"{emoji} {gallery.title()} {emoji}"
+        title = gallery_title(gallery)
         print(f" - Building {title}")
 
         # Metadata
@@ -72,6 +136,11 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
                 gallery_meta[name_no_ext] = clean_meta
         
         gallery_meta['image_order'] = file_list
+        available = set(file_list)
+        ordered_selects = list(dict.fromkeys((selects or {}).get(gallery, ())))
+        selected = [name for name in ordered_selects if name in available]
+        if selected:
+            gallery_meta['selects_order'] = selected
         os.makedirs(os.path.join(g_root, 'metadata'), exist_ok=True)
         with open(os.path.join(g_root, 'metadata', 'metadata.json'), 'w') as f:
             json.dump(gallery_meta, f, indent=4)
@@ -96,7 +165,7 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
             html_path = os.path.join(g_root, 'index.html')
             if os.path.exists(html_path):
                 with open(html_path, 'r', encoding='utf-8') as f: content = f.read()
-                # Separate from display emojis; omitted configuration means sphere.
+                # Omitted shape configuration means sphere.
                 content = re.sub(r'<meta\s+name="gallery-shape-emoji"[^>]*>\s*', '', content)
                 shape_emoji = (shape_emojis or {}).get(gallery, '')
                 if shape_emoji:
@@ -120,10 +189,17 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, galler
                 with open(immersive_path, 'w', encoding='utf-8') as f:
                     f.write(add_gallery_return_navigation(content))
 
+            view_path = os.path.join(g_root, 'js/view3d.js')
+            if os.path.exists(view_path):
+                with open(view_path, 'r', encoding='utf-8') as f:
+                    view_source = customize_gallery_view3d(f.read())
+                with open(view_path, 'w', encoding='utf-8') as f:
+                    f.write(view_source)
+
             js_path = os.path.join(g_root, 'js/app.js')
             if os.path.exists(js_path):
                 with open(js_path, 'r', encoding='utf-8') as f: js_content = f.read()
-                js_content = re.sub(r'const titleText = ".*Gallery Template.*";', f'const titleText = "{title}";', js_content)
+                js_content = customize_gallery_app(js_content, title, has_selects=bool(selected))
                 with open(js_path, 'w', encoding='utf-8') as f: f.write(js_content)
         
         generated_count += 1
