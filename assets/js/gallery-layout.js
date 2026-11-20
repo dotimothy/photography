@@ -197,7 +197,7 @@
             addLink(list, curated ? 'Full Gallery' : 'Selects', url, false);
             list.prepend(list.lastElementChild);
             if (curated) {
-                document.title = `${gallery} Selects`;
+                document.title = `${document.title} Selects`;
                 if (hasToolbar) galleryTitle.textContent = document.title;
             }
             watcher.disconnect();

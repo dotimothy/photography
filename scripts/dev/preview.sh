@@ -18,7 +18,7 @@ import preparePortfolio as pp
 for g in pp.GALLERIES:
     root = os.path.join('build', 'portfolios', g)
     if not os.path.isdir(root): continue
-    title = g.title()
+    title = builder.gallery_title(g)
     for a in ['index.html', 'immersive.html', 'css', 'js', 'templates']:
         src, dst = os.path.join('tmp', 'gallery', a), os.path.join(root, a)
         if os.path.isdir(src): shutil.rmtree(dst, ignore_errors=True); shutil.copytree(src, dst)

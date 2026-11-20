@@ -627,45 +627,115 @@
             -webkit-backdrop-filter: blur(12px);
         }
 
-        #my-perspective { container: about-profiles / inline-size; }
+        #my-perspective {
+            container: about-profiles / inline-size;
+        }
+
+        .about-sky {
+            position: relative;
+            isolation: isolate;
+            display: grid;
+            align-content: end;
+            min-height: clamp(270px, 44vw, 460px);
+            padding: clamp(20px, 5vw, 52px);
+            overflow: hidden;
+            margin-bottom: clamp(24px, 5vw, 52px);
+            border: 1px solid rgba(139, 213, 235, .22);
+            border-radius: 20px;
+            background: linear-gradient(0deg, #050913 4%, rgba(5, 9, 19, .88) 27%, rgba(5, 9, 19, .25) 66%), url('./assets/starshalo.jpg') center 46% / cover;
+        }
+
+        .about-sky::before,
+        .about-sky::after {
+            content: '';
+            position: absolute;
+            right: -12%;
+            top: 12%;
+            z-index: -1;
+            width: 80%;
+            aspect-ratio: 2.4;
+            transform: rotate(-24deg);
+            border: 1px solid rgba(141, 225, 241, .28);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .about-sky::after {
+            right: -18%;
+            top: 6%;
+            width: 91%;
+            border-color: rgba(141, 225, 241, .13);
+        }
 
         #about-heading {
-            margin: 0 0 clamp(14px, 3vw, 24px);
+            margin: 0 0 16px;
             color: #eef4f8;
-            font-size: clamp(1.65rem, 4vw, 2.65rem);
-            line-height: 1.12;
-            letter-spacing: -.025em;
+            font-size: clamp(2.4rem, 8vw, 6rem);
+            line-height: .98;
+            letter-spacing: -.055em;
+            text-shadow: 0 3px 22px #050913;
         }
+
+        .about-profile-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+        .about-profile-nav a {
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
+            padding: 0 13px;
+            border: 1px solid rgba(171, 217, 232, .3);
+            border-radius: 999px;
+            background: rgba(5, 9, 19, .77);
+            color: #eef4f8;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .about-profile-nav a:hover { border-color: var(--accent-cyan); }
+        .about-profile-nav a:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
 
         .info-grid {
             display: grid;
-            gap: clamp(14px, 2vw, 22px);
+            position: relative;
+            gap: clamp(30px, 5vw, 56px);
+            margin-inline-start: 7px;
+            padding-inline-start: clamp(18px, 3.5vw, 38px);
+            border-inline-start: 1px solid rgba(0, 229, 255, .36);
         }
 
         .card {
+            position: relative;
             display: grid;
-            grid-template-rows: auto 1fr;
+            align-items: center;
             min-width: 0;
-            overflow: hidden;
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            background: radial-gradient(ellipse at top left, #102532, #090e17 70%);
-            transition: border-color .2s ease;
+            gap: clamp(15px, 3vw, 32px);
+            scroll-margin-top: 24px;
         }
 
-        .card:hover, .card:focus-within { border-color: rgba(0, 229, 255, .42); }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: calc(-1 * clamp(18px, 3.5vw, 38px) - 5px);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 229, 255, .48);
+        }
 
         .card-img-wrapper {
             position: relative;
             display: block;
             width: 100%;
-            min-height: 180px;
-            aspect-ratio: 16 / 9;
+            min-height: 165px;
+            aspect-ratio: 4 / 3;
             overflow: hidden;
             padding: 0;
-            border: 0;
+            border: 1px solid rgba(139, 213, 235, .22);
+            border-radius: 14px;
             background: #080d16;
             color: #eef4f8;
+            box-shadow: 0 14px 35px rgba(0, 0, 0, .36);
             cursor: zoom-in;
         }
 
@@ -703,7 +773,7 @@
             .card-img-wrapper:hover .card-img { transform: scale(1.04); }
         }
 
-        .card-content { padding: clamp(18px, 3vw, 32px); }
+        .card-content { min-width: 0; padding-bottom: 5px; }
 
         .card h3 {
             display: flex;
@@ -711,7 +781,7 @@
             gap: 10px;
             margin: 0 0 12px;
             color: #eef4f8;
-            font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+            font-size: clamp(1.4rem, 3.4vw, 2.45rem);
             line-height: 1.15;
         }
 
@@ -726,13 +796,20 @@
         }
 
         @container about-profiles (min-width: 620px) {
-            .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .card:first-child {
-                grid-column: 1 / -1;
-                grid-template: minmax(300px, auto) / minmax(0, 1.4fr) minmax(0, 1fr);
-            }
-            .card:first-child .card-img-wrapper { height: 100%; aspect-ratio: auto; }
-            .card:first-child .card-content { align-self: center; }
+            .card { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+            .card:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+            .card:nth-child(even) .card-img-wrapper { grid-column: 2; grid-row: 1; }
+            .card:nth-child(even) .card-content { grid-column: 1; grid-row: 1; }
+        }
+
+        #my-perspective .about-contact {
+            margin-top: clamp(32px, 7vw, 72px);
+            background: radial-gradient(ellipse at right, #102738, #080d18 74%);
+        }
+
+        #my-perspective .about-contact-image {
+            background-position: center, center 48%;
+            mask-image: radial-gradient(ellipse at center, #000 30%, transparent 72%);
         }
 
         /* --- LIGHTBOX (Mobile Optimized) --- */
@@ -1219,11 +1296,18 @@
             </div>
         </section>
 
-        <!-- INFO GRID -->
+        <!-- ABOUT ME PROFILES -->
         <section id="my-perspective" class="info-section about-section" aria-labelledby="about-heading">
-            <h2 class="scroll-reveal" id="about-heading">About Me</h2>
+            <div class="about-sky">
+                <h2 id="about-heading">About Me</h2>
+                <nav class="about-profile-nav" aria-label="Jump To A Profile">
+                    <a href="#about-photographer">Photographer</a>
+                    <a href="#about-engineer">Engineer</a>
+                    <a href="#about-explorer">Explorer</a>
+                </nav>
+            </div>
             <div class="info-grid" id="about-cards" aria-label="About Timothy">
-                <article class="card scroll-reveal">
+                <article id="about-photographer" class="card scroll-reveal">
                     <button type="button" class="card-img-wrapper" aria-label="Enlarge Photographer Picture" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
                         <img data-src="./assets/starshalo.jpg" alt="Photographer" class="card-img" decoding="async"
                             loading="lazy">
@@ -1243,7 +1327,7 @@
                     </div>
                 </article>
 
-                <article class="card scroll-reveal">
+                <article id="about-engineer" class="card scroll-reveal">
                     <button type="button" class="card-img-wrapper" aria-label="Enlarge Engineer Picture" onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
                         <img data-src="https://timothydo.me/images/TheDoProSolo.jpg" alt="Engineer" class="card-img"
                             decoding="async" loading="lazy">
@@ -1263,7 +1347,7 @@
                     </div>
                 </article>
 
-                <article class="card scroll-reveal">
+                <article id="about-explorer" class="card scroll-reveal">
                     <button type="button" class="card-img-wrapper" aria-label="Enlarge Explorer Picture" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
                         <img data-src="./assets/zion.jpg" alt="Explorer" class="card-img" decoding="async"
                             loading="lazy">

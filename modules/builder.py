@@ -14,6 +14,16 @@ GALLERY_THEME_COLORS = {
     'wildlife':  '#2e2a1a',  # earthy gold
 }
 
+GALLERY_TITLE_EMOJIS = {
+    'astronomy': '🌌', 'food': '🍱', 'landscape': '🏞️',
+    'planes': '✈️', 'wildlife': '🐿️',
+}
+
+
+def gallery_title(gallery):
+    return f"{GALLERY_TITLE_EMOJIS.get(gallery, '')} {gallery.title()}".strip()
+
+
 def _inject_gallery_markup(content, marker, markup, into_head):
     """Insert markup once: before </head>, or directly after <body>. `marker` proves it is already there."""
     if marker in content:
@@ -100,7 +110,7 @@ def generate_site(target_keys, gallery_map, results_map, portfolios_root, templa
         if gallery not in gallery_map or not gallery_map[gallery]:
             continue
 
-        title = gallery.title()
+        title = gallery_title(gallery)
         print(f" - Building {title}")
 
         # Metadata
