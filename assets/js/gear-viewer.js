@@ -60,10 +60,10 @@ function gearModels(THREE) {
     grip.bumpMap.wrapS = grip.bumpMap.wrapT = THREE.RepeatWrapping;
     grip.bumpMap.needsUpdate = true;
     grip.bumpScale = .0013;
-    const edge = material(0x909398, .29, .62);
-    const glass = material(0x152e47, .12, .64);
+    const edge = material(0x909398, .49, .40);
+    const glass = material(0x152e47, .32, .35);
     const red = material(0xa92928);
-    const screen = material(0x142536, .18, .36);
+    const screen = material(0x142536, .39, .25);
 
     function mesh(group, geometry, surface, x = 0, y = 0, z = 0) {
         const part = new THREE.Mesh(geometry, surface);
@@ -173,7 +173,7 @@ function gearModels(THREE) {
             }
             ctx.fill();
             for (const [x,z,rx,ry] of [[-.27,-.39,.18,.05],[.32,.34,.09,.026]]) {
-                ctx.fillStyle='rgba(189,217,225,.34)';
+                ctx.fillStyle='rgba(189,217,225,.17)';
                 ctx.beginPath(); ctx.ellipse(x*r,z*r,rx*r,ry*r,-.4,0,2*Math.PI); ctx.fill();
             }
             const imprint = (value, middle) => {
@@ -385,33 +385,12 @@ async function start() {
     stage.append(renderer.domElement);
 
     const scene = new THREE.Scene();
-    // Reflected strip lights define the metal rails and barrel edges at every angle.
-    const studio = new THREE.Scene();
-    studio.background = new THREE.Color(0x24252a);
-    for (const [x,y,z,w,h] of [[-5,3,4,2,8],[4,2,-3,1.2,7],[1,6,3,6,3]]) {
-        const card = new THREE.Mesh(new THREE.PlaneGeometry(w,h),
-            new THREE.MeshBasicMaterial({color:0xffffff}));
-        card.position.set(x,y,z);
-        card.lookAt(0,0,0);
-        studio.add(card);
-    }
-    const generator = new THREE.PMREMGenerator(renderer);
-    const reflections = generator.fromScene(studio, .035);
-    scene.environment = reflections.texture;
-    generator.dispose();
-    studio.children.forEach(card => { card.geometry.dispose(); card.material.dispose(); });
     const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
     camera.position.z = 8;
-    scene.add(new THREE.HemisphereLight(0xeef2ff, 0x737985, .93));
-    for (const [color, intensity, x, y, z] of [
-        [0xfff7ea, 1.45, -4, 5, 6],
-        [0xbee1ff, 1.08, 4, 1, -5],
-        [0xe7ebff, .45, 2, -2, 5],
-    ]) {
-        const light = new THREE.DirectionalLight(color, intensity);
-        light.position.set(x, y, z);
-        scene.add(light);
-    }
+    scene.add(new THREE.HemisphereLight(0xf0f2f5, 0xadb2bb, .85));
+    const keyLight = new THREE.DirectionalLight(0xfff7ed, .52);
+    keyLight.position.set(-3, 5, 4);
+    scene.add(keyLight);
 
     const pivot = new THREE.Group();
     scene.add(pivot);
