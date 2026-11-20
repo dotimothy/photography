@@ -377,9 +377,10 @@ function gearModels(THREE) {
 
 async function start() {
     const THREE = await loadThree();
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
     renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.setClearColor(0x0b1420, 1);
     renderer.domElement.setAttribute('aria-hidden', 'true');
     stage.append(renderer.domElement);
 
