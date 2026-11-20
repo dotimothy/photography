@@ -192,6 +192,9 @@
     .mobile-browse-button { display: none; margin-right: auto; }
     .mobile-browse-button::before { content: '\2190'; font-size: 16px; line-height: 1; }
     .browsing-photos .mobile-browse-button { display: inline-flex; }
+    #btn-open-camera { position: relative; z-index: 1; margin-right: auto; }
+    .browsing-photos #btn-open-camera { display: none; }
+    .controls-container.expanded #btn-open-camera { visibility: hidden; }
     #btn-controls-toggle { position: relative; z-index: 1; }
 
     .mobile-step-back { display: none; }
@@ -1515,6 +1518,7 @@
             <div class="controls-scrim" id="controls-scrim" aria-hidden="true"></div>
             <!-- TOP LEFT: the one way back (2D list to the camera). The camera views use Exit Camera View below. -->
             <button type="button" class="camera-key mobile-browse-button" onclick="toggleMode(true)">Back To Camera</button>
+            <button type="button" class="camera-key" id="btn-open-camera" aria-keyshortcuts="B" title="Open Camera (B)">Open Camera</button>
             <!-- TOP RIGHT: the single menu key. Everything that cannot live on the camera is inside it. -->
             <nav class="primary-destinations" aria-label="Portfolio Destinations">
                 <button type="button" class="camera-key" id="btn-desktop-galleries">Galleries</button>
@@ -1627,7 +1631,7 @@
 
     <!-- TOP LEFT while at the camera: the one way back out. It also works mid-flight. -->
     <button type="button" class="camera-key mobile-step-back mobile-camera-exit" onclick="leaveCameraInspection(true)"><span aria-hidden="true">&#8592;</span><span class="camera-key-label">Exit Camera View</span></button>
-    <p id="camera-keyboard-help" class="camera-screen-reader">Interactive camera. Keyboard: V looks through the viewfinder, Enter or Space presses the shutter, which opens the live space view and then captures it, left and right arrows browse photos, C lists the full galleries, M or H returns to the camera home screen, L opens the live space view, I inspects the photo when AI is enabled, S opens the camera menu, Z cycles the lens from 18 to 300 millimeters, D toggles star drift, and Escape leaves the camera view. Shift plus arrow keys pans a zoomed photo or aims the live view; Home recenters. Pictures from each collection orbit the camera. Press 1 to 5, or use the collections list beside the camera, to bring a collection forward; there, left and right arrows choose a photograph, Enter or Space opens it in its gallery, and Escape returns to the camera. Mouse: click a control on the camera or a button on its screen, scroll over the lens or a display to zoom, drag a zoomed photo to pan, or use its overview map. Touch: tap the camera screen to bring the camera to you, then use the keys on its screen. Pinch to zoom, double-tap to zoom in or reset, swipe an unzoomed photo to browse, and drag the live view to aim. Exit Camera View is at the top left whenever you are at the camera. Use the top navigation for Galleries, About and Contact. Open More or Menu for AI Inspector, Sound, Fullscreen, Reset View and Settings. Escape closes the menu.</p>
+    <p id="camera-keyboard-help" class="camera-screen-reader">Interactive camera. Keyboard: B opens the rear camera screen, V looks through the viewfinder, Enter or Space presses the shutter, which opens the live space view and then captures it, left and right arrows browse photos, C lists the full galleries, M or H returns to the camera home screen, L opens the live space view, I inspects the photo when AI is enabled, S opens the camera menu, Z cycles the lens from 18 to 300 millimeters, D toggles star drift, and Escape leaves the camera view. Shift plus arrow keys pans a zoomed photo or aims the live view; Home recenters. Pictures from each collection orbit the camera. Press 1 to 5, or use the collections list beside the camera, to bring a collection forward; there, left and right arrows choose a photograph, Enter or Space opens it in its gallery, and Escape returns to the camera. Mouse: click a control on the camera or a button on its screen, scroll over the lens or a display to zoom, drag a zoomed photo to pan, or use its overview map. Touch: tap the camera screen to bring the camera to you, then use the keys on its screen. Pinch to zoom, double-tap to zoom in or reset, swipe an unzoomed photo to browse, and drag the live view to aim. Exit Camera View is at the top left whenever you are at the camera. Use the top navigation for Galleries, About and Contact. Open More or Menu for AI Inspector, Sound, Fullscreen, Reset View and Settings. Escape closes the menu.</p>
     <p id="camera-action-status" class="camera-screen-reader" role="status"></p>
 
     <!-- SETTINGS MODAL -->
@@ -5381,6 +5385,25 @@
             cameraTravelTweens.push(tween);
         }
 
+        function openCameraBody() {
+            if (!state.is3D || !screenMesh || !finderMesh ||
+                cameraInspection === 'screen' || els.settingsOverlay.classList.contains('visible') ||
+                els.iframeOverlay.classList.contains('active') || document.querySelector('dialog[open]')) return false;
+
+            if (!state.hasExplored) {
+                state.hasExplored = true;
+                document.getElementById('space-intro').style.display = 'none';
+                els.welcome.classList.add('hidden');
+                document.getElementById('ui-footer').classList.add('visible');
+            }
+
+            window.PrintOrbit?.reset();
+            sfx.click();
+            focusCameraDisplay('screen', true);
+            renderer.domElement.focus({ preventScroll: true });
+            return true;
+        }
+
         function focusCameraDisplay(mode, immediate = false) {
             if (!screenMesh || !finderMesh) return;
             if (!cameraInspection) cameraReturnPose = { position: camera.position.clone(), target: controls.target.clone(), minDistance: controls.minDistance };
@@ -5503,6 +5526,13 @@
             });
             if (!renderer) return;
             const canvas = renderer.domElement;
+            document.getElementById('btn-open-camera').addEventListener('click', openCameraBody);
+            document.addEventListener('keydown', (event) => {
+                if (event.defaultPrevented || event.repeat || event.isComposing || event.ctrlKey || event.metaKey || event.altKey ||
+                    event.key.toLowerCase() !== 'b' ||
+                    event.target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), .vlm-panel, #home-controls')) return;
+                if (openCameraBody()) event.preventDefault();
+            });
             canvas.tabIndex = 0;
             // Own touch gestures even while OrbitControls is disabled for a close-up.
             canvas.style.touchAction = 'none';
