@@ -253,21 +253,10 @@ body:has(#gallery-2d.active) #controls-list > #fps-counter { display: none !impo
 
 /* ---------- 2D grid ---------- */
 #gallery-2d {
+    top: calc(var(--pc-top) + var(--pg-grid-header-height, 58px));
     right: var(--pg-pane);
     width: auto;
-    padding: calc(var(--pc-top) + 60px) max(24px, var(--pc-safe-right)) calc(24px + var(--pc-safe-bottom)) max(24px, var(--pc-safe-left));
-}
-/* Keeps the top bar legible while photos scroll underneath it. */
-#gallery-2d.active::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: var(--pg-pane);
-    height: calc(var(--pc-top) + 76px);
-    z-index: 3;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, .92) 0, rgba(0, 0, 0, .78) 58%, rgba(0, 0, 0, 0) 100%);
-    pointer-events: none;
+    padding: 8px max(24px, var(--pc-safe-right)) calc(24px + var(--pc-safe-bottom)) max(24px, var(--pc-safe-left));
 }
 @media (max-width: 600px) {
     #gallery-2d {
@@ -637,34 +626,24 @@ html.portfolio-nested-steps #hud #btn-close { display: none !important; }
 
 @media (max-width: 600px) {
     #ui-layer:has(#layout-switch) #title {
-        top: calc(var(--pc-top) + 50px);
+        top: calc(var(--pc-top) + 58px);
         left: var(--pg-title-edge);
         right: calc(var(--pg-title-edge) + var(--pg-pane));
     }
 
     body:has(#layout-switch) #gallery-2d {
-        top: 0;
-        padding-top: calc(var(--pc-top) + 100px);
-    }
-
-    body:has(#layout-switch) #gallery-2d.active::before {
-        height: calc(var(--pc-top) + 102px);
+        --pg-grid-header-height: 108px;
     }
 }
 
 html.portfolio-ai-open #ui-layer:has(#layout-switch) #title {
-    top: calc(var(--pc-top) + 50px);
+    top: calc(var(--pc-top) + 58px);
     left: var(--pg-title-edge);
     right: calc(var(--pg-title-edge) + var(--pg-pane));
 }
 
 html.portfolio-ai-open body:has(#layout-switch) #gallery-2d {
-    top: 0;
-    padding-top: calc(var(--pc-top) + 100px);
-}
-
-html.portfolio-ai-open body:has(#layout-switch) #gallery-2d.active::before {
-    height: calc(var(--pc-top) + 102px);
+    --pg-grid-header-height: 108px;
 }
 
 #gallery-dock {
