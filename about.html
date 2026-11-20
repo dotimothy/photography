@@ -604,6 +604,48 @@
             text-decoration: underline;
         }
 
+        .gear-viewer:not([hidden]) {
+            display: grid;
+            grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            border-top: 0;
+            border-radius: 0 0 16px 16px;
+            background: #080e18;
+        }
+
+        .gear-preview {
+            position: relative;
+            min-height: clamp(260px, 38vw, 410px);
+            background: radial-gradient(ellipse at 50% 45%, #153746, #0b1726 52%, #080e18 78%);
+            cursor: grab;
+            touch-action: pan-y;
+        }
+
+        .gear-preview:active { cursor: grabbing; }
+        .gear-preview canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+        .gear-preview:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -3px; }
+        .gear-viewer-controls { align-self: center; padding: clamp(16px, 3vw, 32px); }
+        .gear-viewer-controls label { display: block; margin-bottom: 6px; color: #e5f3fa; font-weight: 600; }
+        .gear-viewer-controls select, .gear-viewer-controls a {
+            box-sizing: border-box;
+            min-height: 44px;
+            border: 1px solid rgba(167, 215, 230, .24);
+            border-radius: 8px;
+            background: #0e1b29;
+            color: #eef4f8;
+            font: inherit;
+        }
+        .gear-viewer-controls select { width: 100%; padding: 0 9px; }
+        .gear-viewer-controls a { display: inline-flex; align-items: center; padding: 0 13px; text-decoration: none; }
+        .gear-viewer-controls p { color: #bacbd6; font-size: .875rem; line-height: 1.5; }
+        .gear-viewer-controls :focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+        .gear-bag { container: gear-bag / inline-size; }
+        @container gear-bag (max-width: 570px) {
+            .gear-viewer:not([hidden]) { grid-template-columns: minmax(0, 1fr); }
+        }
+        .gear-bag-body[hidden] { display: none; }
+
         /* --- INFO CARDS --- */
         .info-section {
             margin-bottom: 30px;
@@ -1194,6 +1236,15 @@
                 </svg>
                 Gear Bag
             </div>
+            <div id="gear-viewer" class="gear-viewer" hidden>
+                <div id="gear-preview" class="gear-preview" tabindex="0"></div>
+                <div class="gear-viewer-controls">
+                    <label for="gear-product">Gear</label>
+                    <select id="gear-product"></select>
+                    <p>Drag or use the arrow keys to rotate the render.</p>
+                    <a id="gear-product-link" target="_blank" rel="noopener">View Product</a>
+                </div>
+            </div>
             <div class="gear-bag-body">
                 <!-- Primary Shooter -->
                 <div>
@@ -1204,7 +1255,7 @@
                                 <path
                                     d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+Alpha+A7+IV" target="_blank" rel="noopener">Sony
+                            <a data-gear="sony-a7" href="https://www.amazon.com/s?k=Sony+Alpha+A7+IV" target="_blank" rel="noopener">Sony
                                 Alpha A7 IV</a>
                         </li>
                         <li>
@@ -1212,7 +1263,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+FE+28-70mm+f3.5-5.6" target="_blank"
+                            <a data-gear="sony-28" href="https://www.amazon.com/s?k=Sony+FE+28-70mm+f3.5-5.6" target="_blank"
                                 rel="noopener">Sony FE 28-70mm F/3.5-5.6</a>
                         </li>
                         <li>
@@ -1220,7 +1271,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Sony+FE+50mm+f1.8" target="_blank" rel="noopener">Sony
+                            <a data-gear="sony-50" href="https://www.amazon.com/s?k=Sony+FE+50mm+f1.8" target="_blank" rel="noopener">Sony
                                 FE 50mm F/1.8</a>
                         </li>
                         <li>
@@ -1228,7 +1279,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Tamron+70-300mm+f4.5-6.3+Sony+E" target="_blank"
+                            <a data-gear="tamron" href="https://www.amazon.com/s?k=Tamron+70-300mm+f4.5-6.3+Sony+E" target="_blank"
                                 rel="noopener">Tamron 70-300mm F/4.5-6.3</a>
                         </li>
                         <li>
@@ -1236,7 +1287,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Samyang+12mm+f2+Sony+E" target="_blank"
+                            <a data-gear="samyang" href="https://www.amazon.com/s?k=Samyang+12mm+f2+Sony+E" target="_blank"
                                 rel="noopener">Samyang 12mm F/2.0</a>
                         </li>
                     </ul>
@@ -1250,7 +1301,7 @@
                                 <path
                                     d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EOS+Rebel+T5" target="_blank" rel="noopener">Canon
+                            <a data-gear="canon-t5" href="https://www.amazon.com/s?k=Canon+EOS+Rebel+T5" target="_blank" rel="noopener">Canon
                                 EOS Rebel T5</a>
                         </li>
                         <li>
@@ -1258,7 +1309,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EF+70-300mm+f4-5.6" target="_blank"
+                            <a data-gear="canon-70" href="https://www.amazon.com/s?k=Canon+EF+70-300mm+f4-5.6" target="_blank"
                                 rel="noopener">Canon EF 70-300mm F/4-5.6</a>
                         </li>
                         <li>
@@ -1266,7 +1317,7 @@
                                 <path
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Canon+EF+18-55mm+f3.5-5.6" target="_blank"
+                            <a data-gear="canon-18" href="https://www.amazon.com/s?k=Canon+EF+18-55mm+f3.5-5.6" target="_blank"
                                 rel="noopener">Canon EF 18-55mm F/3.5-5.6</a>
                         </li>
                     </ul>
@@ -1280,7 +1331,7 @@
                                 <path
                                     d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Samsung+Galaxy+S24+Ultra" target="_blank"
+                            <a data-gear="samsung" href="https://www.amazon.com/s?k=Samsung+Galaxy+S24+Ultra" target="_blank"
                                 rel="noopener">Samsung S24 Ultra</a>
                         </li>
                         <li>
@@ -1288,7 +1339,7 @@
                                 <path
                                     d="M16 64C16 28.7 44.7 0 80 0H304c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zM144 448c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16s-7.2-16-16-16H160c-8.8 0-16 7.2-16 16zM304 64H80V384H304V64z" />
                             </svg>
-                            <a href="https://www.amazon.com/s?k=Google+Pixel+9+Pro" target="_blank" rel="noopener">Pixel
+                            <a data-gear="pixel" href="https://www.amazon.com/s?k=Google+Pixel+9+Pro" target="_blank" rel="noopener">Pixel
                                 9 Pro</a>
                         </li>
                     </ul>
@@ -1717,6 +1768,7 @@
         }
     </script>
 
+    <script type="module" src="./assets/js/gear-viewer.js"></script>
 </body>
 
 </html>
