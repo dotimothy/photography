@@ -39,10 +39,14 @@ body:has(#viewer-controls-container.fade-out) #portfolio-return:not(:focus-visib
 
 /* ---------- Top bar ---------- */
 #ui-layer #title {
+    --pg-title-edge: max(var(--pc-left), var(--pc-right));
     top: var(--pc-top);
-    left: calc(var(--pc-left) + 52px);
-    right: calc(var(--pc-right) + 52px + var(--pg-pane));
+    left: calc(var(--pg-title-edge) + 52px);
+    right: calc(var(--pg-title-edge) + 52px + var(--pg-pane));
     width: auto;
+    max-width: none;
+    margin: 0;
+    transform: none;
     height: 44px;
     box-sizing: border-box;
     padding: 0;
@@ -56,8 +60,8 @@ body:has(#viewer-controls-container.fade-out) #portfolio-return:not(:focus-visib
 }
 @media (min-width: 768px) {
     #ui-layer #title {
-        left: calc(var(--pc-left) + 216px);
-        right: calc(var(--pc-right) + 216px + var(--pg-pane));
+        left: calc(var(--pg-title-edge) + 216px);
+        right: calc(var(--pg-title-edge) + 216px + var(--pg-pane));
         font-size: clamp(20px, 2.6vw, 30px);
     }
 }
@@ -626,17 +630,16 @@ html.portfolio-nested-steps #hud #btn-close { display: none !important; }
 /* The toolbar template keeps the layout switch in the header and the viewer
    details in a dock. Reserve their space before positioning portfolio controls. */
 #ui-layer:has(#layout-switch) #title {
-    right: calc(var(--pc-right) + var(--pg-pane) + 168px);
-    max-width: none;
-    margin: 0;
-    transform: none;
+    --pg-title-inset: calc(var(--pg-title-edge) + max(216px, var(--pg-gallery-toolbar-width, 0px) + 12px));
+    left: var(--pg-title-inset);
+    right: calc(var(--pg-title-inset) + var(--pg-pane));
 }
 
 @media (max-width: 600px) {
     #ui-layer:has(#layout-switch) #title {
         top: calc(var(--pc-top) + 50px);
-        left: var(--pc-left);
-        right: calc(var(--pc-right) + var(--pg-pane));
+        left: var(--pg-title-edge);
+        right: calc(var(--pg-title-edge) + var(--pg-pane));
     }
 
     body:has(#layout-switch) #gallery-2d {
@@ -647,6 +650,21 @@ html.portfolio-nested-steps #hud #btn-close { display: none !important; }
     body:has(#layout-switch) #gallery-2d.active::before {
         height: calc(var(--pc-top) + 102px);
     }
+}
+
+html.portfolio-ai-open #ui-layer:has(#layout-switch) #title {
+    top: calc(var(--pc-top) + 50px);
+    left: var(--pg-title-edge);
+    right: calc(var(--pg-title-edge) + var(--pg-pane));
+}
+
+html.portfolio-ai-open body:has(#layout-switch) #gallery-2d {
+    top: 0;
+    padding-top: calc(var(--pc-top) + 100px);
+}
+
+html.portfolio-ai-open body:has(#layout-switch) #gallery-2d.active::before {
+    height: calc(var(--pc-top) + 102px);
 }
 
 #gallery-dock {
