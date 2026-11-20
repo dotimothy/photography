@@ -91,7 +91,7 @@ window.BrowseScene = (function () {
                     cameraPhotoMetadata.set(gallery, metadata);
                 }
                 const names = cameraPhotoCatalogs.get(gallery);
-                card.querySelector('.card-meta').textContent = `${names.length} photographs`;
+                card.querySelector('.card-meta').textContent = `${names.length} ${names.length === 1 ? 'Picture' : 'Pictures'}`;
                 if (innerWidth <= 768) continue;
                 const cover = card.querySelector('img[data-thumb]').dataset.thumb;
                 const others = names.filter((name) => !cover.endsWith(`/${name}.jpg`));

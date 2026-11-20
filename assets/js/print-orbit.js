@@ -344,7 +344,7 @@ window.PrintOrbit = (function () {
             if (o.counts[gi]) {
                 ctx.fillStyle = '#7fe9f7';
                 ctx.font = '400 50px Roboto, "Helvetica Neue", Arial, sans-serif';
-                ctx.fillText(`${o.counts[gi]} photographs`, 512, 214);
+                ctx.fillText(`${o.counts[gi]} ${o.counts[gi] === 1 ? 'Picture' : 'Pictures'}`, 512, 214);
             }
             label.texture.needsUpdate = true;
         });
@@ -643,7 +643,7 @@ window.PrintOrbit = (function () {
         for (const print of prints()) if (print.gi !== gi) print.brightTarget = DIM;
         layoutFormation(1250);
         document.body.classList.add('orbit-collection');
-        announce(`${TITLES[GALLERIES[gi]]}: ${o.counts[gi] || 'several'} photographs. Left and right arrows choose a photograph, Enter opens it, Escape returns to the camera.`);
+        announce(`${TITLES[GALLERIES[gi]]}: ${o.counts[gi] || 'several'} Pictures. Left and right arrows choose a picture, Enter opens it, Escape returns to the camera.`);
         sfx.click();
         syncRail();
         return true;
@@ -679,7 +679,7 @@ window.PrintOrbit = (function () {
         layoutFormation(760);
         if (!quiet) sfx.click();
         const list = formationOrder();
-        announce(`Photograph ${list.indexOf(print) + 1} of ${list.length}. ${caption(print)}`);
+        announce(`Picture ${list.indexOf(print) + 1} of ${list.length}. ${caption(print)}`);
     }
 
     function formationOrder() {
@@ -999,7 +999,7 @@ window.PrintOrbit = (function () {
         rail = document.createElement('nav');
         rail.id = 'orbit-rail';
         rail.className = 'orbit-rail';
-        rail.setAttribute('aria-label', 'Photographs in orbit');
+        rail.setAttribute('aria-label', 'Pictures In Orbit');
         rail.innerHTML = `
             <ul class="orbit-rail-list">${GALLERIES.map((gallery, gi) => `
                 <li><button type="button" class="orbit-rail-item" data-gallery="${gi}" aria-pressed="false">
@@ -1062,7 +1062,7 @@ window.PrintOrbit = (function () {
             const gi = Number(item.dataset.gallery);
             item.setAttribute('aria-pressed', String(o.mode !== 'home' && gi === o.activeGi));
             item.querySelector('.orbit-rail-count').textContent = o.counts[gi] || '';
-            item.setAttribute('aria-label', `${TITLES[GALLERIES[gi]]}${o.counts[gi] ? `, ${o.counts[gi]} photographs` : ''}`);
+            item.setAttribute('aria-label', `${TITLES[GALLERIES[gi]]}${o.counts[gi] ? `, ${o.counts[gi]} ${o.counts[gi] === 1 ? 'Picture' : 'Pictures'}` : ''}`);
         });
         const detail = rail.querySelector('.orbit-detail');
         const open = o.activeGi >= 0 && (o.mode === 'collection' || o.mode === 'gallery');
@@ -1071,8 +1071,8 @@ window.PrintOrbit = (function () {
         const list = formationOrder();
         detail.querySelector('.orbit-detail-title').textContent = TITLES[GALLERIES[o.activeGi]];
         detail.querySelector('.orbit-detail-frame').textContent = o.hero && list.length
-            ? `Photograph ${list.indexOf(o.hero) + 1} of ${list.length} in orbit, ${o.counts[o.activeGi] || list.length} in the gallery`
-            : 'Photographs are on their way';
+            ? `Picture ${list.indexOf(o.hero) + 1} of ${list.length} in orbit, ${o.counts[o.activeGi] || list.length} in the gallery`
+            : 'Pictures are on their way';
         detail.querySelector('.orbit-detail-exif').textContent = o.hero ? caption(o.hero) : '';
         detail.querySelectorAll('.orbit-button-step').forEach((button) => { button.disabled = list.length < 2; });
     }
