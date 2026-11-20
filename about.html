@@ -627,90 +627,112 @@
             -webkit-backdrop-filter: blur(12px);
         }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            padding: 24px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-top: none;
-            border-radius: 0 0 var(--card-radius) var(--card-radius);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        #my-perspective { container: about-profiles / inline-size; }
+
+        #about-heading {
+            margin: 0 0 clamp(14px, 3vw, 24px);
+            color: #eef4f8;
+            font-size: clamp(1.65rem, 4vw, 2.65rem);
+            line-height: 1.12;
+            letter-spacing: -.025em;
         }
 
-        @media (min-width: 768px) {
-            .info-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+        .info-grid {
+            display: grid;
+            gap: clamp(14px, 2vw, 22px);
         }
 
         .card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--card-radius);
+            display: grid;
+            grid-template-rows: auto 1fr;
+            min-width: 0;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            cursor: pointer;
-            transition: transform 0.2s ease, border-color 0.2s;
-            -webkit-tap-highlight-color: rgba(0, 229, 255, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            background: radial-gradient(ellipse at top left, #102532, #090e17 70%);
+            transition: border-color .2s ease;
         }
 
-        .card:hover {
-            border-color: rgba(79, 195, 247, 0.4);
-        }
-
-        .card:active {
-            transform: scale(0.98);
-        }
+        .card:hover, .card:focus-within { border-color: rgba(0, 229, 255, .42); }
 
         .card-img-wrapper {
             position: relative;
+            display: block;
             width: 100%;
-            height: 200px;
-            background-color: #1a1a1a;
+            min-height: 180px;
+            aspect-ratio: 16 / 9;
             overflow: hidden;
+            padding: 0;
+            border: 0;
+            background: #080d16;
+            color: #eef4f8;
+            cursor: zoom-in;
         }
 
+        .card-img-wrapper::after {
+            content: '+';
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            display: grid;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 50%;
+            background: rgba(8, 12, 20, .75);
+            font: 400 21px/1 'Roboto', sans-serif;
+            pointer-events: none;
+        }
+
+        .card-img-wrapper:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -4px; }
+
         .card-img {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: opacity 0.3s, transform 0.2s;
+            transition: opacity .3s ease, transform .45s ease;
             opacity: 0;
         }
 
-        .card-img.loaded {
-            opacity: 1;
+        .card-img.loaded { opacity: 1; }
+
+        @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+            .card-img-wrapper:hover .card-img { transform: scale(1.04); }
         }
 
-        .card:hover .card-img {
-            transform: scale(1.03);
-        }
+        .card-content { padding: clamp(18px, 3vw, 32px); }
 
-        .card-content {
-            padding: 16px 18px 18px;
-            flex-grow: 1;
-        }
-
-        .card h2 {
-            color: var(--accent-cyan);
-            font-size: 1.1rem;
-            margin: 0 0 8px 0;
-            letter-spacing: 0.5px;
+        .card h3 {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            margin: 0 0 12px;
+            color: #eef4f8;
+            font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+            line-height: 1.15;
         }
 
+        .card h3 .icon { flex: none; color: var(--accent-cyan); fill: currentColor; }
+
         .card p {
-            line-height: 1.6;
-            color: var(--text-muted);
+            max-width: 55ch;
             margin: 0;
-            font-size: 0.9rem;
+            color: #bacbd6;
+            font-size: .95rem;
+            line-height: 1.7;
+        }
+
+        @container about-profiles (min-width: 620px) {
+            .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .card:first-child {
+                grid-column: 1 / -1;
+                grid-template: minmax(300px, auto) / minmax(0, 1.4fr) minmax(0, 1fr);
+            }
+            .card:first-child .card-img-wrapper { height: 100%; aspect-ratio: auto; }
+            .card:first-child .card-content { align-self: center; }
         }
 
         /* --- LIGHTBOX (Mobile Optimized) --- */
@@ -881,10 +903,6 @@
         .story-copy p { line-height: 1.85; }
         .info-section { margin-bottom: 44px; }
         .section-heading { padding: 18px 24px; font-size: .85rem; }
-        .info-grid { gap: 20px; }
-        .info-grid .card { height: auto; }
-        .card-content { padding: 22px; }
-        .card p { line-height: 1.8; }
         .gear-bag-body { gap: 24px; padding: 28px; }
         .gear-category-label { text-align: left; padding-bottom: 12px; margin-bottom: 16px; }
         .gear-list li { min-height: 46px; line-height: 1.5; }
@@ -897,7 +915,7 @@
             .about-intro .subtitle { font-size: 10px; letter-spacing: 1.5px; }
             .story-copy { padding: 28px 24px; }
             .story-feature, .info-section { margin-bottom: 28px; }
-            .info-grid, .gear-bag-body { padding: 16px; gap: 18px; }
+            .gear-bag-body { padding: 16px; gap: 18px; }
             .section-heading { padding: 16px 18px; }
         }
 
@@ -918,7 +936,7 @@
             .container.about-3d > .story-feature { display: block; }
             .container.about-3d > .story-feature .story-image-wrap { height: 280px; min-height: 0; }
             .container.about-3d .story-copy { padding: 24px 8px; }
-            .container.about-3d .info-grid, .container.about-3d .gear-bag-body { padding: 12px; }
+            .container.about-3d .gear-bag-body { padding: 12px; }
         }
         @media (prefers-reduced-motion: reduce) { .container.about-3d > .about-plane { transition: none; } }
 
@@ -1203,76 +1221,69 @@
 
         <!-- INFO GRID -->
         <section id="my-perspective" class="info-section about-section" aria-labelledby="about-heading">
-            <div class="section-heading scroll-reveal" id="about-heading">
-                <svg class="icon" viewBox="0 0 448 512">
-                    <path
-                        d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z" />
-                </svg>
-                About Me
-            </div>
-            <main class="info-grid" id="about-cards" aria-label="About Timothy">
-                <div class="card scroll-reveal" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
-                    <div class="card-img-wrapper">
+            <h2 class="scroll-reveal" id="about-heading">About Me</h2>
+            <div class="info-grid" id="about-cards" aria-label="About Timothy">
+                <article class="card scroll-reveal">
+                    <button type="button" class="card-img-wrapper" aria-label="Enlarge Photographer Picture" onclick="openLightbox('./assets/starshalo.jpg', 'Photographer')">
                         <img data-src="./assets/starshalo.jpg" alt="Photographer" class="card-img" decoding="async"
                             loading="lazy">
-                    </div>
+                    </button>
                     <div class="card-content">
-                        <h2>
-                            <svg class="icon" viewBox="0 0 576 512">
+                        <h3>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 576 512">
                                 <path
                                     d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z" />
                             </svg>
                             Photographer
-                        </h2>
+                        </h3>
                         <p>I specialize in astrophotography, capturing the dusty glow of the Milky Way and the deep
                             colors
                             of the Orion Nebula. By day, I traverse National Parks to honor nature through landscape
                             photography.</p>
                     </div>
-                </div>
+                </article>
 
-                <div class="card scroll-reveal"
-                    onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
-                    <div class="card-img-wrapper">
+                <article class="card scroll-reveal">
+                    <button type="button" class="card-img-wrapper" aria-label="Enlarge Engineer Picture" onclick="openLightbox('https://timothydo.me/images/TheDoProSolo.jpg', 'Engineer')">
                         <img data-src="https://timothydo.me/images/TheDoProSolo.jpg" alt="Engineer" class="card-img"
                             decoding="async" loading="lazy">
-                    </div>
+                    </button>
                     <div class="card-content">
-                        <h2>
-                            <svg class="icon" viewBox="0 0 512 512">
+                        <h3>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 512 512">
                                 <path
                                     d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm88 64v64H64V96h88zm56 0h88v64H208V96zm240 0v64H360V96h88zM64 224h88v64H64V224zm232 0v64H208V224h88zm64 0h88v64H360V224zM152 352v64H64V352h88zm56 0h88v64H208V352zm240 0v64H360V352h88z" />
                             </svg>
                             Engineer
-                        </h2>
+                        </h3>
                         <p>With a Master's degree in Electrical and Computer Engineering from UCLA, I now work in
                             Computer Vision and Image Processing. Understanding image acquisition, signal processing,
                             and
                             visual AI allows me to push the boundaries of what a camera can capture.</p>
                     </div>
-                </div>
+                </article>
 
-                <div class="card scroll-reveal" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
-                    <div class="card-img-wrapper">
+                <article class="card scroll-reveal">
+                    <button type="button" class="card-img-wrapper" aria-label="Enlarge Explorer Picture" onclick="openLightbox('./assets/zion.jpg', 'Explorer')">
                         <img data-src="./assets/zion.jpg" alt="Explorer" class="card-img" decoding="async"
                             loading="lazy">
-                    </div>
+                    </button>
                     <div class="card-content">
-                        <h2>
-                            <svg class="icon" viewBox="0 0 512 512">
+                        <h3>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 512 512">
                                 <path
                                     d="M192 32c17.7 0 32 14.3 32 32V316c0 14.6-9.6 27.5-23.5 31.2C63.6 385.5 1.5 329.6 0 328c-1.1-1.1-17.7-18.4 12.5-47.5 19.4-18.7 28.3-27.1 36.1-34.5l9.4-8.9c19.3-18.2 41.9-46.7 41.9-82.6V64c0-17.7 14.3-32 32-32h60.1zm84.4 290.7l21.3 49.6c11.3 26.2 46.6 26.2 57.9 0l22.6-52.6c3.4-7.8 11-12.8 19.5-12.8s16.1 5 19.5 12.8l22.6 52.6c11.3 26.2 46.6 26.2 57.9 0l21.3-49.6c3.4-7.9 11.1-12.9 19.7-12.9H512V32c0-17.7-14.3-32-32-32H388c-17.7 0-32 14.3-32 32v157c-26.4 12.5-47.7 32.1-59.5 57.2l-20.1 42.6V32z" />
                             </svg>
                             Explorer
-                        </h2>
+                        </h3>
                         <p>As an Eagle Scout with the photography merit badge, nature is my second home. This portfolio
                             is
                             my window into a collection of moments where the universe stood still just long enough for
                             the
                             shutter to click.</p>
                     </div>
-                </div>
-            </main>
+                </article>
+            </div>
             <section class="about-contact scroll-reveal" aria-labelledby="about-contact-title">
                 <div class="about-contact-copy">
                     <h2 id="about-contact-title">Let’s Make Something</h2>
