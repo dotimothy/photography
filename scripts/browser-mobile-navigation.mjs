@@ -17,7 +17,7 @@ try {
     const back=document.querySelector('#portfolio-return').getBoundingClientRect();
     const overlaps=r=>r.width&&r.height&&r.left<back.right&&r.right>back.left&&r.top<back.bottom&&r.bottom>back.top;
     document.querySelector('#imageViewer').hidden=false;
-    return [...document.querySelectorAll('#controls-toggle,#controls-list button,#controls-list a,#viewer-controls-toggle,#viewer-controls-list button')].filter(el=>overlaps(el.getBoundingClientRect())).map(el=>el.id||el.textContent.trim());
+    return [...document.querySelectorAll('#controls-toggle,#layout-switch button,#controls-list button,#controls-list a,#viewer-controls-toggle,#toggleMetadata,#viewer-controls-list button')].filter(el=>overlaps(el.getBoundingClientRect())).map(el=>el.id||el.textContent.trim());
    });
    assert.deepEqual(collisions,[],`${prefix} ${width}: controls must clear Back`);
    const inspector=await page.locator('#portfolio-inspector').boundingBox();

@@ -52,6 +52,13 @@ class GalleryNavigationTests(unittest.TestCase):
             self.assertIn("get('view') === 'selects'", app)
             self.assertIn('this.images = data.selects_order', app)
 
+    def test_selects_work_with_the_toolbar_template_loader(self):
+        source = 'this.images = this.metadata.image_order || Object.keys(this.metadata);'
+        updated = builder.customize_gallery_app(source, 'Astronomy', has_selects=True)
+        self.assertIn(source, updated)
+        self.assertIn("get('view') === 'selects'", updated)
+        self.assertIn('this.images = this.metadata.selects_order;', updated)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,7 @@
 #!/bin/sh
 # Refresh build/ from the source pages, regenerate the gallery pages from tmp/gallery with the
 # current modules/builder.py injection, and serve the repo root on PORT (default 8765).
+# Use --no-serve to refresh files only.
 # Needs one full `make build` first (downloads photos into build/portfolios and the template into tmp/gallery).
 set -e
 ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel); cd "$ROOT"
@@ -51,6 +52,10 @@ for g in pp.GALLERIES:
         js = builder.customize_gallery_app(open(p, encoding='utf-8').read(), title, has_selects)
         open(p, 'w', encoding='utf-8').write(js)
 PY
+if [ "${1:-}" = "--no-serve" ]; then
+  echo "Refreshed build/."
+  exit 0
+fi
 if ! curl -s -o /dev/null "http://127.0.0.1:$PORT/index.html"; then
   (python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 &); sleep 1
 fi

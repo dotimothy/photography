@@ -176,11 +176,12 @@
 
     // --- Credits and the frame-rate readout move from the page edges into the menu. ---
     const list = byId('controls-list');
+    const hasToolbar = Boolean(byId('layout-switch'));
     if (list) {
         const footer = byId('gallery-footer');
         const fps = byId('fps-counter');
         addLink(list, 'Contact', contact);
-        if (footer) list.append(footer);
+        if (footer && !hasToolbar) list.append(footer);
         if (fps) list.append(fps);
     }
 
@@ -195,11 +196,16 @@
             else url.searchParams.set('view', 'selects');
             addLink(list, curated ? 'Full Gallery' : 'Selects', url, false);
             list.prepend(list.lastElementChild);
-            if (curated) document.title = `${gallery} Selects`;
+            if (curated) {
+                document.title = `${gallery} Selects`;
+                if (hasToolbar) galleryTitle.textContent = document.title;
+            }
             watcher.disconnect();
         };
         const watcher = new MutationObserver(addSelectsLink);
         watcher.observe(galleryTitle, { childList: true, characterData: true, subtree: true });
+        const loader = byId('loading-screen');
+        if (loader) watcher.observe(loader, { attributes: true, attributeFilter: ['class'] });
         addSelectsLink();
     }
 

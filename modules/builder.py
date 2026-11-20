@@ -68,13 +68,18 @@ def customize_gallery_app(source, title, has_selects=False):
 
     # The same gallery app powers the archive and Selects so that keyboard,
     # slideshow, thumbnail and deep-link behavior all use the chosen sequence.
-    load_order = "this.images = data.image_order || Object.keys(data).filter(k => k !== 'image_order');"
-    if source.count(load_order) != 1:
+    orders = (
+        "this.images = data.image_order || Object.keys(data).filter(k => k !== 'image_order');",
+        'this.images = this.metadata.image_order || Object.keys(this.metadata);',
+    )
+    order = next((candidate for candidate in orders if source.count(candidate) == 1), None)
+    if order is None:
         raise ValueError("The gallery template's photo loading code changed. Update Selects integration.")
-    return source.replace(load_order, load_order + """
-            if (new URLSearchParams(location.search).get('view') === 'selects' && data.selects_order?.length) {
-                this.images = data.selects_order;
-            }""", 1)
+    metadata = 'this.metadata' if 'this.metadata.image_order' in order else 'data'
+    return source.replace(order, order + f"""
+            if (new URLSearchParams(location.search).get('view') === 'selects' && {metadata}.selects_order?.length) {{
+                this.images = {metadata}.selects_order;
+            }}""", 1)
 
 
 def customize_gallery_view3d(source):

@@ -191,7 +191,7 @@ async function audit(page, label, { size, mode, inset }) {
     console.log(`${problems.length ? 'FAIL' : 'ok  '} ${id} (${ours.length} controls)${problems.map(problem => `\n       ${problem}`).join('')}`);
 }
 
-const ready = frame => frame.waitForFunction(() => window.galleryApp?.view3d?.frames.length > 0
+const ready = frame => frame.waitForFunction(() => window.galleryApp?.images.length > 0
     && document.getElementById('loading-screen')?.classList.contains('hidden') && Number(getComputedStyle(document.getElementById('controls-container')).opacity) > .99, null, { timeout: 60000 });
 
 /** The gallery page, state by state, through the same controls a visitor uses. */
@@ -202,6 +202,8 @@ async function walkGallery(page, g, options) {
         await g.locator(toggle).click();
         if (row) { await page.waitForTimeout(350); await g.locator(row).click(); }
     };
+    const hasToolbar = await g.locator('#layout-switch').count() > 0;
+    const toggleInfo = () => hasToolbar ? g.locator('#toggleMetadata').click() : menu('#viewer-controls-toggle', '#toggleMetadata');
     await app(() => galleryApp.switchMode('2D'));
     await check('2D grid');
     if (options.mode === 'embedded' && await page.locator('.vlm-panel.vlm-open').count()) {
@@ -217,15 +219,23 @@ async function walkGallery(page, g, options) {
     await page.keyboard.press('Escape');
     assert.equal(await app(() => document.getElementById('settingsModal').classList.contains('visible')), false, 'Escape closes settings');
     assert.equal(await app(() => document.getElementById('controls-container').classList.contains('expanded')), false, 'choosing a menu row closes the menu');
-    await menu('#controls-toggle', '#openLicense');
+    if (hasToolbar) {
+        await g.locator('#openLicense').click();
+    } else {
+        await menu('#controls-toggle', '#openLicense');
+    }
     await g.locator('#licenseOverlay.visible').waitFor({ state: 'visible' });
     await check('license dialog');
     await g.locator('#closeLicense').click();
 
-    await menu('#controls-toggle', '#mode-toggle');
+    if (hasToolbar) {
+        await g.locator('#layout-switch [data-layout="3D"]').click();
+    } else {
+        await menu('#controls-toggle', '#mode-toggle');
+    }
     await g.waitForFunction(() => galleryApp.mode === '3D');
     await check('3D shape');
-    const shape = g.locator('#gallery-3d > button');
+    const shape = g.locator(hasToolbar ? '#shape-toggle' : '#gallery-3d > button');
     if (await shape.isVisible()) {
         await shape.click();
         await check('3D sphere');
@@ -249,11 +259,11 @@ async function walkGallery(page, g, options) {
     await check('photo, menu open');
     await g.locator('#toggleThumbs').click();
     await check('photo, thumbnails');
-    await menu('#viewer-controls-toggle', '#toggleMetadata');
+    await toggleInfo();
     await check('photo, info and thumbnails');
     await menu('#viewer-controls-toggle', '#toggleThumbs');
     await check('photo, info');
-    await menu('#viewer-controls-toggle', '#toggleMetadata');
+    await toggleInfo();
     await menu('#viewer-controls-toggle', '#viewer-slideshow');
     await check('slideshow starting');
     await page.waitForTimeout(3600);
@@ -287,7 +297,7 @@ async function walkGallery(page, g, options) {
     await g.locator('.vlm-panel.vlm-open .vlm-close-btn').click();
     await g.waitForFunction(() => !document.querySelector('.vlm-panel.vlm-open'));
     await menu('#viewer-controls-toggle', '#toggleThumbs');
-    await menu('#viewer-controls-toggle', '#toggleMetadata');
+    await toggleInfo();
     await check('photo, info and thumbnails, AI toggle parked');
     await app(() => galleryApp.closeFullscreen());
     await page.waitForTimeout(400);

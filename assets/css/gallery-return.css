@@ -622,3 +622,96 @@ html.portfolio-nested-steps #hud #btn-close { display: none !important; }
     .nav-arrow,
     #hud .icon-btn { transition: none; }
 }
+
+/* The toolbar template keeps the layout switch in the header and the viewer
+   details in a dock. Reserve their space before positioning portfolio controls. */
+#ui-layer:has(#layout-switch) #title {
+    right: calc(var(--pc-right) + var(--pg-pane) + 168px);
+    max-width: none;
+    margin: 0;
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    #ui-layer:has(#layout-switch) #title {
+        top: calc(var(--pc-top) + 50px);
+        left: var(--pc-left);
+        right: calc(var(--pc-right) + var(--pg-pane));
+    }
+
+    body:has(#layout-switch) #gallery-2d {
+        top: 0;
+        padding-top: calc(var(--pc-top) + 100px);
+    }
+
+    body:has(#layout-switch) #gallery-2d.active::before {
+        height: calc(var(--pc-top) + 102px);
+    }
+}
+
+#gallery-dock {
+    left: var(--pg-hud-reserve, 0px);
+    right: calc(var(--pg-pane) + var(--pg-ai-reserve));
+    padding: 0 var(--pc-right) var(--pc-bottom) var(--pc-left);
+}
+
+#viewer-controls-container .gallery-toolbar button:hover {
+    transform: none;
+}
+
+#imageViewer:has(#viewer-dock) {
+    padding-top: calc(var(--pc-top) + 52px);
+}
+
+#imageViewer #viewer-dock {
+    padding-bottom: var(--pc-safe-bottom);
+}
+
+#imageViewer:has(#viewer-dock) #full-image-container {
+    position: relative;
+    inset: auto;
+}
+
+#viewer-dock #image-counter,
+#viewer-dock #viewer-exif-strip,
+#viewer-dock #thumbnail-selector {
+    position: static;
+}
+
+#viewer-dock #viewer-exif-strip {
+    justify-self: center;
+    box-sizing: border-box;
+}
+
+#viewer-dock:has(#metadataViewer.visible) #viewer-exif-strip,
+#viewer-dock:has(#viewer-exif-strip[data-frame-caption]) #image-counter {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+#viewer-dock #metadataViewer {
+    width: min(340px, calc(100% - var(--pc-left) - var(--pc-right) - var(--pg-ai-reserve)));
+    max-height: min(28dvh, 13rem);
+    margin-left: var(--pc-left);
+}
+
+#viewer-dock #thumbnail-selector { margin-left: var(--pg-hud-reserve, 0px); }
+
+body:has(#layout-switch):has(#controls-container.expanded) #gallery-2d .thumb {
+    pointer-events: none;
+}
+
+body:has(#layout-switch) #gallery-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    white-space: nowrap;
+}
+
+body:has(#layout-switch):has(#settingsModal.visible, #licenseOverlay.visible, #lightPollutionMapOverlay.visible) #gallery-footer {
+    visibility: hidden;
+}
