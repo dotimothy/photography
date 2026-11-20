@@ -518,6 +518,7 @@ class GalleryVLMOverlay {
         this._clearanceTimer = 0;
         this._destroyed     = false;
         this._modelCommandPending = false;
+        this._generationOverrides = {};
         this._statusKind    = 'idle';
 
         // Local-model download state (window.VLM_MODELS contract; inert when that API is absent).
@@ -576,8 +577,13 @@ class GalleryVLMOverlay {
         this._stt.interimResults = true;
         this._stt.maxAlternatives = 1;
         this._sttActive = true;
-        micBtn.classList.add('vlm-mic-active');
-        micBtn.setAttribute('aria-pressed', 'true');
+        const setListening = (listening) => {
+            micBtn.classList.toggle('vlm-mic-active', listening);
+            micBtn.setAttribute('aria-pressed', String(listening));
+            micBtn.title = listening ? 'Stop Listening' : 'Voice Input';
+            micBtn.setAttribute('aria-label', micBtn.title);
+        };
+        this._stt.onstart = () => setListening(true);
         this._stt.onresult = (e) => {
             let interim = '', final = '';
             for (const r of e.results) {
@@ -590,8 +596,7 @@ class GalleryVLMOverlay {
         };
         this._stt.onend = () => {
             this._sttActive = false;
-            micBtn.classList.remove('vlm-mic-active');
-            micBtn.setAttribute('aria-pressed', 'false');
+            setListening(false);
             this._stt = null;
             if (input.value.trim() && !this._streaming) this._sendMessage();
             // Live mode: restart mic only when TTS is not playing
@@ -602,8 +607,7 @@ class GalleryVLMOverlay {
         };
         this._stt.onerror = (e) => {
             this._sttActive = false;
-            micBtn.classList.remove('vlm-mic-active');
-            micBtn.setAttribute('aria-pressed', 'false');
+            setListening(false);
             this._stt = null;
             // Restart unless the user denied permission
             if (this._liveMode && e.error !== 'not-allowed' && e.error !== 'service-not-allowed') {
@@ -613,7 +617,13 @@ class GalleryVLMOverlay {
                 }, 500);
             }
         };
-        this._stt.start();
+        try {
+            this._stt.start();
+        } catch {
+            this._sttActive = false;
+            this._stt = null;
+            setListening(false);
+        }
     }
 
     _toggleTTS() {
@@ -893,11 +903,10 @@ class GalleryVLMOverlay {
         <button class="vlm-btn vlm-mode-tab vlm-active" id="${id}-mode-chat" type="button" role="tab" aria-selected="true">Chat</button>
         <button class="vlm-btn vlm-mode-tab" id="${id}-mode-search" type="button" role="tab" aria-selected="false" tabindex="-1">Search</button>
     </div>
+    <button class="vlm-btn vlm-model-select vlm-chat-only" id="${id}-model-select" type="button" title="Open Model Settings">Model</button>
     <span class="vlm-toolbar-spacer"></span>
     <button class="vlm-btn vlm-new-btn vlm-chat-only" id="${id}-new" type="button" title="Clear Chat And Stop The Current Response">Clear Chat</button>
-    <button class="vlm-btn vlm-btn-icon vlm-options-btn" id="${id}-options-btn" type="button" title="Options" aria-label="Options" aria-expanded="false" aria-controls="${id}-options">${ICONS.sliders}</button>
 </div>
-<div class="vlm-options" id="${id}-options" hidden></div>
 <div class="vlm-current-photo" id="${id}-imgname">
     <img class="vlm-photo-thumb" id="${id}-photothumb" alt="" decoding="async">
     <span class="vlm-photo-name" id="${id}-photoname"></span>
@@ -917,15 +926,17 @@ class GalleryVLMOverlay {
 <div class="vlm-search-view" id="${id}-search-view"></div>
 <div class="vlm-composer vlm-chat-only">
     <div class="vlm-suggestions" role="group" aria-label="Sample Prompts">${suggestions}</div>
+    <div class="vlm-options" id="${id}-options" hidden></div>
     <div class="vlm-input-area">
         <textarea class="vlm-input" id="${id}-input" rows="1" placeholder="Ask about this photo or type /help" aria-label="Ask About The Photo Or Enter A Command"></textarea>
         <div class="vlm-input-tools">
+            <button class="vlm-btn vlm-btn-icon vlm-options-btn" id="${id}-options-btn" type="button" title="Chat Controls" aria-label="Chat Controls" aria-expanded="false" aria-controls="${id}-options">${ICONS.sliders}</button>
             <button class="vlm-btn vlm-btn-icon vlm-voice-btn vlm-mic-btn" id="${id}-mic" type="button" hidden title="Voice Input" aria-label="Voice Input" aria-pressed="false">${ICONS.mic}</button>
             <button class="vlm-btn vlm-btn-icon vlm-voice-btn vlm-tts-btn" id="${id}-tts" type="button" title="Read Aloud: Off" aria-label="Read Aloud: Off" aria-pressed="false">${ICONS.speakerOff}</button>
             <button class="vlm-btn vlm-live-btn" id="${id}-live" type="button" hidden title="Live Conversation: Off" aria-pressed="false"><span class="vlm-live-dot" aria-hidden="true"></span>Live</button>
             <span class="vlm-toolbar-spacer"></span>
-            <button class="vlm-btn vlm-btn-danger vlm-stop-btn" id="${id}-stop" type="button" hidden>${ICONS.stop}<span>Stop</span></button>
-            <button class="vlm-btn vlm-btn-primary vlm-send-btn" id="${id}-send" type="button" disabled>Send</button>
+            <button class="vlm-btn vlm-btn-icon vlm-btn-danger vlm-stop-btn" id="${id}-stop" type="button" hidden aria-label="Stop" title="Stop">${ICONS.stop}</button>
+            <button class="vlm-btn vlm-btn-icon vlm-btn-primary vlm-send-btn" id="${id}-send" type="button" disabled aria-label="Send" title="Send"><span aria-hidden="true">↑</span></button>
         </div>
     </div>
 </div>`;
@@ -944,6 +955,8 @@ class GalleryVLMOverlay {
         this._q('-new').addEventListener('click',      () => this._newChat());
         this._q('-fs').addEventListener('click',       () => this._toggleFullscreen());
         this._q('-gear').addEventListener('click',     () => this._openSettings());
+        this._q('-model-select').addEventListener('click', () => this._openSettings());
+        this._syncModelLabel();
         this._q('-mode-chat').addEventListener('click', () => this._setPanelMode('chat'));
         this._q('-mode-search').addEventListener('click', () => this._setPanelMode('search'));
         this._q('-options-btn').addEventListener('click', () => this._toggleOptions());
@@ -1124,6 +1137,10 @@ class GalleryVLMOverlay {
         if (tray.childElementCount) return tray;
         const id = this._id;
         tray.innerHTML = `
+<div class="vlm-chat-parameters" role="group" aria-label="Generation Overrides">
+    <label>Max Generated Tokens<input type="number" id="${id}-chat-max-tokens" min="1" max="32768" step="1" placeholder="Default"></label>
+    <label>Temperature<input type="number" id="${id}-chat-temperature" min="0" max="2" step="any" placeholder="Default"></label>
+</div>
 <div class="vlm-font-btns" role="group" aria-label="Text Size">
     <button class="vlm-btn vlm-font-btn" id="${id}-font-dn" type="button" title="Smaller Text" aria-label="Smaller Text">A−</button>
     <button class="vlm-btn vlm-font-btn" id="${id}-font-up" type="button" title="Larger Text" aria-label="Larger Text">A+</button>
@@ -1133,6 +1150,18 @@ class GalleryVLMOverlay {
 <button class="vlm-btn" id="${id}-copy-chat" type="button" title="Copy The Whole Conversation">Copy Chat</button>
 <button class="vlm-btn" id="${id}-export-log" type="button" title="Save The Conversation As A Text File">Export Log</button>
 <p class="vlm-options-note">EXIF Auto answers camera and location questions straight from the photo's metadata. Direct Links shows map links in place of the interactive map.</p>`;
+        for (const [id, key] of [['-chat-max-tokens', 'maxNewTokens'], ['-chat-temperature', 'temperature']]) {
+            const input = this._q(id);
+            input.addEventListener('change', () => {
+                if (!input.reportValidity()) {
+                    input.value = this._generationOverrides[key] ?? '';
+                } else if (input.value === '') {
+                    delete this._generationOverrides[key];
+                } else {
+                    this._generationOverrides[key] = input.value;
+                }
+            });
+        }
         this._q('-font-dn').addEventListener('click',  () => this._changeFontSize(-1));
         this._q('-font-up').addEventListener('click',  () => this._changeFontSize(+1));
         this._q('-bypass').addEventListener('click', () => {
@@ -1167,7 +1196,14 @@ class GalleryVLMOverlay {
     _toggleOptions(force) {
         const tray = this._q('-options');
         const open = force ?? tray.hidden;
-        if (open) this._ensureOptions();
+        if (open) {
+            this._ensureOptions();
+            for (const [id, key] of [['-chat-max-tokens', 'maxNewTokens'], ['-chat-temperature', 'temperature']]) {
+                const input = this._q(id);
+                input.placeholder = window.VLM_SETTINGS?.[key] || 'Default';
+                input.value = this._generationOverrides[key] ?? '';
+            }
+        }
         tray.hidden = !open;
         const button = this._q('-options-btn');
         button.setAttribute('aria-expanded', String(open));
@@ -1989,6 +2025,7 @@ class GalleryVLMOverlay {
         const text = input.value.trim();
         const command = this._modelCommand(text);
         sendBtn.disabled = this._modelCommandPending || !text || (command ? this._streaming : blocked);
+        sendBtn.hidden = this._streaming;
         if (stopBtn) stopBtn.hidden = !this._streaming;
         // Live mode: restart mic once generation ends, but only if TTS is not playing
         if (this._liveMode && !this._streaming && !this._sttActive && this._ttsPending === 0)
@@ -2971,6 +3008,8 @@ class GalleryVLMOverlay {
             this._history.slice(),
             {
                 signal: this._abortController.signal,
+                maxNewTokens: this._generationOverrides.maxNewTokens ?? window.VLM_SETTINGS?.maxNewTokens,
+                temperature: this._generationOverrides.temperature ?? window.VLM_SETTINGS?.temperature,
                 onThinking: (chunk) => {
                     if (this._generation !== gen) return;
                     // Lazily create the collapsible think block on first chunk
@@ -3109,6 +3148,15 @@ class GalleryVLMOverlay {
             if (this.manager._worker) this.manager.restart(this._gate.modelId);
             else this.manager.init(this._gate.modelId);
         } catch (_) { /* the runtime reports failures through 'vlm-model-state' */ }
+    }
+
+    _syncModelLabel() {
+        const button = this._q('-model-select');
+        if (!button) return;
+        const settings = window.VLM_SETTINGS ?? {};
+        const name = settings.type === 'ollama' ? settings.ollamaModel
+            : settings.type === 'api' ? settings.apiModel : this._modelInfo().name;
+        button.textContent = name || 'Model';
     }
 
     /** Model name and size for the notices, from whatever list the page exposes. */
@@ -3282,6 +3330,7 @@ class GalleryVLMOverlay {
             const { enabled, type, model, apiEndpoint, apiKey, apiModel, ollamaEndpoint, ollamaModel, ollamaThink, systemPrompt } = e.detail ?? {};
             // Update stored system prompt before any mode-switch (mode code reads _baseSystemPrompt())
             if (systemPrompt !== undefined) this._customSystemPrompt = systemPrompt ?? '';
+            this._syncModelLabel();
             const galleryOpen = this._iframeMode
                 ? this._galleryOpen
                 : !!(this._iframeDoc && this._iframeDoc.location?.href !== 'about:blank');
@@ -3417,6 +3466,8 @@ function initGalleryVLM({ autoStart = true } = {}) {
                 overlay._clearImage();
             } else if (d.type === 'gallery-image-changed') {
                 overlay._setImage(d.src, d.name || 'photo');
+            } else if (d.type === 'vlm-generation-settings') {
+                Object.assign(window.VLM_SETTINGS ??= {}, d.settings);
             } else if (d.type === 'vlm-config') {
                 if (!window.VLM_SETTINGS) window.VLM_SETTINGS = {};
                 Object.assign(window.VLM_SETTINGS, d.config);

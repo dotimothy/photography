@@ -577,7 +577,14 @@ test('camera request instructions stay isolated from the gallery across API, Oll
     for (const backend of ['api', 'ollama']) {
         if (backend === 'api') manager.setApiMode('http://fixture.invalid/v1', '', 'fixture');
         else manager.setOllamaMode('http://fixture.invalid', 'fixture');
-        assert.equal(await query({ systemPrompt: 'Describe only. No tips. Forty words maximum.' }), 'Stars.');
+        assert.equal(await query({ systemPrompt: 'Describe only. No tips. Forty words maximum.', maxNewTokens: '96', temperature: '0.4' }), 'Stars.');
+        const request = requests.at(-1);
+        if (backend === 'api') {
+            assert.equal(request.max_tokens, 96);
+            assert.equal(request.temperature, 0.4);
+        } else {
+            assert.deepEqual(request.options, { num_predict: 96, temperature: 0.4 });
+        }
         assert.equal(requests.at(-1).messages[0].content, 'Describe only. No tips. Forty words maximum.');
         await query({});
         assert.equal(requests.at(-1).messages[0].content, 'Gallery instructions', `${backend} retains the gallery prompt`);
@@ -586,10 +593,11 @@ test('camera request instructions stay isolated from the gallery across API, Oll
     await tick();
     const worker = FakeWorker.created.at(-1);
     worker.reply({ type: 'ready', device: 'wasm' });
-    manager.query('data:image/jpeg;base64,fixture', 'Describe this.', [], { systemPrompt: 'Camera instructions', maxNewTokens: 96 });
+    manager.query('data:image/jpeg;base64,fixture', 'Describe this.', [], { systemPrompt: 'Camera instructions', maxNewTokens: 96, temperature: 0.4 });
     await tick();
     assert.equal(worker.messages.at(-1).prompt, 'Camera instructions\n\nDescribe this.');
     assert.equal(worker.messages.at(-1).maxNewTokens, 96);
+    assert.equal(worker.messages.at(-1).temperature, 0.4);
     assert.equal(worker.messages.at(-1).imageSrc, 'data:image/jpeg;base64,fixture');
     manager.query('data:image/jpeg;base64,fixture', 'Gallery question', [], {});
     await tick();
@@ -769,6 +777,17 @@ test('follow-up questions reuse the key/value cache and skip the vision encoder;
     assert.equal(continuationTurns({ imageKey: 'a', turns: [{ sent: 'x', answer: 'y' }] }, 'b', [{ role: 'user', content: 'x' }, { role: 'assistant', content: 'y' }]), null);
     engine.dispose();
     assert.equal(engine.hasSession, false);
+});
+
+test('local generation only enables sampling for positive temperature', async () => {
+    const kit = fakeModelKit();
+    const engine = createInferenceEngine(kit);
+    await engine.generate({ image: {}, prompt: 'Sample.', temperature: 0.4 });
+    assert.equal(kit.log.generate.at(-1).do_sample, true);
+    assert.equal(kit.log.generate.at(-1).temperature, 0.4);
+    await engine.generate({ image: {}, prompt: 'Be predictable.', temperature: 0 });
+    assert.equal(kit.log.generate.at(-1).do_sample, false);
+    assert.equal(kit.log.generate.at(-1).temperature, undefined);
 });
 
 test('a rejected cache falls back to a full pass, and abort, token budget and loops stop generation', async () => {

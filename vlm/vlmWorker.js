@@ -17,7 +17,7 @@
  *
  * Message protocol
  *   in   { type: 'load', modelId, plan, fallback?, family, imageSplitting? }
- *        { type: 'generate', id, image? (ImageBitmap) | imageSrc?, imageKey?, prompt, chatHistory, maxNewTokens? }
+ *        { type: 'generate', id, image? (ImageBitmap) | imageSrc?, imageKey?, prompt, chatHistory, maxNewTokens?, temperature? }
  *        { type: 'abort', id }
  *   out  progress { stage, message, pct } · ready { device, dtype, loadMs, heapMB }
  *        warm { warmupMs } · generating { id } · token { id, token, tps, tokenCount }
@@ -225,6 +225,7 @@ async function runInference(request) {
             prompt: request.prompt,
             chatHistory: request.chatHistory ?? [],
             maxNewTokens: request.maxNewTokens,
+            temperature: request.temperature,
         }, {
             onText: (token, meta) => post({ type: 'token', id, token, tps: meta?.tps ?? null, tokenCount: meta?.tokenCount ?? 0 }),
             shouldStop: () => aborted.has(id),

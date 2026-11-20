@@ -214,12 +214,12 @@ export function createInferenceEngine({ lib, processor, model, family, imageSpli
     }
 
     /**
-     * @param {object} request  { image, imageKey, prompt, chatHistory, maxNewTokens }
+     * @param {object} request  { image, imageKey, prompt, chatHistory, maxNewTokens, temperature }
      * @param {object} hooks    { onText(text, { tps, tokenCount }), shouldStop() }
      * @returns {Promise<{ text: string, tokenCount: number, avgTps: number|null, stats: object }>}
      */
     async function generate(request, hooks = {}) {
-        const { image, imageKey = null, prompt, chatHistory = [], maxNewTokens = DEFAULT_MAX_NEW_TOKENS } = request;
+        const { image, imageKey = null, prompt, chatHistory = [], maxNewTokens = DEFAULT_MAX_NEW_TOKENS, temperature = 0 } = request;
         const started = now();
 
         const continued = continuationTurns(state.session, imageKey, chatHistory);
@@ -272,9 +272,11 @@ export function createInferenceEngine({ lib, processor, model, family, imageSpli
             _call(inputIds) { const halt = stop || !!hooks.shouldStop?.(); return inputIds.map(() => halt); }
         }
         const options = {
-            max_new_tokens: maxNewTokens, do_sample: false, streamer,
+            max_new_tokens: maxNewTokens, do_sample: temperature > 0, streamer,
             stopping_criteria: new Stop(), return_dict_in_generate: true,
         };
+
+        if (temperature > 0) options.temperature = temperature;
 
         state.activeKey = imageKey;
         state.imageHit = false;

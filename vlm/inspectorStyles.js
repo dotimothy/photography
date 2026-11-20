@@ -264,15 +264,56 @@ export const PANEL_CSS = `
 @media (pointer: coarse), (max-width: 768px) { .vlm-mode-tab.vlm-btn { min-height: var(--vlm-hit); } }
 .vlm-toolbar-spacer { flex: 1; min-width: 0; }
 
-/* ── Options tray (text size, EXIF auto, direct links, export) ─ */
+.vlm-model-select.vlm-btn {
+    display: block;
+    flex: 1 1 110px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    border-color: transparent;
+    background: transparent;
+}
+.vlm-model-select + .vlm-toolbar-spacer { flex: 0; }
+
+/* ── Chat controls ────────────────────────────────────────────── */
 .vlm-options {
+    position: absolute;
+    z-index: 3;
+    bottom: calc(100% + 4px);
+    inset-inline: var(--vlm-gutter);
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 8px var(--vlm-gutter);
-    border-bottom: 1px solid var(--vlm-line);
+    max-height: min(260px, 45vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 12px;
+    border: 1px solid var(--vlm-glass-line);
+    border-radius: 14px;
+    background: var(--vlm-raised);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+}
+.vlm-chat-parameters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1 0 100%;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.vlm-chat-parameters label { min-width: 0; color: var(--vlm-text-2); font-size: 12px; }
+.vlm-chat-parameters input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--vlm-hit);
+    margin-top: 4px;
+    padding: 0 8px;
+    border: 1px solid var(--vlm-glass-line);
+    border-radius: 8px;
     background: var(--vlm-ink);
-    flex-shrink: 0;
+    color: var(--vlm-text);
+    font: inherit;
+    font-size: 16px;
 }
 .vlm-options-note { flex-basis: 100%; margin: 2px 0 0; font-size: 12px; color: var(--vlm-text-3); line-height: 1.45; }
 .vlm-font-btns { display: inline-flex; gap: 2px; }
@@ -412,9 +453,9 @@ export const PANEL_CSS = `
 .vlm-msg-assistant {
     align-self: stretch;
     max-width: 100%;
-    background: var(--vlm-raised);
+    background: transparent;
     color: var(--vlm-text);
-    border: 1px solid var(--vlm-line);
+    border: 1px solid transparent;
     border-bottom-left-radius: 4px;
 }
 /* Finished answers that are scrolled away cost nothing to keep around. */
@@ -727,7 +768,7 @@ export const PANEL_CSS = `
 }
 .vlm-tts-bar.vlm-tts-bar-on { display: block; }
 .vlm-tts-hl { background: rgba(0, 229, 255, 0.24); color: #fff; border-radius: 2px; padding: 0 1px; }
-.vlm-composer { flex-shrink: 0; border-top: 1px solid var(--vlm-line); background: var(--vlm-surface); padding-bottom: 8px; }
+.vlm-composer { position: relative; flex-shrink: 0; background: var(--vlm-surface); padding-bottom: 8px; }
 .vlm-suggestions {
     display: flex;
     gap: 6px;
@@ -743,7 +784,7 @@ export const PANEL_CSS = `
 .vlm-input-area {
     margin: 8px var(--vlm-gutter) 0;
     border: 1px solid var(--vlm-glass-line);
-    border-radius: 14px;
+    border-radius: 20px;
     background: var(--vlm-raised);
     transition: border-color 0.14s ease;
 }
@@ -772,7 +813,17 @@ export const PANEL_CSS = `
 .vlm-live-btn.vlm-live-on { color: var(--vlm-danger); border-color: rgba(255, 123, 114, 0.5); background: rgba(255, 123, 114, 0.12); }
 .vlm-live-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .vlm-live-btn.vlm-live-on .vlm-live-dot { animation: vlm-blink 1.2s ease-in-out infinite; }
-.vlm-send-btn.vlm-btn { padding: 0 16px; }
+.vlm-send-btn.vlm-btn { padding: 0; border-radius: 50%; font-size: 22px; line-height: 1; }
+.vlm-stop-btn.vlm-btn { border-radius: 50%; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .vlm-mic-btn.vlm-mic-active { animation: vlm-mic-pulse 3s ease-in-out infinite; }
+}
+
+@keyframes vlm-mic-pulse {
+    0%, 100% { box-shadow: inset 0 0 0 0 rgba(255, 123, 114, .06); }
+    50% { box-shadow: inset 0 0 0 3px rgba(255, 123, 114, .24); }
+}
 
 /* ── Portfolio search ────────────────────────────────────────── */
 .vlm-search-view { display: none; min-height: 0; flex: 1; flex-direction: column; }

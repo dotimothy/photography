@@ -51,6 +51,8 @@ export async function inspectCameraImage({ imageSrc, prompt, settings, signal, o
     }
     if (signal.aborted) throw new DOMException('Inspection cancelled', 'AbortError');
     onStatus('Inspecting image…');
+    const tokenLimit = Number(settings.maxNewTokens);
+    const maxNewTokens = Number.isInteger(tokenLimit) && tokenLimit > 0 ? Math.min(tokenLimit, 96) : 96;
     return new Promise((resolve, reject) => {
         const controller = new AbortController();
         let settled = false, response = '';
@@ -71,7 +73,8 @@ export async function inspectCameraImage({ imageSrc, prompt, settings, signal, o
                 systemPrompt: `${settings.systemPrompt || ''}\nYou are the in-camera image inspector. Describe only visible image content in concise Markdown, using at most 40 words total. Do not give photography advice, capture tips, suggestions, or recommendations. Do not invent facts.`,
                 signal: controller.signal,
                 // Forty words is about sixty tokens; a local model stops here even if it ignores the instruction.
-                maxNewTokens: 96,
+                maxNewTokens,
+                temperature: settings.temperature,
                 onToken: token => {
                     if (settled) return;
                     response += token; onToken(token);

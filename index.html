@@ -1757,10 +1757,28 @@
                         </select>
                     </div>
 
+                    <div id="vlm-generation-settings">
+                        <div class="setting-category" style="margin-top:14px;">Response Generation</div>
+                        <label class="setting-row" for="vlm-max-tokens">
+                            <span class="setting-label">Max Generated Tokens</span>
+                            <input type="number" class="setting-input" id="vlm-max-tokens" min="1" max="32768" step="1" placeholder="Default">
+                        </label>
+                        <label class="setting-row" for="vlm-temperature">
+                            <span class="setting-label">Temperature</span>
+                            <input type="number" class="setting-input" id="vlm-temperature" min="0" max="2" step="any" placeholder="Default">
+                        </label>
+                        <p class="vlm-model-intro">Leave a field blank for the backend default. Lower temperature makes responses more predictable.</p>
+                    </div>
+
                     <!-- Local model settings -->
                     <div id="vlm-local-settings">
                         <div class="setting-category" style="margin-top:14px;">Local Models</div>
                         <p class="vlm-model-intro" id="vlm-model-intro">Local models run inside this browser, so photos never leave the device. Nothing is downloaded until you press Download.</p>
+                        <div class="vlm-storage-actions">
+                            <button id="vlm-local-load-btn" type="button" class="vlm-model-btn primary">Load Model</button>
+                            <button id="vlm-local-unload-btn" type="button" class="vlm-model-btn" disabled>Unload Model</button>
+                        </div>
+                        <p class="vlm-model-intro" id="vlm-local-memory-status" role="status">Load the selected model from browser storage.</p>
                         <div class="vlm-model-search-wrap">
                             <span class="vlm-voice-search-icon">&#128269;</span>
                             <input type="text" id="vlm-model-filter" placeholder="Search models, size, or backend…"
@@ -1851,9 +1869,9 @@
                             <button id="vlm-ollama-ps-btn"
                                 style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Active Models</button>
                             <button id="vlm-ollama-load-btn"
-                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Load</button>
+                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Load Model</button>
                             <button id="vlm-ollama-unload-btn"
-                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Unload</button>
+                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;flex:1">Unload Model</button>
                         </div>
                         <div id="vlm-ollama-running-list"
                             style="display:none;padding:4px 0;font-size:11px;color:#fff"></div>
@@ -1954,6 +1972,8 @@
             vlmOllamaModel: 'gemma3',
             vlmOllamaThink: null,
             vlmSystemPrompt: '',
+            vlmMaxNewTokens: '',
+            vlmTemperature: '',
         };
 
         // Shared VLM settings object — read by GalleryVLMOverlay.js (same page context)
@@ -1968,6 +1988,8 @@
             ollamaModel: state.vlmOllamaModel,
             ollamaThink: state.vlmOllamaThink,
             systemPrompt: state.vlmSystemPrompt,
+            maxNewTokens: state.vlmMaxNewTokens,
+            temperature: state.vlmTemperature,
         };
 
         function syncVLMSettings() {
@@ -1992,6 +2014,8 @@
                 ollamaModel: state.vlmOllamaModel,
                 ollamaThink: state.vlmOllamaThink,
                 systemPrompt: state.vlmSystemPrompt,
+                maxNewTokens: state.vlmMaxNewTokens,
+                temperature: state.vlmTemperature,
             };
             window.dispatchEvent(new CustomEvent('vlmsettingschanged', { detail }));
             if (typeof cameraAI !== 'undefined') { cancelCameraInspectionAI(); cameraAI.photo = null; if (uiCtx) updateUI(); }
@@ -2331,6 +2355,8 @@
             if (savedVlmOllamaThink !== null) {
                 state.vlmOllamaThink = savedVlmOllamaThink === 'null' ? null : savedVlmOllamaThink === 'true';
             }
+            state.vlmMaxNewTokens = localStorage.getItem('vlmMaxNewTokens') ?? '';
+            state.vlmTemperature = localStorage.getItem('vlmTemperature') ?? '';
             const savedVlmSystemPrompt = localStorage.getItem('vlmSystemPrompt');
             if (savedVlmSystemPrompt !== null) state.vlmSystemPrompt = savedVlmSystemPrompt;
             window.VLM_SETTINGS = {
@@ -2344,6 +2370,8 @@
                 ollamaModel: state.vlmOllamaModel,
                 ollamaThink: state.vlmOllamaThink,
                 systemPrompt: state.vlmSystemPrompt,
+                maxNewTokens: state.vlmMaxNewTokens,
+                temperature: state.vlmTemperature,
             };
 
             // Sync UI Toggles
@@ -2359,10 +2387,14 @@
             document.getElementById('vlm-ollama-model').value = state.vlmOllamaModel;
             document.getElementById('vlm-ollama-think').value = state.vlmOllamaThink === null ? 'null' : String(state.vlmOllamaThink);
             document.getElementById('vlm-system-prompt').value = state.vlmSystemPrompt;
+            document.getElementById('vlm-max-tokens').value = state.vlmMaxNewTokens;
+            document.getElementById('vlm-temperature').value = state.vlmTemperature;
+
             const _vlmOn = state.vlmEnabled;
             const _vlmApi = state.vlmType === 'api';
             const _vlmOllama = state.vlmType === 'ollama';
             document.getElementById('vlm-backend-row').style.display = _vlmOn ? '' : 'none';
+            document.getElementById('vlm-generation-settings').hidden = !_vlmOn;
             document.getElementById('vlm-local-settings').style.display = (_vlmOn && !_vlmApi && !_vlmOllama) ? '' : 'none';
             document.getElementById('vlm-api-settings').style.display = (_vlmOn && _vlmApi) ? '' : 'none';
             document.getElementById('vlm-ollama-settings').style.display = (_vlmOn && _vlmOllama) ? '' : 'none';
@@ -2390,9 +2422,62 @@
             refreshQueued: false,
         };
 
+        let vlmSettingsManager;
+        let vlmMemoryBusy = false;
+
         async function vlmStore() {
-            if (!window.VLM_MODELS) await import('./vlm/VLMManager.js?v=12');
+            if (!vlmSettingsManager) {
+                const { VLMManager } = await import('./vlm/VLMManager.js?v=12');
+                if (!vlmSettingsManager) {
+                    vlmSettingsManager = VLMManager.getInstance();
+                    vlmSettingsManager.on('stats', () => syncVLMMemoryControls());
+                    vlmSettingsManager.on('error', ({ message }) => syncVLMMemoryControls(message || 'Model load failed.'));
+                    syncVLMMemoryControls();
+                }
+            }
             return window.VLM_MODELS;
+        }
+
+        function syncVLMMemoryControls(message) {
+            if (!vlmSettingsManager || state.vlmType !== 'local') return;
+            const { loaded, modelId, backend } = vlmSettingsManager.stats;
+            const resident = backend === 'local' && loaded;
+            const loading = vlmSettingsManager.isLoading;
+            const load = document.getElementById('vlm-local-load-btn');
+            const unload = document.getElementById('vlm-local-unload-btn');
+            load.disabled = vlmMemoryBusy || loading || (resident && modelId === state.vlmModel);
+            unload.disabled = vlmMemoryBusy || !resident;
+            document.getElementById('vlm-local-memory-status').textContent = message
+                || (loading ? 'Loading model into memory…'
+                    : resident ? `${modelId === state.vlmModel ? 'Selected model' : modelId} loaded into memory.`
+                    : 'No model loaded in this tab.');
+        }
+
+        async function changeVLMLocalMemory(load) {
+            if (vlmMemoryBusy) return;
+            vlmMemoryBusy = true;
+            let message;
+            try {
+                const store = await vlmStore();
+                if (load) {
+                    const modelId = state.vlmModel;
+                    if (await store.status(modelId) !== 'downloaded') {
+                        message = 'Download the selected model below before loading it.';
+                    } else if (state.vlmType === 'local' && modelId === state.vlmModel) {
+                        const started = await vlmSettingsManager.load(modelId);
+                        if (!started) message = 'Could not start the selected model. If the inspector is busy, try again when it finishes.';
+                    }
+                } else {
+                    message = vlmSettingsManager.release()
+                        ? 'Model unloaded. Its files are still in browser storage.'
+                        : 'The model is busy or already out of memory.';
+                }
+            } catch (error) {
+                message = error.message || 'Could not change model memory.';
+            } finally {
+                vlmMemoryBusy = false;
+                syncVLMMemoryControls(message);
+            }
         }
 
         function vlmBytes(bytes) {
@@ -2529,6 +2614,7 @@
             if (newModel === state.vlmModel) return;
             const workerRunning = !!(window.VLM_SETTINGS._workerStarted);
             state.vlmModel = newModel;
+            syncVLMMemoryControls();
             localStorage.setItem('vlmModel', newModel);
             // Keep hidden compat select in sync
             const sel = document.getElementById('select-vlm-model');
@@ -2557,7 +2643,7 @@
 
             if (row.state === 'downloaded') {
                 const use = selected ? '' : '<button type="button" class="vlm-model-btn primary" data-action="use">Use This Model</button>';
-                return `<span class="vlm-model-status ok">Downloaded · ${vlmBytes(row.cachedBytes)}${selected ? ' · in use' : ''}</span>
+                return `<span class="vlm-model-status ok">Downloaded · ${vlmBytes(row.cachedBytes)}${selected ? ' · Selected' : ''}</span>
                     <div class="vlm-model-actions">${use}<button type="button" class="vlm-model-btn danger" data-action="delete">Delete</button></div>`;
             }
 
@@ -2924,6 +3010,30 @@
                 state.slideshowInterval = e.target.value;
             });
 
+            for (const [id, key, setting] of [
+                ['vlm-max-tokens', 'vlmMaxNewTokens', 'maxNewTokens'],
+                ['vlm-temperature', 'vlmTemperature', 'temperature'],
+            ]) {
+                document.getElementById(id).addEventListener('change', (event) => {
+                    const input = event.currentTarget;
+                    if (!input.reportValidity()) {
+                        input.value = state[key];
+                        return;
+                    }
+                    state[key] = input.value;
+                    if (input.value === '') localStorage.removeItem(key);
+                    else localStorage.setItem(key, input.value);
+                    window.VLM_SETTINGS[setting] = input.value;
+                    els.iframe.contentWindow?.postMessage({
+                        type: 'vlm-generation-settings',
+                        settings: { [setting]: input.value },
+                    }, location.origin);
+                });
+            }
+
+            document.getElementById('vlm-local-load-btn').addEventListener('click', () => changeVLMLocalMemory(true));
+            document.getElementById('vlm-local-unload-btn').addEventListener('click', () => changeVLMLocalMemory(false));
+
             // VLM Enable Toggle
             setupToggle(document.getElementById('toggle-vlm'), (val) => {
                 state.vlmEnabled = val;
@@ -2931,6 +3041,7 @@
                 const isApi = state.vlmType === 'api';
                 const isOllama = state.vlmType === 'ollama';
                 document.getElementById('vlm-backend-row').style.display = val ? '' : 'none';
+                document.getElementById('vlm-generation-settings').hidden = !val;
                 document.getElementById('vlm-local-settings').style.display = (val && !isApi && !isOllama) ? '' : 'none';
                 document.getElementById('vlm-api-settings').style.display = (val && isApi) ? '' : 'none';
                 document.getElementById('vlm-ollama-settings').style.display = (val && isOllama) ? '' : 'none';
@@ -2945,6 +3056,7 @@
                 localStorage.setItem('vlmType', state.vlmType);
                 const isApi = state.vlmType === 'api';
                 const isOllama = state.vlmType === 'ollama';
+                syncVLMMemoryControls();
                 document.getElementById('vlm-local-settings').style.display = (!isApi && !isOllama) ? '' : 'none';
                 document.getElementById('vlm-api-settings').style.display = isApi ? '' : 'none';
                 document.getElementById('vlm-ollama-settings').style.display = isOllama ? '' : 'none';
@@ -3257,7 +3369,7 @@
                 } catch (err) {
                     note.textContent = `Load failed: ${err.message}`;
                 } finally {
-                    btn.textContent = 'Load';
+                    btn.textContent = 'Load Model';
                     btn.disabled = false;
                 }
             });
@@ -3279,7 +3391,7 @@
                 } catch (err) {
                     note.textContent = `Unload failed: ${err.message}`;
                 } finally {
-                    btn.textContent = 'Unload';
+                    btn.textContent = 'Unload Model';
                     btn.disabled = false;
                 }
             });

@@ -193,6 +193,10 @@ class VLMManager {
 
     /** Explicitly start or resume the selected local model from browser storage. */
     async load(modelId = this._modelId ?? DEFAULT_MODEL_ID) {
+        if (this._modelId !== modelId && (this._worker || this._starting)) {
+            if (this._busy > 0 || this._loading) return false;
+            this.restart(modelId);
+        }
         if (this._worker) return this._modelId === modelId;
         if (this._startPromise) return this._modelId === modelId && await this._startPromise;
         if (this._suspended && this._modelId === modelId) return this._startLocal(modelId);
@@ -499,13 +503,20 @@ class VLMManager {
      * @param {string}   imageSrc      Absolute URL or data-URI of the image.
      * @param {string}   prompt        User's question.
      * @param {Array}    chatHistory   Prior {role, content} turns (may be empty).
-     * @param {object}   callbacks     { onStart?, onToken?, onDone?, onError?, signal?, systemPrompt?, maxNewTokens? }
+     * @param {object}   callbacks     { onStart?, onToken?, onDone?, onError?, signal?, systemPrompt?, maxNewTokens?, temperature? }
      * systemPrompt overrides the shared prompt for this request without changing other clients.
-     * maxNewTokens caps a local answer (default 512).
+     * maxNewTokens caps generated tokens. Temperature 0 uses greedy decoding for local models.
      * onDone receives (text, tokenCount, avgTps, stats).
      * @returns {number}               Request ID.
      */
     query(imageSrc, prompt, chatHistory, callbacks = {}) {
+        const maxNewTokens = Number(callbacks.maxNewTokens);
+        const temperature = callbacks.temperature === '' || callbacks.temperature == null ? NaN : Number(callbacks.temperature);
+        callbacks = {
+            ...callbacks,
+            maxNewTokens: Number.isInteger(maxNewTokens) && maxNewTokens >= 1 && maxNewTokens <= 32768 ? maxNewTokens : undefined,
+            temperature: Number.isFinite(temperature) && temperature >= 0 && temperature <= 2 ? temperature : undefined,
+        };
         if (this._mode === 'api') {
             this._queryApi(imageSrc, prompt, chatHistory, callbacks);
             return 0;
@@ -542,6 +553,7 @@ class VLMManager {
                 type: 'generate', id, prompt: requestPrompt, chatHistory,
                 imageKey: prepared.key,
                 maxNewTokens: callbacks.maxNewTokens,
+                temperature: callbacks.temperature,
             };
             if (prepared.bitmap) message.image = prepared.bitmap; else message.imageSrc = imageSrc;
             this._imageInfo.set(id, {
@@ -718,7 +730,8 @@ class VLMManager {
             const headers = { 'Content-Type': 'application/json' };
             if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
-            const body = { model, messages, stream: true, max_tokens: 2048 };
+            const body = { model, messages, stream: true, max_tokens: callbacks.maxNewTokens ?? 2048 };
+            if (callbacks.temperature != null) body.temperature = callbacks.temperature;
 
             const res = await fetch(`${endpoint}/chat/completions`, {
                 method: 'POST',
@@ -849,6 +862,11 @@ class VLMManager {
         try {
             const body = { model, messages, stream: true };
             if (think !== null && think !== undefined) body.think = think;
+            if (callbacks.maxNewTokens != null || callbacks.temperature != null) {
+                body.options = {};
+                if (callbacks.maxNewTokens != null) body.options.num_predict = callbacks.maxNewTokens;
+                if (callbacks.temperature != null) body.options.temperature = callbacks.temperature;
+            }
 
             const res = await fetch(`${ollamaBase}/api/chat`, {
                 method:  'POST',
