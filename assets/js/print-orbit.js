@@ -541,6 +541,8 @@ window.PrintOrbit = (function () {
     function arrive() {
         if (!camera || !controls) return;
         const pose = homePose();
+        const close = pose.pos.clone().multiplyScalar(0.7);
+        pose.pos.multiplyScalar(1.12);
         if (!o.built || motionOff()) {
             camera.position.copy(pose.pos);
             controls.target.copy(pose.target);
@@ -548,7 +550,6 @@ window.PrintOrbit = (function () {
             return;
         }
 
-        const close = pose.pos.clone().multiplyScalar(0.7);
         // Smootherstep keeps both velocity and acceleration at zero at the endpoints.
         const easing = (t) => t ** 3 * (10 + t * (6 * t - 15));
         controls.enabled = false;
