@@ -301,12 +301,22 @@ body:has(#controls-container.expanded) #gallery-3d > button { opacity: 0; pointe
     /* Room for the top bar and the frame line, so neither sits on the photograph. */
     #full-image-container { top: 60px; bottom: calc(72px + var(--pg-stack)); }
 }
+#imageViewer { container-type: inline-size; }
 #viewer-hint {
+    left: calc(var(--pc-left) + 160px);
+    right: calc(var(--pc-right) + 160px);
+    width: fit-content;
+    max-width: none;
+    margin-inline: auto;
+    text-align: center;
     top: calc(var(--pc-top) + 15px);
     color: var(--pc-text-dim);
     font-size: 12px;
     line-height: 14px;
     letter-spacing: .06em;
+}
+@container (max-width: 600px) {
+    #viewer-hint { display: none; }
 }
 @media (max-width: 767px), (hover: none), (pointer: coarse) {
     /* Keyboard shortcuts mean nothing on a touch screen. */
@@ -645,6 +655,9 @@ html.portfolio-ai-open #ui-layer:has(#layout-switch) #title {
 html.portfolio-ai-open body:has(#layout-switch) #gallery-2d {
     --pg-grid-header-height: 108px;
 }
+
+/* The expanded menu occupies the title row on compact and split-screen layouts. */
+#ui-layer:has(#controls-container.expanded) #title { visibility: hidden; }
 
 #gallery-dock {
     left: var(--pg-hud-reserve, 0px);
