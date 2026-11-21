@@ -96,7 +96,7 @@ def customize_gallery_view3d(source):
     """Start the gallery overview closer while keeping the template's zoom limits."""
     return re.sub(
         r'this\.baseDistance\s*=\s*this\.getOptimalDistance\(\);',
-        'this.baseDistance = this.getOptimalDistance() * 0.9;',
+        'this.baseDistance = this.getOptimalDistance() * 0.82;',
         source,
     )
 
